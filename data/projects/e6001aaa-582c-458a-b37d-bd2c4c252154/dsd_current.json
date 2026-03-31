@@ -1,0 +1,257 @@
+{
+  "project_id": "e6001aaa-582c-458a-b37d-bd2c4c252154",
+  "version": 1,
+  "created_at": "2026-03-27T17:50:08.872585",
+  "updated_at": "2026-03-27T18:04:30.576918",
+  "type": "furniture",
+  "name": "Traditional Tripartite Library Wall Unit — Classical Breakfront Cabinet",
+  "description": "A large, formal, freestanding symmetrical tripartite display cabinet and bookcase wall unit executed in a classical/traditional architectural style. The composition follows strict Palladian tripartite massing principles: a dominant, taller and wider central section is flanked by two shorter, narrower side wings, creating a clearly stepped, hierarchical roofline in which the central section is unambiguously the tallest element and the side wings are subordinate at approximately 75–80% of the central height. The overall silhouette reads as a classical breakfront bookcase — one of the most authoritative furniture typologies of the Georgian and Victorian periods.\n\nThe unit is organized across three vertical modules and two horizontal zones (upper display and lower storage), separated by a continuous counter or bridge shelf across the central section. A critical depth transition occurs at this counter level: the lower base cabinet and side wings are deeper (approximately 450–500 mm), while the upper central section steps back to a shallower depth (approximately 300–350 mm), creating a functional display ledge at counter height — a detail consistent with traditional library cabinet conventions. This stepped-depth condition is a strongly recommended design feature but must be confirmed with the client before fabrication.\n\nCENTRAL SECTION — UPPER ZONE: The upper portion of the central section is organized as a three-part sub-composition: an open adjustable shelving bay (left) | a central pair of tall doors, possibly glazed (centre) | an open adjustable shelving bay (right). The two outer shelving bays each contain approximately 3–4 adjustable shelves with varied compartment heights suited to mixed use (books and display objects). The central door pair may be solid raised-panel or glazed — this is a critical variable requiring explicit client confirmation before fabrication. Vertical pilaster-like stiles separate each outer shelving bay from the central door zone.\n\nCENTRAL SECTION — LOWER ZONE: The lower base cabinet is organized as a three-part sub-composition: a single solid raised-panel cupboard door (left) | a central divided drawer bank (centre) | a single solid raised-panel cupboard door (right). The central drawer bank contains approximately three stacked rows divided into two columns, yielding approximately six drawer units total, consistent with classical cabinetry conventions. Drawer pulls are period-appropriate bin pulls or knobs in antique brass or aged bronze.\n\nCENTRAL SECTION — TRANSITION: A fixed horizontal counter or bridge shelf spans the full width of the central section at approximately 900 mm above floor level, acting as both a structural datum and a functional display or counter surface. This shelf marks the depth transition between the deeper lower base and the shallower upper display section, creating a stepped counter ledge of approximately 100–150 mm. This is the defining mid-height datum of the composition.\n\nSIDE SECTIONS (LEFT AND RIGHT): Each flanking side section is identical and symmetrically mirrored. The upper zone contains open adjustable shelving (1–2 shelves). The lower zone contains a single solid raised-panel cupboard door. The top of each side section is crowned with a curved decorative crown molding — ogee, cove, cyma recta, or cyma reversa profile — which is an explicitly confirmed and non-negotiable critical design detail. The base of each side section features a corresponding curved decorative base molding of complementary profile. These curved moldings are the defining decorative signature of the side sections and must be executed in solid hardwood.\n\nFRONT FACE ARCHITECTURE: The front face of the entire unit is organized by prominent vertical pilaster-like stiles that frame the three main modules and subdivide internal bays, giving the piece its classical architectural character. These vertical elements read as architectural pilasters at module junctions and are a defining feature of the face-frame composition.\n\nAll three sections share a continuous plinth or base running at floor level. All sections require full structural back panels. The piece is intended to sit flush against a wall and must be anchored with anti-tip wall-fixing brackets — a non-negotiable safety requirement given the height and mass of the unit. The finish is a painted heritage tone throughout (white, cream, or period color). Hardware is period-appropriate antique brass or aged bronze throughout — no modern chrome or stainless finishes. The sketch includes multiple question-mark annotations confirming that specific dimensions and internal details remain unresolved and require explicit client confirmation before production.",
+  "dimensions": {
+    "width": "3000–3400 mm overall (central section approximately 1400–1600 mm wide; each side section approximately 700–900 mm wide)",
+    "height": "2400–2600 mm for the central section; side sections approximately 2000–2200 mm (approximately 75–80% of central height), creating a stepped hierarchical roofline with a height differential of approximately 300–400 mm between central and side sections",
+    "depth": "450–500 mm for the lower base cabinet and both side sections; 300–350 mm for the upper central section above the counter/bridge shelf, creating a functional stepped counter ledge of approximately 100–150 mm at the transition point",
+    "notes": "All dimensions are extrapolated from sketch proportions and standard classical furniture conventions. No client-supplied measurements have been provided. The sketch is drawn in perspective, so all proportions are approximate. The question-mark annotations throughout the sketch explicitly confirm that the client has not resolved specific dimensions. The stepped-depth condition (deeper base and sides, shallower upper central section) is strongly recommended as a traditional and functional feature but must be confirmed with the client. If a uniform depth is preferred, 420–450 mm throughout is a viable alternative. The overall width of 3000–3400 mm reflects the scale implied by the internal compartment complexity across three sections. A ceiling height of at least 2700 mm (9 ft) is required to accommodate the central section height. All final dimensions must be confirmed with the client before production drawings are issued."
+  },
+  "style": {
+    "aesthetic": "Classical / Traditional — Palladian tripartite architectural furniture form with hierarchical stepped massing, curved decorative molding profiles on side sections, prominent classical cornice on central section, pilaster-like front stile divisions, raised-panel joinery, and period-appropriate detailing throughout",
+    "era": "Georgian / Victorian / Colonial Revival — 18th to early 20th century classical cabinetry tradition, consistent with the English breakfront bookcase typology",
+    "influences": [
+      "Palladian architectural tripartite façade composition and hierarchical massing principles",
+      "Georgian cabinetry and architectural furniture",
+      "Victorian breakfront bookcase and display cabinet conventions",
+      "Colonial Revival furniture-making traditions",
+      "Traditional English library furniture — breakfront bookcase typology",
+      "Classical architectural cornice, pilaster, and molding hierarchies",
+      "Face-frame cabinetry construction with applied architectural detailing"
+    ]
+  },
+  "materials": [
+    {
+      "name": "18 mm MDF or paint-grade birch plywood",
+      "usage": "Primary carcass panels for all three sections — top, bottom, side gables, vertical partitions, internal dividers, and fixed horizontal shelves. Full structural back panels to all three modules for rigidity and anti-racking performance.",
+      "finish": "Painted satin or eggshell — heritage white, cream, or period color throughout. All three sections must share an identical exterior finish for visual cohesion."
+    },
+    {
+      "name": "25 mm MDF or hardwood-lipped plywood",
+      "usage": "Counter/bridge shelf spanning the central section at mid-height, long-span horizontal members, top deck panels beneath cornice build-ups, and any shelves spanning more than 600 mm to prevent bowing under book loads.",
+      "finish": "Painted to match carcass, or contrasting stained wood veneer if client confirms a two-tone scheme."
+    },
+    {
+      "name": "9–18 mm plywood or HDF back panels",
+      "usage": "Full back panels to all three modules — central section and both side wings. No section is open-backed. Recessed into a rabbet on rear edges of side, top, and bottom panels. Upgrade to 18 mm plywood if wall-mounting or structural rigidity demands it.",
+      "finish": "Painted to match cabinet interior, or a contrasting display tone (darker heritage color or period wallpaper lining) — client to confirm."
+    },
+    {
+      "name": "Solid hardwood (machined molding stock, minimum 25 mm)",
+      "usage": "All crown moldings, curved side-section crown and base moldings (ogee, cove, cyma recta, or cyma reversa profiles — non-negotiable critical detail), central section classical cornice build-up (bed molding, fascia, crown), base moldings, vertical pilaster-like front stiles, and all decorative edge profiles throughout.",
+      "finish": "Painted to match carcass. Curved profiles on side sections to be routed or machined from solid timber minimum 25 mm stock. Central cornice build-up from solid hardwood minimum 25 mm stock per layer."
+    },
+    {
+      "name": "22–25 mm MDF or solid hardwood / veneered MDF",
+      "usage": "All door panels (up to 6 doors total: 2 lower cupboard doors in central section, 2 lower cupboard doors in side sections, 2 upper central doors — possibly glazed), and all drawer fronts (approximately 6 drawer fronts in central lower bank). Traditional raised-panel stile-and-rail construction for all solid doors.",
+      "finish": "Painted heritage finish to match carcass. If upper central doors are confirmed glazed: hardwood stile-and-rail frame with glass rebate, fitted with clear, seeded, or reeded glass — client to confirm."
+    },
+    {
+      "name": "Birch plywood or solid hardwood (drawer boxes)",
+      "usage": "Internal drawer carcasses for the approximately 6 drawers in the lower central drawer bank (3 rows × 2 columns). Full-extension soft-close undermount drawer slides (Blum Tandem or equivalent).",
+      "finish": "Natural birch plywood interior or painted to match. Soft-close undermount slides concealed within drawer carcass."
+    },
+    {
+      "name": "18–25 mm MDF or plywood with hardwood front lipping (adjustable shelves)",
+      "usage": "All adjustable shelves within the upper central shelving bays (approximately 3–4 shelves per bay) and upper side-section shelving (1–2 shelves per side). Supported by 5 mm shelf pins on 32 mm system drilling.",
+      "finish": "Painted to match. Front edge lipped with solid hardwood nosing or bullnose profile minimum 18 mm thickness; 25 mm strongly recommended for spans over 600 mm."
+    },
+    {
+      "name": "Period-appropriate hardware — antique brass or aged bronze",
+      "usage": "Drawer pulls (bin pulls or cup pulls), door knobs or cup pulls, hinges (concealed cup hinges or traditional butt hinges for period authenticity), shelf pins, and anti-tip wall-fixing brackets. Soft-close integrated where concealed hinges are used.",
+      "finish": "Antique brass, polished brass, aged bronze, or oil-rubbed bronze throughout. No modern chrome, brushed nickel, or stainless steel. Consistency of hardware finish across all three sections is mandatory."
+    },
+    {
+      "name": "Anti-tip wall-fixing brackets and structural anchoring hardware",
+      "usage": "Safety wall anchoring for the full unit — mandatory given the estimated height of 2400–2600 mm and substantial mass of the piece. Minimum two anchor points per section into wall studs or masonry with appropriate fixings.",
+      "finish": "Concealed behind back panels or integrated into the top rail of each section."
+    }
+  ],
+  "colors": {
+    "primary": "Heritage white or warm cream — painted satin or eggshell finish (e.g., Farrow & Ball All White, Wimborne White, Pointing, or equivalent heritage tone)",
+    "secondary": "Matching painted interior shelf surfaces; alternatively a contrasting darker heritage tone or period wallpaper lining for back panels to enhance display quality — client to confirm",
+    "accent": "Antique brass or aged bronze for all hardware throughout",
+    "notes": "The source sketch is monochrome pencil only; no color information is directly readable. A painted heritage finish is the strongest and most period-appropriate inference for a classical tripartite cabinet of this typology. If a natural wood finish is confirmed by the client, stained and lacquered hardwood (mahogany, cherry, or oak) would be period-appropriate, with all three sections sharing an identical stain and lacquer specification. Interior back panels may be lined with a contrasting color or period wallpaper for display enhancement — client to confirm. All three sections must share an identical exterior finish for visual cohesion."
+  },
+  "structural_elements": [
+    {
+      "id": "5d613b6c",
+      "name": "Central Section Carcass",
+      "description": "The primary and tallest vertical module, forming the dominant centre of the tripartite composition. Full-height side gable panels, top panel, bottom panel, and full structural back panel forming the outer shell. Internally subdivided by vertical partitions creating three upper sub-zones (left open shelving bay, central door bay, right open shelving bay) and three lower sub-zones (left cupboard, central drawer bank, right cupboard). A fixed horizontal counter/bridge shelf at approximately 900 mm above floor level separates the upper and lower zones across the full width of the central section and marks the depth transition between the deeper lower base and the shallower upper section. The top of the central section features the most prominent and hierarchically dominant classical cornice/crown treatment of the three sections. The base sits on the continuous plinth. Estimated width: 1400–1600 mm. Estimated height: 2400–2600 mm.",
+      "dimensions": null,
+      "material": "18 mm MDF or birch plywood carcass; 9–18 mm HDF/plywood full back panel; 25 mm MDF or plywood counter/bridge shelf; solid hardwood moldings and cornice build-up",
+      "position": "Centre of the overall composition",
+      "count": 1
+    },
+    {
+      "id": "482df679",
+      "name": "Left Side Wing Carcass",
+      "description": "Shorter flanking unit to the left of the central section, at approximately 75–80% of the central section height. Full-height side gable panels (shorter than central), top panel, bottom panel, and full structural back panel. Upper zone: open adjustable shelving (1–2 shelves). Lower zone: single solid raised-panel cupboard door. Top features the explicitly confirmed curved decorative crown molding (ogee, cove, cyma recta, or cyma reversa profile — non-negotiable critical detail). Base features a corresponding curved decorative base molding of complementary profile. Sits flush or integrated with the central section at the shared vertical edge, connected by a pilaster-like front stile at the junction. Estimated width: 700–900 mm. Estimated height: 2000–2200 mm.",
+      "dimensions": null,
+      "material": "18 mm MDF or birch plywood carcass; 9–18 mm HDF/plywood full back panel; solid hardwood curved crown and base moldings (minimum 25 mm stock)",
+      "position": "Left flank of the composition",
+      "count": 1
+    },
+    {
+      "id": "ba25b308",
+      "name": "Right Side Wing Carcass",
+      "description": "Exact mirror image of the left side wing. Identical dimensions, internal configuration (open adjustable shelving above, single solid raised-panel cupboard door below), and molding profiles (curved crown and curved base — non-negotiable critical details). Symmetrically positioned to the right of the central section. Connected to the central section at the shared vertical edge by a pilaster-like front stile.",
+      "dimensions": null,
+      "material": "18 mm MDF or birch plywood carcass; 9–18 mm HDF/plywood full back panel; solid hardwood curved crown and base moldings (minimum 25 mm stock)",
+      "position": "Right flank of the composition",
+      "count": 1
+    },
+    {
+      "id": "93499713",
+      "name": "Central Section Classical Crown / Cornice",
+      "description": "The tallest and most prominent crown treatment of the three sections, reinforcing the hierarchical massing of the tripartite composition. Full classical cornice build-up: bed molding, fascia, and crown — consistent with Georgian/Victorian architectural conventions. Projects forward of the carcass face by approximately 80–120 mm. Solid hardwood, painted. This crown is hierarchically superior to the side section crowns and reads as the apex of the entire composition. Its profile and projection must be visually dominant relative to the side section curved crowns.",
+      "dimensions": null,
+      "material": "Solid hardwood build-up (minimum 25 mm stock per layer), painted to match carcass",
+      "position": "Top of central section, full width of central module",
+      "count": 1
+    },
+    {
+      "id": "48e4a251",
+      "name": "Side Section Curved Crown Moldings",
+      "description": "Curved decorative crown molding at the top of each flanking side section — an explicitly confirmed and non-negotiable critical design detail. Profile: ogee, cove, cyma recta, or cyma reversa — a graceful curved transition from the top of the side unit body, subordinate in scale and projection to the central classical cornice but coordinated in character and finish. Projects forward of the carcass face by approximately 40–70 mm. Executed in solid hardwood, painted to match. One per side section.",
+      "dimensions": null,
+      "material": "Solid hardwood (minimum 25 mm stock), painted to match carcass",
+      "position": "Top of left side wing and top of right side wing",
+      "count": 2
+    },
+    {
+      "id": "a94bb60f",
+      "name": "Side Section Curved Base Moldings",
+      "description": "Curved decorative base molding at the bottom of each flanking side section — an explicitly confirmed and non-negotiable critical design detail. Profile: ogee, cove, or cyma reversa — flows gracefully from the body of the side unit toward the floor or plinth. Complements the curved crown molding above, giving each side section a complete and resolved classical furniture silhouette. Solid hardwood, painted to match. One per side section.",
+      "dimensions": null,
+      "material": "Solid hardwood (minimum 25 mm stock), painted to match carcass",
+      "position": "Base of left side wing and base of right side wing",
+      "count": 2
+    },
+    {
+      "id": "0e36cd98",
+      "name": "Continuous Plinth / Base",
+      "description": "Continuous plinth or stepped base running across the full width of all three sections at floor level. Raises the carcass off the floor by approximately 80–120 mm. Provides a unified base datum tying all three modules together visually. May incorporate a toe-kick recess set back approximately 60–80 mm from the face. Solid hardwood or MDF with hardwood facing, painted to match. Leveling feet concealed within the plinth are strongly recommended to accommodate uneven floors.",
+      "dimensions": null,
+      "material": "18–25 mm MDF or plywood with solid hardwood face molding; concealed leveling feet",
+      "position": "Full width base at floor level, all three sections",
+      "count": 1
+    },
+    {
+      "id": "ee0e6a8c",
+      "name": "Counter / Bridge Shelf",
+      "description": "Fixed horizontal counter or bridge shelf spanning the full width of the central section at approximately 900 mm above floor level. Acts as both a structural datum and a functional display or counter surface. Marks the transition between the deeper lower base cabinet (450–500 mm depth) and the shallower upper central section (300–350 mm depth), creating a stepped counter ledge of approximately 100–150 mm. Front edge to be lipped with a solid hardwood nosing or classical edge profile. This is a defining mid-height datum of the composition.",
+      "dimensions": null,
+      "material": "25 mm MDF or hardwood-lipped plywood with solid hardwood front nosing",
+      "position": "Mid-height of central section, full width of central module, approximately 900 mm above floor",
+      "count": 1
+    },
+    {
+      "id": "8635ded8",
+      "name": "Upper Central Open Shelving Bays",
+      "description": "Open adjustable shelving bays occupying the left and right sub-zones of the upper central section, flanking the central door pair. Each bay contains approximately 3–4 adjustable shelves with varied compartment heights suited to mixed use (books and display objects). Shelves supported by 5 mm shelf pins on 32 mm system drilling. Front edges lipped with solid hardwood nosing. Minimum 25 mm thickness for spans over 600 mm.",
+      "dimensions": null,
+      "material": "18–25 mm MDF or plywood with solid hardwood front lipping",
+      "position": "Upper left and upper right sub-zones of the central section",
+      "count": 2
+    },
+    {
+      "id": "563fd9b5",
+      "name": "Upper Central Door Pair",
+      "description": "A pair of tall doors occupying the central sub-zone of the upper central section, between the two open shelving bays. May be solid raised-panel or glazed — this is a critical variable requiring explicit client confirmation before fabrication. If glazed: hardwood stile-and-rail frame with glass rebate, fitted with clear, seeded, or reeded glass. If solid: traditional raised-panel stile-and-rail construction. Hinges: concealed cup hinges or traditional butt hinges for period authenticity. Period-appropriate knobs or cup pulls in antique brass or aged bronze.",
+      "dimensions": null,
+      "material": "22–25 mm hardwood stile-and-rail frame; raised-panel MDF or solid hardwood infill (solid option) or clear/seeded glass infill (glazed option — client to confirm)",
+      "position": "Upper centre sub-zone of the central section",
+      "count": 2
+    },
+    {
+      "id": "c34d0c47",
+      "name": "Lower Central Drawer Bank",
+      "description": "Central lower storage element of the central section, positioned between the two flanking lower cupboard doors. Organized as approximately three stacked rows divided into two columns, yielding approximately six drawer units total. Drawer fronts: traditional raised-panel or flat-panel with applied molding detail, painted to match. Drawer boxes: birch plywood with full-extension soft-close undermount slides (Blum Tandem or equivalent). Hardware: period-appropriate bin pulls or cup pulls in antique brass or aged bronze. Exact face subdivision to be confirmed in shop drawings.",
+      "dimensions": null,
+      "material": "18 mm MDF or plywood carcass; birch plywood drawer boxes; 22 mm MDF or solid hardwood raised-panel drawer fronts; full-extension soft-close undermount slides",
+      "position": "Lower centre sub-zone of the central section",
+      "count": 6
+    },
+    {
+      "id": "13e19269",
+      "name": "Lower Central Flanking Cupboard Doors",
+      "description": "Single solid raised-panel cupboard door on each side of the lower central drawer bank (one left, one right), forming the left and right sub-zones of the lower central section. Traditional raised-panel stile-and-rail construction. Hinges: concealed cup hinges or traditional butt hinges. Period-appropriate knobs or cup pulls in antique brass or aged bronze.",
+      "dimensions": null,
+      "material": "22–25 mm MDF or solid hardwood raised-panel stile-and-rail door construction",
+      "position": "Lower left and lower right sub-zones of the central section",
+      "count": 2
+    },
+    {
+      "id": "e8fc4353",
+      "name": "Side Wing Upper Open Shelving",
+      "description": "Open adjustable shelving in the upper zone of each side wing (1–2 shelves per side). Shelves supported by 5 mm shelf pins on 32 mm system drilling. Front edges lipped with solid hardwood nosing. Minimum 18 mm thickness; 25 mm recommended for spans over 600 mm.",
+      "dimensions": null,
+      "material": "18–25 mm MDF or plywood with solid hardwood front lipping",
+      "position": "Upper zone of left side wing and upper zone of right side wing",
+      "count": 2
+    },
+    {
+      "id": "c03d4102",
+      "name": "Side Wing Lower Cupboard Doors",
+      "description": "Single solid raised-panel cupboard door in the lower zone of each side wing (one per side). Traditional raised-panel stile-and-rail construction, matching the door treatment of the lower central section. Hinges: concealed cup hinges or traditional butt hinges. Period-appropriate knobs or cup pulls in antique brass or aged bronze.",
+      "dimensions": null,
+      "material": "22–25 mm MDF or solid hardwood raised-panel stile-and-rail door construction",
+      "position": "Lower zone of left side wing and lower zone of right side wing",
+      "count": 2
+    },
+    {
+      "id": "99e195f8",
+      "name": "Vertical Pilaster-Like Front Stiles",
+      "description": "Prominent vertical structural and decorative stiles running the full height of each module junction and framing the outer edges of the composition. These elements read as architectural pilasters at the module junctions and are the primary device giving the piece its classical architectural character rather than a purely furniture appearance. Applied to the front face of the carcass at all major vertical divisions: outer left edge, junction of left wing and central section, junction of central section and right wing, and outer right edge.",
+      "dimensions": null,
+      "material": "Solid hardwood or 22 mm MDF with applied solid hardwood trim, painted to match carcass",
+      "position": "Front vertical divisions at all major module junctions and outer edges",
+      "count": 4
+    },
+    {
+      "id": "334cde8e",
+      "name": "Anti-Tip Wall-Fixing Brackets",
+      "description": "Heavy-duty concealed wall-anchoring brackets securing the full unit to the wall — a non-negotiable safety requirement given the estimated height of 2400–2600 mm and substantial mass of the piece. Minimum two anchor points per section (six total across three sections) into wall studs or masonry with appropriate structural fixings. Concealed behind back panels or integrated into the top rail of each section.",
+      "dimensions": null,
+      "material": "Galvanized or powder-coated steel brackets with structural wall fixings appropriate to wall substrate (timber stud, masonry, or concrete)",
+      "position": "Top rear of all three sections, concealed behind back panels",
+      "count": 6
+    }
+  ],
+  "spatial_layout": "The unit is strictly symmetrical about its vertical centreline. The central section is the tallest and widest module, with two shorter and narrower side wings creating a clearly stepped, hierarchical roofline — the defining Palladian tripartite silhouette. The central section is organized vertically into two zones divided by a fixed counter/bridge shelf at approximately 900 mm above floor level: the upper zone contains left open shelving bay | central door pair (possibly glazed) | right open shelving bay; the lower zone contains left cupboard | central drawer bank (approximately 6 drawers in 3 rows × 2 columns) | right cupboard. A critical depth transition occurs at the counter level: the lower base cabinet and both side wings are deeper (450–500 mm), while the upper central section steps back to a shallower depth (300–350 mm), creating a functional display ledge of approximately 100–150 mm at counter height. Each side wing contains an upper open shelving area above a lower enclosed cupboard. The side wings terminate at the top in curved decorative crown moldings and at the base in curved decorative base moldings — the defining decorative signature of the side sections. The central section is crowned by a prominent classical cornice build-up, hierarchically superior to the side crowns. A continuous plinth runs across the full width of all three sections at floor level. Vertical pilaster-like front stiles frame all module junctions and outer edges. The entire unit sits flush against a wall and is anchored with concealed anti-tip wall-fixing brackets.",
+  "context": {
+    "placement": "Freestanding against a wall, with mandatory concealed anti-tip wall-anchoring brackets at minimum two points per section (six total). The unit must be leveled on the plinth using concealed adjustable feet before anchoring.",
+    "surroundings": "Formal interior space — study, home library, drawing room, traditional living room, or dining room with period-appropriate interior detailing and sufficient wall length (minimum 3200–3600 mm clear wall width recommended).",
+    "scale_reference": "A substantial statement wall-unit piece that will fill the majority of a standard wall. A minimum ceiling height of 2700 mm (9 ft) is required to accommodate the central section height of 2400–2600 mm including the crown cornice projection. The piece is scaled for a generous room rather than a small or standard domestic space."
+  },
+  "views_to_generate": [
+    {
+      "type": "floor_plan",
+      "label": "Floor Plan",
+      "description": "Top-down layout showing the overall footprint of all three modules, overall width (3000–3400 mm), module widths (central 1400–1600 mm; each side wing 700–900 mm), the critical stepped-depth condition (lower base and side wings at 450–500 mm depth; upper central section at 300–350 mm depth), cornice and crown projection beyond the face line, wall placement, and the positions of the six concealed anti-tip wall-fixing bracket anchor points.",
+      "id": "df71a341"
+    },
+    {
+      "type": "front_elevation",
+      "label": "Front Elevation — Main Cabinet Face",
+      "description": "Full frontal elevation of the entire tripartite composition showing: the stepped hierarchical roofline with the central section clearly taller than the side wings (height differential approximately 300–400 mm); the prominent classical cornice/crown build-up at the top of the central section; the curved decorative crown moldings at the top of each side wing; the curved decorative base moldings at the bottom of each side wing; the continuous plinth across all three sections; the four vertical pilaster-like front stiles at all module junctions and outer edges; the upper central zone arrangement (left open shelving bay | central door pair | right open shelving bay) with adjustable shelf positions indicated; the counter/bridge shelf datum line at approximately 900 mm above floor; the lower central zone arrangement (left cupboard door | central drawer bank with approximately 6 drawers in 3 rows × 2 columns | right cupboard door); the upper and lower cupboard doors in each side wing; all door and drawer hardware positions (knobs, cup pulls, or bin pulls in antique brass or aged bronze); and all question-mark annotation zones flagged for client confirmation (upper central door glazing, exact drawer face subdivision, depth transition confirmation).",
+      "id": "faa3b758"
+    }
+  ],
+  "generation_notes": "CRITICAL DESIGN PRIORITIES: (1) The stepped tripartite roofline — central section tallest, side wings at approximately 75–80% of central height — is the non-negotiable defining massing of this piece. Do not render a flat or continuous top line. (2) The curved decorative crown and base moldings on both side sections are explicitly confirmed critical details and must be clearly visible and well-resolved in all views. (3) The central section classical cornice must read as hierarchically dominant over the side section curved crowns. (4) Strict bilateral symmetry about the vertical centreline must be maintained throughout. (5) All doors and drawer fronts must feature traditional raised-panel detailing — no flat modern slab treatment. (6) Hardware must be visible and period-appropriate: knobs, bin pulls, or cup pulls in antique brass or aged bronze throughout — no chrome or contemporary finishes. (7) The counter/bridge shelf depth transition (deeper base stepping back to shallower upper central section) is a strongly recommended feature — flag for client confirmation but show in drawings as the preferred option. (8) Open shelving must show visible shelf thickness (minimum 18 mm, preferably 25 mm) to avoid a flimsy appearance. (9) Anti-tip wall-fixing brackets must be included in the structural specification — mandatory safety requirement. (10) The sketch contains question-mark annotations indicating the following details remain unresolved and require explicit client confirmation before fabrication: exact overall dimensions, upper central door treatment (solid raised-panel vs. glazed — and if glazed, glass type: clear, seeded, or reeded), exact drawer face subdivision in the lower central bank, stepped-depth condition confirmation, interior back panel finish (matching or contrasting), and hardware selection. All unresolved items must be flagged in shop drawings before production. (11) Soft-close undermount drawer slides and quality soft-close hinges are recommended throughout, even if styled in a traditional manner. (12) All spans over 600 mm must use minimum 25 mm shelf thickness to prevent bowing under book loads. (13) The finish is a painted heritage tone (white, cream, or period color) applied uniformly across all three sections — if a natural wood finish is confirmed by the client, mahogany, cherry, or oak stain with clear lacquer would be period-appropriate, but all three sections must share an identical specification.",
+  "change_history": [],
+  "baseline_locked": true,
+  "locked_fields": [
+    "type",
+    "dimensions",
+    "spatial_layout",
+    "structural_elements",
+    "style.aesthetic"
+  ]
+}

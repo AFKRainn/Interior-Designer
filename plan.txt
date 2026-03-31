@@ -1,0 +1,514 @@
+================================================================================
+                    ARCHITECTURE AGENT — PROJECT PLAN
+================================================================================
+Created: 2026-03-25
+Last Updated: 2026-03-27
+
+================================================================================
+1. PROJECT OVERVIEW
+================================================================================
+
+An AI-powered multi-agent architecture design system that takes a user's sketch 
+(hand-drawn, PNG/JPG) or text description and produces professional architectural 
+outputs: floor plans, elevations, and 3D perspective renders.
+
+The system uses a "Council" of three multimodal LLMs (Claude, GPT, Gemini) that 
+deliberate and reach consensus before any generation happens. This ensures 
+accuracy and faithfulness to the user's intent.
+
+Key differentiator: A structured Design Specification Document (DSD) sits at the 
+center. The Council agrees on the DSD, images are generated FROM the DSD, and 
+changes UPDATE the DSD — enabling targeted modifications (e.g., change color 
+without changing layout).
+
+Target use: Local app, single user (the developer).
+Primary focus: Furniture design, but supports rooms and buildings too.
+
+================================================================================
+2. TECH STACK
+================================================================================
+
+- Language:          Python 3.10+
+- UI:                Streamlit (local web interface)
+- API Gateway:       OpenRouter (all LLM calls go through here)
+- HTTP Client:       httpx (async support)
+- Data Models:       Pydantic v2
+- Image Processing:  Pillow (PIL)
+- Storage:           JSON files (lightweight, no database)
+- Environment:       OPENROUTER_API_KEY env variable
+
+================================================================================
+3. MODELS (via OpenRouter)
+================================================================================
+
+Council Members (Multimodal — can analyze images + text):
+  1. Claude:   anthropic/claude-sonnet-4.6
+  2. GPT:      openai/gpt-5.4
+  3. Gemini:   google/gemini-3.1-pro-preview
+
+Image Generation:
+  - Nano Banana: google/gemini-3-pro-image-preview
+    (Google's Gemini 3 Pro Image Preview — supports high-quality 
+     architectural image generation, editing, 2K/4K output)
+
+Chairman Role: Rotates among the three council members, or uses the 
+member with the highest confidence score in that session.
+
+================================================================================
+4. SYSTEM ARCHITECTURE — THE 6-LAYER PIPELINE
+================================================================================
+
+Every user interaction flows through these layers. Not every layer runs 
+every time — the system is smart about skipping unnecessary layers 
+(e.g., a color change skips full council deliberation).
+
+------------------------------------------------------------------------------
+LAYER 0: INPUT PROCESSING & DESIGN CONSULTATION
+------------------------------------------------------------------------------
+Purpose: Accept user input and refine it through conversation.
+
+- Single unified input: Text description + optional multiple images
+- Creates an "Input Package" containing:
+  - Raw images (if provided) — stored and base64-encoded for API calls
+  - Text description (if provided)
+  - Element selections (from built-in element library)
+  - Timestamp, session ID
+
+- DESIGN CONSULTANT (Pre-Council Chat Layer):
+  - Single LLM (Claude) acts as a conversational design consultant
+  - Assesses input completeness: high/medium/low
+  - If high → produces design brief immediately, skips to council
+  - If low/medium → asks focused clarifying questions (2-4 exchanges max)
+  - Does NOT analyze images — only asks user to explain what they are
+  - Outputs a refined "design brief" for the council
+  - Rule: NEVER ask questions just to ask. Skip if input is clear.
+
+- ELEMENT LIBRARY:
+  - Built-in selectable reference elements (side panels, handles, 
+    grain patterns, standard MDF sizes, etc.)
+  - Default is always "plain" — no need to ask
+  - User can optionally select elements while prompting
+  - Selected elements are included in the design brief and council prompts
+
+- Passes refined Design Brief + images + elements to Layer 1
+
+------------------------------------------------------------------------------
+LAYER 1: THE COUNCIL (Interpretation & Deliberation)
+------------------------------------------------------------------------------
+Purpose: Three LLMs independently analyze the input, discuss, and converge 
+on a unified understanding. This is the quality gate.
+
+Process:
+  Round 1 — Independent Analysis:
+    - Each council member receives the Input Package
+    - Each produces a structured interpretation:
+      * What is being designed (furniture/room/building)
+      * Dimensions (estimated from sketch or described)
+      * Style & aesthetic
+      * Materials & colors
+      * Structural elements
+      * Spatial layout
+    - All three work in PARALLEL (async API calls)
+
+  Round 2 — Cross-Review:
+    - Each member sees the other two members' interpretations
+    - Each provides:
+      * Agreement points
+      * Disagreement points with reasoning
+      * Suggested corrections
+    - All three work in PARALLEL
+
+  Round 3 — Convergence:
+    - Each member proposes a FINAL unified interpretation
+    - Considers all feedback from Round 2
+    - All three work in PARALLEL
+
+  Consensus Check:
+    - System compares the three final interpretations
+    - If 2/3 or 3/3 align on key elements → CONSENSUS REACHED
+    - If no consensus → another round (max 3 total rounds)
+    - If still no consensus after 3 rounds → Chairman makes final call
+
+  Chairman Synthesis:
+    - One LLM synthesizes all agreed elements into the DSD
+    - The DSD becomes the single source of truth
+
+Output: Design Specification Document (DSD) — see Section 5
+
+------------------------------------------------------------------------------
+LAYER 2: USER CHECKPOINT
+------------------------------------------------------------------------------
+Purpose: Show the user what the Council understood before spending 
+resources on image generation.
+
+- Presents the DSD in a clean, readable format
+- User can:
+  * Confirm → proceed to Layer 3
+  * Request modifications → update DSD, quick council review
+  * Reject → back to Layer 0 with new input
+
+This layer saves cost by catching misunderstandings early.
+
+------------------------------------------------------------------------------
+LAYER 3: IMAGE GENERATION (Two-Stage)
+------------------------------------------------------------------------------
+Purpose: Generate architectural images from the DSD in two stages.
+
+STAGE 1 — Technical Drawings:
+  1. Floor Plan (top-down orthographic view)
+  2. Front Elevation (front face view)
+  → User reviews and approves drawings before proceeding
+
+STAGE 2 — Realistic Render (after approval):
+  3. Photorealistic Lifestyle Render
+     - Design placed in a real-world environment
+     - Contextual items (books, plants, props on shelves, etc.)
+     - Natural lighting, depth of field, magazine-quality composition
+
+Additional views (generated on request):
+  - Side Elevation, Rear Elevation
+  - 3D Perspective views
+  
+  Note: Not all views are generated for all designs. The Council 
+  decides which views are relevant based on the design type.
+  E.g., a table might not need a rear elevation.
+
+Process:
+  - For each view, a specialized prompt is crafted containing:
+    * Full DSD context
+    * View-specific instructions (camera angle, projection type)
+    * Style guidance (architectural drawing style, render style)
+    * Technical requirements (clean lines, proper scale, labels)
+  - Uses Nano Banana (google/gemini-3-pro-image-preview)
+  - Images generated sequentially (to manage API rate limits)
+  - Each image stored with metadata linking it to the DSD version
+
+------------------------------------------------------------------------------
+LAYER 4: QUALITY REVIEW (Council Review)
+------------------------------------------------------------------------------
+Purpose: The Council reviews generated images for accuracy.
+
+Process:
+  - Each council member reviews each generated image against the DSD
+  - Scoring (1-10) on:
+    * Dimensional accuracy
+    * Material/color accuracy
+    * Style adherence
+    * View correctness (is it the right angle/projection?)
+    * Overall quality
+  - If average score < 7 → regenerate with specific feedback
+  - If score >= 7 → APPROVED
+  - Max 3 regeneration attempts per image
+  - If still failing after 3 attempts → flag for user attention
+
+Output: Set of approved images with quality scores
+
+------------------------------------------------------------------------------
+LAYER 5: PRESENTATION
+------------------------------------------------------------------------------
+Purpose: Present all approved images to the user.
+
+- Gallery view in Streamlit with all generated views
+- Each image labeled with view type and quality score
+- User can:
+  * Approve all → project saved
+  * Request changes → goes to Layer 6
+  * Regenerate specific view → back to Layer 3 for that view only
+  * Start over → back to Layer 0
+
+------------------------------------------------------------------------------
+LAYER 6: REFINEMENT (Change Management)
+------------------------------------------------------------------------------
+Purpose: Handle targeted changes without regenerating everything.
+
+This is the critical "change color without changing layout" feature.
+
+Process:
+  Step 1 — Change Classification:
+    - User describes change in natural language
+    - A classifier agent determines:
+      * Change type: COSMETIC (color, texture, finish)
+                     STRUCTURAL (layout, dimensions, proportions)
+                     ADDITIVE (new element added)
+                     SUBTRACTIVE (element removed)
+      * DSD sections affected
+      * Which images need regeneration (not all!)
+
+  Step 2 — DSD Update:
+    - Creates a new DSD version (version number incremented)
+    - Only modified sections are changed
+    - Change recorded in change_history
+    - Old DSD version preserved for rollback
+
+  Step 3 — Council Quick Review:
+    - For COSMETIC changes: 1 council member confirms (fast)
+    - For STRUCTURAL/ADDITIVE/SUBTRACTIVE: Full council review
+    - Ensures change is valid and complete
+
+  Step 4 — Targeted Regeneration:
+    - Only regenerate images affected by the change
+    - Prompts include: "Maintain everything from the original except [change]"
+    - Original images provided as reference when possible
+
+  Step 5 — Change Verification:
+    - Council compares original vs new images
+    - Confirms only the requested change was made
+    - If unintended changes detected → regenerate with stricter prompt
+    - Max 3 attempts
+
+  Step 6 — Updated Presentation:
+    - Show before/after comparison
+    - Update gallery with new images
+
+================================================================================
+5. DESIGN SPECIFICATION DOCUMENT (DSD) — STRUCTURE
+================================================================================
+
+The DSD is a structured JSON document that serves as the single source 
+of truth for any design. All generation and review references this.
+
+{
+  "project_id": "uuid",
+  "version": 1,
+  "created_at": "timestamp",
+  "updated_at": "timestamp",
+  "type": "furniture | room | building",
+  "name": "Human-readable name",
+  "description": "Detailed prose description of the design",
+  
+  "dimensions": {
+    "width": "value + unit",
+    "height": "value + unit",
+    "depth": "value + unit",
+    "notes": "any dimensional notes"
+  },
+  
+  "style": {
+    "aesthetic": "modern minimalist / rustic / industrial / etc.",
+    "era": "contemporary / vintage / etc.",
+    "influences": ["scandinavian", "japanese", ...]
+  },
+  
+  "materials": [
+    {
+      "name": "material name",
+      "usage": "where it's used",
+      "finish": "matte / glossy / natural / etc."
+    }
+  ],
+  
+  "colors": {
+    "primary": "#hex or description",
+    "secondary": "#hex or description",
+    "accent": "#hex or description or null",
+    "notes": "color relationship notes"
+  },
+  
+  "structural_elements": [
+    {
+      "id": "element_uuid",
+      "name": "element name",
+      "description": "detailed description",
+      "dimensions": {},
+      "material": "reference to materials",
+      "position": "spatial position description",
+      "count": 1
+    }
+  ],
+  
+  "spatial_layout": "Detailed description of how all elements relate spatially",
+  
+  "context": {
+    "placement": "where the design will be placed",
+    "surroundings": "what's around it",
+    "scale_reference": "human / room / building scale"
+  },
+  
+  "views_to_generate": [
+    "floor_plan",
+    "front_elevation", 
+    "side_elevation",
+    "rear_elevation",
+    "perspective_3d_front",
+    "perspective_3d_angle"
+  ],
+  
+  "generation_notes": "Any special instructions for image generation",
+  
+  "change_history": [
+    {
+      "version": 1,
+      "timestamp": "when",
+      "change_type": "cosmetic | structural | additive | subtractive",
+      "description": "what changed",
+      "sections_affected": ["colors", "materials"],
+      "images_regenerated": ["front_elevation", "perspective_3d_front"]
+    }
+  ]
+}
+
+================================================================================
+6. PROJECT FILE STRUCTURE
+================================================================================
+
+F:\Architecture agents\
+├── plan.txt                        # This file — project plan
+├── progress.txt                    # Progress tracking file
+├── requirements.txt                # Python dependencies
+├── .env                            # OPENROUTER_API_KEY (gitignored)
+├── run.py                          # Entry point — launches Streamlit
+├── config.py                       # Configuration & model settings
+│
+├── app/
+│   ├── __init__.py
+│   │
+│   ├── ui/
+│   │   ├── __init__.py
+│   │   ├── app.py                  # Main Streamlit application
+│   │   ├── components.py           # Reusable UI components
+│   │   └── styles.py               # Custom CSS / theming
+│   │
+│   ├── agents/
+│   │   ├── __init__.py
+│   │   ├── council.py              # Council orchestration (Layer 1)
+│   │   ├── interpreter.py          # Input interpretation per council member
+│   │   ├── generator.py            # Image generation agent (Layer 3)
+│   │   ├── reviewer.py             # Quality review agent (Layer 4)
+│   │   ├── refiner.py              # Change management agent (Layer 6)
+│   │   └── chairman.py             # Chairman synthesis logic
+│   │
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── dsd.py                  # DSD Pydantic model
+│   │   ├── project.py              # Project data model
+│   │   └── council_state.py        # Council deliberation state tracking
+│   │
+│   ├── services/
+│   │   ├── __init__.py
+│   │   ├── openrouter.py           # OpenRouter API client (async)
+│   │   ├── image_service.py        # Image encode/decode/resize
+│   │   └── project_store.py        # Save/load projects (JSON files)
+│   │
+│   └── prompts/
+│       ├── __init__.py
+│       ├── council_prompts.py      # Council deliberation prompt templates
+│       ├── generation_prompts.py   # Image generation prompt templates
+│       ├── review_prompts.py       # Quality review prompt templates
+│       └── refinement_prompts.py   # Change management prompt templates
+│
+├── data/
+│   └── projects/                   # Stored project data (JSON + images)
+│
+└── outputs/                        # Final approved outputs
+
+================================================================================
+7. DEVELOPMENT PHASES
+================================================================================
+
+PHASE 1: FOUNDATION
+  - Project structure setup (folders, __init__.py files)
+  - Configuration system (config.py)
+  - OpenRouter API client (async, supports text + vision + image gen)
+  - Pydantic models (DSD, Project, CouncilState)
+  - Basic Streamlit shell (layout, navigation)
+
+PHASE 2: COUNCIL SYSTEM
+  - Council orchestration logic
+  - Independent analysis (Round 1) — parallel async calls
+  - Cross-review (Round 2) — parallel async calls
+  - Convergence (Round 3) — parallel async calls
+  - Consensus checking algorithm
+  - Chairman synthesis
+  - DSD generation from council output
+
+PHASE 3: IMAGE GENERATION
+  - Nano Banana integration via OpenRouter
+  - Prompt engineering for each view type:
+    * Floor plans (top-down, clean lines, measurements)
+    * Elevations (orthographic, labeled)
+    * 3D perspectives (realistic rendering)
+  - Image storage with metadata
+  - Retry logic for failed generations
+
+PHASE 4: QUALITY REVIEW
+  - Council review system
+  - Multi-criteria scoring
+  - Feedback generation for failed images
+  - Regeneration loop with feedback incorporation
+
+PHASE 5: STREAMLIT UI
+  - Input page (upload/text/both)
+  - Council deliberation view (live progress)
+  - DSD review/confirmation page
+  - Image gallery with zoom/compare
+  - Change request interface (chat-like)
+  - Project history/management
+
+PHASE 6: REFINEMENT SYSTEM
+  - Change classification agent
+  - DSD versioning and diffing
+  - Targeted regeneration logic
+  - Change verification (before/after comparison)
+  - Rollback capability
+
+PHASE 7: POLISH & OPTIMIZATION
+  - Error handling and recovery
+  - Rate limit management
+  - Caching (avoid re-generating identical requests)
+  - UI polish and UX improvements
+  - Cost tracking (show API usage)
+
+================================================================================
+8. KEY DESIGN DECISIONS
+================================================================================
+
+1. DSD as Source of Truth:
+   All generation references the DSD. This enables targeted changes 
+   and version control. The DSD is the "contract" between understanding 
+   and generation.
+
+2. Council Before Generation:
+   Never generate images without council consensus. This prevents 
+   wasted API calls on misunderstood designs.
+
+3. User Checkpoints:
+   Always show the user what was understood before generating. 
+   Catching mistakes early saves significant cost.
+
+4. Parallel API Calls:
+   Council rounds use parallel async calls (3 simultaneous requests).
+   This keeps the system fast despite using 3 models.
+
+5. Targeted Regeneration:
+   When changes are made, only regenerate affected images.
+   A color change should NOT regenerate the floor plan (no colors there).
+
+6. Version History:
+   Every DSD change creates a new version. Users can rollback to 
+   any previous version. This prevents "I liked it better before."
+
+7. Quality Over Speed:
+   Given budget flexibility, prioritize quality. Use best models,
+   allow multiple review rounds, generate at highest resolution.
+
+8. All Through OpenRouter:
+   Single API key, single billing, unified interface. Simplifies 
+   the codebase significantly.
+
+================================================================================
+9. FUTURE ENHANCEMENTS (NOT IN CURRENT SCOPE)
+================================================================================
+
+- Material lists with quantities and estimated costs
+- Carpentry detail drawings (joints, framing, assembly)
+- CAD file import support
+- Export to standard architectural formats
+- AR/VR preview integration
+- Multi-project comparison
+- Style transfer from reference images
+- Collaborative mode (multiple users)
+- Cost estimation for builds
+
+================================================================================
+END OF PLAN
+================================================================================

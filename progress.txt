@@ -1,0 +1,1010 @@
+================================================================================
+                  ARCHITECTURE AGENT — PROGRESS TRACKER
+================================================================================
+Created: 2026-03-25
+Last Updated: 2026-03-27
+
+================================================================================
+CURRENT STATUS: PHASE 8 (ENHANCEMENTS) COMPLETE
+================================================================================
+
+Base pipeline (7 phases) complete. All 5 enhancements implemented:
+- Phase 8A: Design Consultant chat layer + single unified input   [DONE]
+- Phase 8B: Multiple images support everywhere                    [DONE]
+- Phase 8C: Built-in element library with defaults                [DONE]
+- Phase 8D: Domain knowledge & logical completeness               [DONE]
+- Phase 8E: Design intent preservation across modifications       [DONE]
+
+Pipeline flow (updated):
+  Input (text + multiple images + element selections)
+  -> Design Consultant (clarifies intent, produces brief)
+  -> Council deliberation (3 LLMs)
+  -> DSD creation + inline editing
+  -> Technical drawings (floor plan + elevation) -> User approval
+  -> Realistic lifestyle render
+  -> Quality review
+  -> Gallery + Refinement
+
+================================================================================
+PHASE PROGRESS
+================================================================================
+
+[✓] PHASE 0: PLANNING
+    - Gathered requirements from user
+    - Designed 6-layer pipeline architecture
+    - Defined DSD (Design Specification Document) structure
+    - Selected models (Claude, GPT, Gemini via OpenRouter)
+    - Selected tech stack (Python 3.10+, Streamlit, httpx, Pydantic)
+    - Created plan.txt and progress.txt
+    Status: COMPLETE
+
+[✓] PHASE 1: FOUNDATION
+    - [✓] Project folder structure and all __init__.py files
+    - [✓] requirements.txt (streamlit, httpx, pydantic, Pillow, python-dotenv)
+    - [✓] .env.example created
+    - [✓] config.py — all model IDs, paths, settings, view configs
+    - [✓] OpenRouter API client (app/services/openrouter.py)
+          - [✓] Text chat completion endpoint
+          - [✓] Vision (single image + text) endpoint
+          - [✓] Vision multi-image endpoint
+          - [✓] Image generation endpoint (Nano Banana)
+          - [✓] Response parsing (text, JSON, images)
+          - [✓] Retry logic with exponential backoff
+          - [✓] Rate limit handling (429)
+          - [✓] Async/sync bridge for Streamlit (run_async)
+    - [✓] Pydantic models
+          - [✓] DSD model (dsd.py) — full schema with versioning
+          - [✓] Project model (project.py) — lifecycle tracking
+          - [✓] Council state model (council_state.py) — deliberation tracking
+    - [✓] Services
+          - [✓] ImageService — encode/decode/resize/save
+          - [✓] ProjectStore — JSON file persistence for projects + DSDs
+    - [✓] Prompt templates (all four files with detailed templates)
+          - [✓] council_prompts.py — Round 1/2/3 + Chairman synthesis
+          - [✓] generation_prompts.py — All 6 view types + helper
+          - [✓] review_prompts.py — Quality review + change verification
+          - [✓] refinement_prompts.py — Change classification + DSD update
+    - [✓] Agent modules
+          - [✓] council.py — Full 3-round deliberation orchestration (IMPLEMENTED)
+          - [✓] chairman.py — DSD synthesis from council output (IMPLEMENTED)
+          - [✓] interpreter.py — Input preprocessing (basic, ready for Phase 2)
+          - [✓] generator.py — Full image generation (IMPLEMENTED Phase 3)
+          - [✓] reviewer.py — Full quality review (IMPLEMENTED Phase 4)
+          - [✓] refiner.py — Full refinement system (IMPLEMENTED Phase 6)
+    - [✓] Streamlit UI shell (app/ui/app.py)
+          - [✓] Multi-page navigation (sidebar)
+          - [✓] New Project page (text/image/both input tabs)
+          - [✓] Council View page (progress + detailed state)
+          - [✓] DSD Review page (formatted DSD display + actions)
+          - [✓] Gallery page (placeholder for Phase 3)
+          - [✓] Refinement page (placeholder for Phase 6)
+          - [✓] Projects list page (load/delete projects)
+          - [✓] Custom CSS styling (styles.py)
+          - [✓] Reusable components (components.py)
+    - [✓] run.py entry point
+    - [✓] Dependencies installed and import-tested
+    Status: COMPLETE
+
+[✓] PHASE 2: COUNCIL SYSTEM
+    Note: council.py and chairman.py were implemented in Phase 1.
+    Phase 2 focused on testing, bug fixing, and live API validation.
+    - [✓] Test council deliberation end-to-end with real API calls
+    - [✓] Tune council prompts based on real outputs
+    - [✓] Handle partial failures (1 member fails, 2 succeed)
+    - [✓] Fixed app.py naming conflict (renamed to main.py)
+    - [✓] Fixed extract_text() to handle None content from Gemini
+    - [✓] Fixed structured_data to accept dict or list types
+    - [✓] Fixed Round 2 to work with only 2 successful members
+    - [✓] Removed emoji from console progress messages (Windows cp1252)
+    - [ ] Improve consensus checking (basic heuristic works, can enhance)
+    - [ ] Add council session persistence (save/resume) — deferred
+    Status: COMPLETE
+
+[✓] PHASE 3: IMAGE GENERATION
+    - [✓] Implement generator.py
+          - [✓] generate_all_views() — sequential generation with progress
+          - [✓] generate_single_view() — on-demand single view
+          - [✓] regenerate_view() — re-generation with quality review feedback
+          - [✓] Retry logic with configurable max retries
+          - [✓] URL-based image download fallback
+    - [✓] Test Nano Banana image generation via OpenRouter
+          - [✓] Discovered response format: message.images[] with nested
+                 data-URL structure {type: "image_url", image_url: {url: "data:..."}}
+          - [✓] Confirmed image generation and saving (1074.5 KB PNG)
+    - [✓] Fix _parse_image_response for Nano Banana response format
+          - [✓] Added message-level images[] extraction (priority 1)
+          - [✓] Added _extract_image_item() for nested dict/string items
+          - [✓] Added _extract_image_url_part() for data-URL parsing
+          - [✓] Preserved existing fallbacks (raw base64, multipart content)
+    - [✓] Image storage with metadata linking
+          - [✓] Images saved to projects/<id>/images/ directory
+          - [✓] GeneratedImage records linked to project with metadata
+    - [✓] Wire generation into UI
+          - [✓] "Approve & Generate" button on DSD review page
+          - [✓] Generating page with live progress spinner
+          - [✓] Gallery page with image grid, download buttons
+          - [✓] Download All as ZIP
+          - [✓] Per-view regeneration with feedback text input
+          - [✓] Original input reference (expandable)
+          - [✓] Sidebar navigation based on project status
+    Status: COMPLETE
+
+[✓] PHASE 4: QUALITY REVIEW
+    - [✓] Implement reviewer.py
+          - [✓] review_image() — single image review using Claude vision
+          - [✓] review_all_images() — sequential batch review with progress
+          - [✓] review_and_regenerate() — full quality loop with auto-regen
+          - [✓] verify_change() — before/after comparison for refinements
+          - [✓] _parse_review_response() — robust JSON extraction from model
+    - [✓] Multi-criteria scoring system (5 criteria, 1-10 each)
+          - Dimensional accuracy, Material & color accuracy
+          - Style adherence, View correctness, Overall quality
+    - [✓] Feedback-driven regeneration loop
+          - Auto-regenerates images below threshold (7/10)
+          - Specific regeneration instructions from review feedback
+          - Up to 3 retry rounds per image
+    - [✓] Wire review into pipeline
+          - Generation page now flows to quality_review page
+          - Auto-review starts on page load
+          - Project status: GENERATING -> QUALITY_REVIEW -> COMPLETE
+    - [✓] Quality review UI page
+          - Score breakdown per criterion with color-coded bars
+          - Strengths / issues / suggestions display
+          - Review log (expandable)
+          - Actions: Go to Gallery, Re-run Review, View DSD
+    - [✓] Added ReviewResult, ReviewScores, ReviewFeedback models
+    - [✓] Tested end-to-end with real API (Claude vision review of Nano Banana image)
+          - Correctly identified shelf count mismatch (5 vs 4 specified)
+          - Gave actionable regeneration feedback
+          - Score: 7.8/10 (APPROVED)
+    Status: COMPLETE
+
+[✓] PHASE 5: STREAMLIT UI POLISH
+    - [✓] Session persistence across page reloads
+          - Saves last active project ID + page to .last_session.json
+          - Restores on fresh page load (auto-detects project status)
+    - [✓] DSD editing interface
+          - Inline editing in tabbed view (View / Edit tabs)
+          - Edit: name, description, dimensions, style, colors, views, notes
+          - Auto-saves to disk on change
+    - [✓] Image comparison view
+          - Side-by-side comparison of any two generated views
+          - Dropdown selectors for left/right image
+          - DSD reference expandable alongside comparison
+    - [✓] Pipeline progress indicator
+          - Sidebar shows step-by-step pipeline status
+          - Visual indicators: completed / active / pending
+    - [✓] Enhanced CSS styling
+          - Pipeline step indicators, quality review cards
+          - Score pills (color-coded), smooth image hover transitions
+          - Better tab styling, review card borders
+    - [✓] Quality review page (from Phase 4, refined here)
+          - Expandable per-image review with score breakdown
+          - Color-coded score bars (green/yellow/red)
+          - Review log expandable
+    Status: COMPLETE
+
+[✓] PHASE 6: REFINEMENT SYSTEM
+    - [✓] Implement refiner.py
+          - [✓] classify_change() — LLM-based change classification
+                (cosmetic/structural/additive/subtractive)
+          - [✓] apply_change() — LLM updates DSD JSON, fallback to manual bump
+          - [✓] targeted_regeneration() — only regenerate affected views
+          - [✓] refine() — full pipeline: classify -> update DSD -> regen
+    - [✓] DSD versioning with rollback
+          - Versioned copies saved (dsd_v1.json, dsd_v2.json, etc.)
+          - Rollback button on refinement page loads previous version
+    - [✓] Targeted regeneration
+          - Cosmetic changes skip floor plans (no colors)
+          - Structural changes regenerate all views
+          - Change context passed to generator for accurate re-renders
+    - [✓] Refinement UI page
+          - Current design summary + image previews
+          - Text area for natural language change requests
+          - Change history display (expandable)
+          - Rollback to previous version button
+          - Progress messages during refinement
+    - [✓] Tested with real API
+          - Cosmetic change: correctly classified, skipped floor plan
+          - Structural change: correctly classified as additive, all views
+    Status: COMPLETE
+
+[✓] PHASE 7: POLISH & OPTIMIZATION
+    - [✓] Error handling hardening
+          - Exponential backoff with jitter on retries
+          - Graceful handling of unexpected exceptions in _make_request
+          - Client errors (4xx) don't retry; server errors (5xx) do
+    - [✓] Rate limit management
+          - Reads Retry-After header from 429 responses
+          - Adds random jitter (0-25%) to prevent thundering herd
+          - Exponential backoff: delay * 2^attempt
+    - [✓] Cost tracking (CostTracker singleton)
+          - Records per-call: model, tokens, cost, time
+          - Sidebar display: total calls, tokens, cost
+          - Per-model breakdown via get_summary()
+    - [✓] Caching (ResponseCache)
+          - In-memory LRU cache (max 50 entries, 1hr TTL)
+          - Only caches low-temperature (<=0.5) text requests
+          - Skips image generation (non-deterministic)
+          - SHA-256 hash key from model + messages + temperature
+    Status: COMPLETE
+
+================================================================================
+SYSTEM STATE
+================================================================================
+
+Current Working Systems:
+  - Project creation and persistence (JSON files)
+  - DSD creation, versioning, save/load
+  - Council deliberation (3-round with parallel async calls)
+  - Chairman DSD synthesis
+  - Image encoding/decoding/resizing
+  - Image generation via Nano Banana (Gemini 3 Pro Image Preview)
+  - Quality review via Claude vision (5-criteria scoring)
+  - Auto-regeneration loop (review -> feedback -> regen -> re-review)
+  - Gallery with download, ZIP export, per-view regeneration
+  - Session persistence (auto-restore on reload)
+  - DSD inline editing
+  - Refinement system (classify -> update DSD -> targeted regen)
+  - DSD versioning + rollback
+  - Cost tracking (CostTracker singleton, sidebar display)
+  - Response caching (LRU, 50 entries, 1hr TTL)
+  - Rate limiting with exponential backoff + jitter
+  - Streamlit UI with multi-page navigation (8 pages)
+  - OpenRouter API client (text, vision, image gen)
+
+Files Created (27 files):
+  Root:
+    - plan.txt, progress.txt, requirements.txt
+    - .env.example, config.py, run.py
+  app/:
+    - __init__.py
+  app/ui/:
+    - __init__.py, main.py (renamed from app.py), components.py, styles.py
+  app/agents/:
+    - __init__.py, council.py, chairman.py, interpreter.py
+    - generator.py, reviewer.py, refiner.py
+  app/models/:
+    - __init__.py, dsd.py, project.py, council_state.py
+  app/services/:
+    - __init__.py, openrouter.py, image_service.py, project_store.py
+  app/prompts/:
+    - __init__.py, council_prompts.py, generation_prompts.py
+    - review_prompts.py, refinement_prompts.py
+
+Dependencies Installed:
+  streamlit 1.55.0, httpx 0.28.1, pydantic 2.12.5,
+  Pillow 11.3.0, python-dotenv 1.2.1
+
+Models Configured and TESTED with live API:
+  Council: anthropic/claude-sonnet-4, openai/gpt-4o,
+           google/gemini-2.5-pro-preview
+  Generation: google/gemini-3-pro-image-preview (Nano Banana)
+
+API Verified: YES — all three council models respond correctly.
+  OPENROUTER_API_KEY set as system env variable (sk-or-..., 73 chars).
+
+================================================================================
+WHAT EACH SYSTEM DOES (Current State)
+================================================================================
+
+1. OpenRouter Client (app/services/openrouter.py):
+   Async HTTP client using httpx. Supports text chat completions,
+   vision (image+text), multi-image vision, and image generation.
+   Has retry logic with exponential backoff for rate limits (429)
+   and server errors (5xx). Includes JSON extraction from responses
+   (handles raw JSON, markdown code blocks, embedded JSON).
+   run_async() bridges async code into Streamlit's sync context.
+
+2. Design Specification Document — DSD (app/models/dsd.py):
+   Pydantic model that captures all design details: type, name,
+   description, dimensions, style, materials, colors, structural
+   elements, spatial layout, context, views to generate, and
+   change history. Supports versioning via create_new_version().
+   Has to_prompt_description() for feeding into generation prompts.
+   Has get_applicable_views() to determine which views make sense
+   for a given design type (e.g., furniture skips rear elevation).
+
+3. Project Model (app/models/project.py):
+   Tracks project lifecycle from DRAFT through COUNCIL_REVIEW,
+   AWAITING_CONFIRMATION, GENERATING, QUALITY_REVIEW, COMPLETE,
+   to REFINING. Stores input data, generated images with metadata,
+   and DSD version history.
+
+4. Council System (app/agents/council.py + chairman.py):
+   Full 3-round deliberation:
+   - Round 1: Each member independently analyzes input (parallel async)
+   - Round 2: Each member reviews others' interpretations (parallel)
+   - Round 3: Each member produces final converged interpretation (parallel)
+   - Consensus check (basic: 2/3 valid responses = consensus)
+   - Chairman synthesizes into a DSD
+   Supports text-only, image-only, and mixed (text+image) input.
+   Progress callback for UI updates.
+
+5. Council State (app/models/council_state.py):
+   Tracks all deliberation rounds, member responses (text + structured
+   JSON), consensus status, and chairman decisions. Full audit trail.
+
+6. Prompt Templates:
+   - Council: System prompt, Round 1 (text/image/mixed variants),
+     Round 2 (cross-review), Round 3 (convergence), Chairman synthesis
+   - Generation: Per-view prompts (floor plan, 3 elevations, 2 3D perspectives)
+   - Review: Quality scoring (5 criteria), change verification
+   - Refinement: Change classification, DSD update, targeted regen
+
+7. Services:
+   - ImageService: Load/encode/resize images for API, decode/save
+     generated images, create thumbnails
+   - ProjectStore: JSON file-based persistence for projects and DSDs.
+     Versioned DSD storage (dsd_current.json + dsd_v{n}.json).
+     Project listing, deletion, image management.
+
+8. Streamlit UI (app/ui/main.py):
+   Multi-page app with sidebar navigation:
+   - New Project: Upload sketch or type description (3 tabs)
+   - Council View: Shows deliberation progress and details
+   - DSD Review: Formatted display of the agreed specification
+   - Gallery: Image grid, download, ZIP, per-view regen
+   - Quality Review: Scores, feedback, approval, re-review
+   - Refinement: Change request (placeholder, Phase 6)
+   - Projects: List all projects with open/delete
+
+================================================================================
+DECISIONS LOG
+================================================================================
+
+2026-03-25:
+  - UI: Streamlit chosen for local interface
+  - Input: Images (hand-drawn, PNG/JPG) and text. No CAD files
+  - Output: Floor plans, elevations, 3D perspectives. No material lists
+  - Scale: Mix (furniture focus)
+  - Budget: Quality first, optimize later
+  - API: All through OpenRouter with OPENROUTER_API_KEY
+  - Models: Claude Sonnet 4, GPT-4o, Gemini 2.5 Pro (council)
+            Gemini 3 Pro Image Preview / Nano Banana (generation)
+  - Decided to implement council.py and chairman.py fully in Phase 1
+    rather than stub them, since they are the core of the system.
+
+================================================================================
+KNOWN ISSUES / BLOCKERS
+================================================================================
+
+1. Console emoji output issue on Windows (cp1252 encoding) — FIXED by
+   removing emoji from progress messages. Streamlit UI handles Unicode fine.
+
+2. Chairman sometimes suggests view types not in our ViewType enum
+   (e.g. "detail_corner_joint", "contextual_view") — these are logged
+   as warnings and skipped. Could add more view types later.
+
+================================================================================
+CHANGE LOG
+================================================================================
+
+2026-03-25: Initial project planning complete.
+2026-03-25: Phase 1 (Foundation) complete — 27 files created, all imports
+            tested, dependencies installed. Council system implemented.
+2026-03-26: Phase 2 (Council System) complete — Fixed app.py naming conflict
+            (renamed to main.py), tested all 3 models via OpenRouter, fixed
+            partial failure handling, Gemini null content, structured_data types.
+            Full 3-round deliberation + chairman synthesis verified end-to-end.
+2026-03-25: Phase 3 (Image Generation) complete — Implemented Generator agent
+            with Nano Banana (Gemini 3 Pro Image Preview). Discovered and fixed
+            response parsing for message.images[] with nested data-URL format.
+            Gallery page built with download buttons, ZIP export, per-view
+            regeneration with feedback. Full pipeline tested end-to-end.
+2026-03-26: Phase 4 (Quality Review) complete — Implemented Reviewer agent
+            with 5-criteria scoring via Claude vision. Auto-regeneration loop
+            regenerates images below threshold (7/10) with specific feedback.
+            Quality review UI page shows score breakdowns, strengths/issues,
+            and suggestions. Added ReviewResult/ReviewScores/ReviewFeedback
+            models. Tested end-to-end: Claude correctly identified shelf count
+            mismatch and gave actionable regeneration instructions (7.8/10).
+2026-03-26: Phase 5 (UI Polish) complete — Session persistence (saves/restores
+            last project on reload), DSD inline editing (name, desc, dims,
+            style, colors, views, notes), image comparison view (side-by-side
+            with selectors), pipeline progress indicator (sidebar steps),
+            enhanced CSS (review cards, score pills, animations).
+2026-03-26: Phase 6 (Refinement System) complete — Refiner agent with LLM-based
+            change classification (cosmetic/structural/additive/subtractive),
+            DSD update via LLM, targeted regeneration of affected views only.
+            Full refinement UI with change request input, change history,
+            rollback to previous DSD versions. Tested: cosmetic changes
+            correctly skip floor plans, structural changes regen all views.
+2026-03-26: Phase 7 (Polish & Optimization) complete — CostTracker singleton
+            records per-call usage (model, tokens, cost, time) displayed in
+            sidebar. ResponseCache (LRU, 50 entries, 1hr TTL) avoids duplicate
+            API calls for low-temperature requests. Exponential backoff with
+            random jitter on rate limits and server errors. Improved error
+            handling across _make_request.
+
+================================================================================
+PHASE 8: MAJOR ENHANCEMENTS
+================================================================================
+
+[✓] PHASE 8A: DESIGN CONSULTANT + SINGLE INPUT + TWO-STAGE GENERATION
+    Completed: 2026-03-27
+    Changes:
+    - Added CONSULTING and DRAWINGS_REVIEW statuses to ProjectStatus
+    - Added REALISTIC_RENDER view type
+    - Created app/agents/consultant.py — conversational pre-council agent
+      * Uses Claude to assess input completeness (high/medium/low)
+      * If clear: produces design brief immediately, skips to council
+      * If unclear: asks focused questions (2-4 exchanges max)
+      * Outputs refined design brief for council
+    - Created app/prompts/consultant_prompts.py — system prompt, assessment
+      prompt, follow-up prompt, brief template
+    - Replaced 3-tab input (text/image/both) with single unified input:
+      * One text area + one multi-file uploader
+      * Cleaner, simpler UX
+    - Added page_consulting — chat interface for consultant conversation
+      * Shows conversation history
+      * "Send to Council" button when brief is ready
+      * "Skip — Send to Council" for users who want to bypass
+    - Split image generation into two stages:
+      * Stage 1: Technical drawings only (floor plan + front elevation)
+      * Stage 2: Realistic lifestyle render (after user approves drawings)
+    - Added page_drawings_review — user reviews technical drawings
+      * Shows drawings with approve/regenerate options
+      * Individual drawing regeneration with feedback
+      * "Approve & Generate Realistic Render" button
+    - Added page_generating_render — generates photorealistic lifestyle image
+    - Added REALISTIC_RENDER_PROMPT — detailed prompt for lifestyle render
+      * Environment context, props, natural lighting, magazine quality
+    - Updated pipeline: 8 steps (Consultation → Council → DSD → Drawings →
+      Drawings Review → Realistic Render → Quality Review → Complete)
+    - Updated all routing, session restore, sidebar nav, PAGE_MAP
+
+[✓] PHASE 8B: MULTIPLE IMAGES SUPPORT EVERYWHERE
+    Completed: 2026-03-27
+    Changes:
+    - page_new_project: single multi-file uploader (accept_multiple_files=True)
+    - _start_project: processes all uploaded files, stores list of (b64, mime)
+    - Council.deliberate: accepts all_images param
+    - Council._run_round1: passes all images to _query_member
+    - _query_member: uses vision_completion_multi when >1 image
+    - page_refine: added optional image upload for change requests
+    - All routing passes all_images through consultant → council
+
+[✓] PHASE 8C: BUILT-IN ELEMENT LIBRARY
+    Completed: 2026-03-27
+    Changes:
+    - Created app/models/elements.py — complete element library with:
+      * 10 categories: side_panel, edge_band, handle, shelf_type,
+        back_panel, leg_style, surface_finish, grain_pattern,
+        door_type, drawer_front
+      * Multiple options per category with name, description, technical_spec
+      * Default for each category (always plain/standard)
+      * ElementSelections model for tracking user picks
+      * to_description() for human-readable output
+      * to_technical_spec() for council prompt injection
+    - page_new_project: expandable "Construction Elements" selector
+      * Shows all categories with selectbox (default pre-selected)
+      * Only non-default selections are tracked
+      * Technical specs appended to design brief for council
+    - Element specs flow: input → consultant → brief → council
+
+[✓] PHASE 8D: DOMAIN KNOWLEDGE & LOGICAL COMPLETENESS
+    Completed: 2026-03-27
+    Changes:
+    - Created app/prompts/domain_knowledge.py with:
+      * GENERAL_STANDARDS: backs, bases, edges, hardware, structural rules
+      * FURNITURE_STANDARDS: shelf depths, desk heights, material choices
+      * KITCHEN_STANDARDS: work triangle, counter heights, sink placement
+      * ROOM_STANDARDS: door clearance, circulation, furniture spacing
+      * BUILDING_STANDARDS: floor-to-ceiling, stairs, doorways
+      * COMPLETENESS_CHECKLIST: 10-point verification list
+      * get_domain_knowledge(design_type): returns appropriate sections
+    - Council system prompt: {domain_knowledge} placeholder added
+    - Council._run_round1: infers design type from user text, injects
+      appropriate domain knowledge into system prompt
+
+[✓] PHASE 8E: DESIGN INTENT PRESERVATION
+    Completed: 2026-03-27
+    Changes:
+    - DSD model: added baseline_locked (bool), locked_fields (list[str])
+    - DSD.lock_baseline(): locks type, dimensions, spatial_layout,
+      structural_elements, style.aesthetic
+    - DSD.get_locked_summary(): returns prompt-ready locked fields text
+    - Baseline lock triggered: page_drawings_review "Approve" button
+      locks the DSD before generating realistic render
+    - DSD_UPDATE_PROMPT: includes {baseline_lock_notice}, rule #6
+      prevents modifying locked fields unless explicitly requested
+    - TARGETED_REGENERATION_PROMPT: includes {baseline_lock_notice}
+    - Refiner.apply_change: passes baseline lock info to prompt
+    - Refiner.targeted_regeneration: includes baseline notice in feedback
+
+[✓] PHASE 9: COUNCIL-DRIVEN MULTI-VIEW SYSTEM
+    Completed: 2026-03-27
+    Changes:
+    - NEW: ViewSpec model (app/models/dsd.py) — type, label, description, id
+      Replaces flat ViewType enum for views_to_generate.
+      Council now decides EXACTLY how many images to generate, with labels.
+    - DSD: views_to_generate changed from list[ViewType] to list[ViewSpec]
+    - DSD.get_applicable_views(): returns list[ViewSpec] as fallback
+    - Council prompts (all 3 Round 1 + Chairman synthesis):
+      views_recommended now a list of {type, label, description} objects.
+      CRITICAL INSTRUCTION block tells council to decide:
+        * Always 1 floor_plan
+        * 1 front_elevation per distinct wall/face
+        * L-shaped = 2, U-shaped = 3, room = 4, etc.
+        * Each with a unique descriptive label
+    - Chairman._build_dsd: parses both new dict format and legacy string format
+    - Generator: all methods now accept ViewSpec instead of ViewType
+      - Injects SPECIFIC VIEW INSTRUCTIONS (label + description) into prompt
+      - Uses view_spec.id in filename to avoid overwriting duplicates
+    - GeneratedImage model: added view_label, view_spec_id fields
+    - Project.get_latest_images: uses view_spec_id as unique key
+    - Reviewer: uses ViewSpec for regeneration, displays view_label
+    - Refiner: resolves view type strings to ALL matching ViewSpecs
+      (e.g. "front_elevation" -> Wall A + Wall B for L-shaped)
+    - UI (main.py):
+      - page_generating: filters technical views by ViewSpec.type
+      - page_drawings_review: shows view_label for each drawing
+      - Individual regeneration: uses ViewSpec lookup
+      - Comparison view: uses image.id as unique key (not view_type)
+      - Gallery/refine: shows view_label everywhere
+      - DSD editor: views are read-only (council decides)
+    - UI (components.py): shows ViewSpec label and type
+
+[✓] PHASE 9B: REFINEMENT COUNCIL REVIEW + MANDATORY VIEWS + COMPAT FIX
+    Completed: 2026-03-27
+    Changes:
+    - BUGFIX: AttributeError on old projects — GeneratedImage.display_label
+      and .spec_id properties use getattr() for backward compatibility
+      with objects saved before view_label/view_spec_id were added.
+    - ALL UI + reviewer code now uses img.display_label and img.spec_id
+      instead of direct field access.
+    - Council Quick Review: wired COUNCIL_QUICK_REVIEW_PROMPT into
+      Refiner.refine(). After DSD update, all 3 council members review
+      the modification in parallel. Majority vote for approval. Issues
+      are logged.
+    - Mandatory views on refinement: Refiner.refine() now ALWAYS
+      regenerates ALL technical views (floor_plan + ALL front_elevations
+      + any side/rear elevations). No skipping. Ensures consistency.
+    - Floor plan + at least 1 front_elevation guaranteed:
+      Both page_generating and refiner enforce this minimum.
+    - Refinement flow: after refinement, routes to DRAWINGS_REVIEW
+      instead of COMPLETE. User must approve regenerated technical
+      drawings before realistic render is generated. Same staged flow
+      as initial generation.
+    - CHANGE_CLASSIFICATION_PROMPT: updated rules — all technical views
+      must always be regenerated regardless of change type.
+
+[✓] PHASE 10: UX & GENERATION FIXES
+    Completed: 2026-03-27
+    Changes:
+    - BUGFIX: GPT-5-image rejects 'temperature' parameter — removed
+      temperature from generate_image() payload entirely. Image
+      generation doesn't need temperature control.
+    - Switched image generation model from Nano Banana (Gemini 3 Pro
+      Image Preview) to GPT-5 Image (OpenAI) for better consistency
+      between floor plans and realistic renders.
+    - config.py: Updated IMAGE_GEN_MODEL name to "GPT-5 Image (OpenAI)"
+    - Consultant prompt overhaul: the consultant was simplifying and
+      removing details from user input. All 3 prompts rewritten:
+      * CONSULTANT_SYSTEM_PROMPT: new #1 rule "NEVER LOSE INFORMATION",
+        brief must be richer than original input, never condense
+      * CONSULTANT_ASSESS_PROMPT: 5 critical rules for brief writing,
+        no vague phrases like "as described" or "see image"
+      * CONSULTANT_FOLLOWUP_PROMPT: 6 critical brief rules, must be
+        at least as long as all client messages combined
+      * generate_brief_from_assessment: explicit 5-rule instruction
+        to expand rather than summarize, max_tokens raised to 4096
+    - Post-council DSD corrections: added "Provide Corrections" tab
+      to DSD review page. Users can type natural-language feedback
+      (e.g., "dimensions are wrong", "I wanted 3 shelves not 2").
+      Uses the Refiner's apply_change() to update DSD via LLM.
+      Optional image attachment for reference.
+    - Consultant chat image upload: added file_uploader to the
+      consulting page. Images attached during chat are saved to
+      the project, encoded, and added to images_data so they
+      pass through to the council alongside the brief.
+    - Message text includes "(attached N image(s))" note so the
+      consultant knows new images were provided.
+
+[✓] PHASE 11: PROMPT STRENGTHENING — CONSISTENT TECHNICAL DRAWINGS
+    Completed: 2026-03-27
+    Changes:
+    - Complete rewrite of ALL generation prompts in
+      app/prompts/generation_prompts.py for strict consistency:
+      
+      * BASE_GENERATION_INSTRUCTION: Changed to prescriptive tone
+        "You are an expert architectural renderer... MUST follow...
+        Deviation is unacceptable"
+      
+      * FLOOR_PLAN_PROMPT: Added ABSOLUTE REQUIREMENTS section with
+        explicit camera angle (90° overhead), STRICTLY 2D mandate,
+        architectural standard conventions, prohibited elements list.
+        Clear statement: "If it looks like a 3D render... you have
+        FAILED the task."
+      
+      * FRONT_ELEVATION_PROMPT: Added strict orthographic requirements,
+        camera perpendicular to front face, NO perspective depth,
+        material representation rules, proportion requirements,
+        prohibited elements list. Emphasis: "If it shows depth,
+        perspective... you have FAILED"
+      
+      * SIDE_ELEVATION_PROMPT: Strict 2D side view requirements,
+        what this shows vs front elevation, flat technical drawing only
+      
+      * REAR_ELEVATION_PROMPT: Strict 2D rear view requirements
+      
+      * PERSPECTIVE_3D_FRONT_PROMPT: Added MUST BE 3D requirements
+        (no orthographic), specific camera positioning, lighting
+        requirements, material photorealism rules
+      
+      * PERSPECTIVE_3D_ANGLE_PROMPT: Strict 45° angle requirements,
+        three faces visible, perspective depth mandate, no isometric
+      
+      * REALISTIC_RENDER_PROMPT: Comprehensive lifestyle render guide
+        with specific styling by furniture type, photographic lighting,
+        atmospheric requirements, hyper-realistic materials
+    
+    - All prompts now use:
+      * "ABSOLUTE REQUIREMENTS — ANY DEVIATION MAKES OUTPUT INVALID"
+      * Numbered, specific technical requirements
+      * Explicit "PROHIBITED ELEMENTS" lists
+      * "REMEMBER" summaries at end reinforcing the key rule
+      * Stronger imperative language (MUST, NEVER, STRICTLY)
+
+================================================================================
+PHASE 12: COUNCIL FORENSIC DEBATE + DRAWING STYLE OVERHAUL
+================================================================================
+
+[✓] PHASE 12: FORENSIC COUNCIL + B&W DRAWING PROMPTS + UX CORRECTIONS FIX
+    Completed: 2026-03-30
+    Changes:
+
+    - COUNCIL PROMPTS (app/prompts/council_prompts.py) — FULL REWRITE:
+      The council's purpose was clarified: each member acts as a forensic
+      analyst of the image, independently building an evidence-based case,
+      then engaging in genuine expert debate.
+
+      * COUNCIL_SYSTEM_PROMPT: Strengthened identity — "Evidence above
+        agreement." Members are instructed: only concede if genuinely
+        convinced by stronger evidence, never just to be agreeable.
+
+      * ROUND1_IMAGE_PROMPT: Now a 5-phase forensic analysis:
+        Phase 1 — Forensic Image Scan: Systematic left-to-right, top-to-
+          bottom scan of every element. Each element must be reported as:
+          "[Element]: [what I see] → [what I interpret] | CONFIDENCE:
+          HIGH/MEDIUM/LOW | EVIDENCE: [specific visual cue]". Covers:
+          overall form, boundaries, openings (doors/windows — must cite
+          evidence), interior elements, proportions/scale, annotations,
+          material cues, drawing quality/precision.
+        Phase 2 — User Needs Analysis: Extract requirements from consultant brief.
+        Phase 3 — Image vs. Needs Cross-Reference: For every key element,
+          compare image finding vs. brief statement, flag ALIGNED/CONFLICT/
+          IMAGE ONLY/BRIEF ONLY, and resolve with evidence-based reasoning.
+          Rule: image wins for geometry/layout; brief wins for materials/colors.
+        Phase 4 — Pre-Emptive Vulnerability Check: Before debate, each
+          member honestly flags where their interpretation is most likely
+          wrong and what evidence would change their mind.
+        Phase 5 — Structured JSON Interpretation: Full design spec with
+          new fields: image_analysis_notes, confidence_level, disputed_elements.
+
+      * ROUND1_MIXED_PROMPT: Same 5-phase approach for image+text input.
+        Cross-reference rule clarified: spatial geometry → trust image,
+        materials/colors → trust text, dimensions → prefer explicit numbers.
+
+      * ROUND1_TEXT_PROMPT: 4-phase approach for text-only: user needs
+        analysis, design intent inference, gaps/assumptions with
+        STANDARD PRACTICE / REASONABLE INFERENCE / MY ASSUMPTION markers,
+        pre-emptive vulnerability check, then JSON.
+
+      * ROUND2_REVIEW_PROMPT: Genuine point-by-point debate format.
+        Each disagreement addressed with: "My evidence: [X] | Their
+        evidence: [Y] | Verdict: HOLDING FIRM / CONCEDING because [Z]".
+        Cannot change position without specific reason. Cannot hold firm
+        without re-stating evidence. Acknowledges missed elements.
+        JSON output includes: positions_held_firm, positions_changed.
+
+      * ROUND3_CONVERGENCE_PROMPT: Final position declaration for every
+        element: [UNCHANGED] / [REVISED R1→R2] / [REVISED R2→R3] /
+        [HELD FIRM against X] / [UNRESOLVED — best judgment]. Design
+        intent synthesis section. JSON includes: debate_summary,
+        unresolved_ambiguities.
+
+      * CHAIRMAN_SYNTHESIS_PROMPT: Synthesis with explicit tagging:
+        (A) Strong consensus, (B) Majority decision with noted dissent,
+        (C) Chairman judgment calls. Dimension rule: only include explicit
+        dimensions (stated or sketch-annotated) — if marked "estimated/
+        APPROXIMATE", set to null. JSON includes: consensus_notes field.
+
+    - GENERATION PROMPTS (app/prompts/generation_prompts.py):
+      Floor plan and front elevation completely rewritten:
+
+      * FLOOR_PLAN_PROMPT: "Pure black lines on pure white background —
+        like AutoCAD or a technical pen on drafting paper." Removes all
+        material/texture language. Conditional measurements: checks the
+        DSD for a Dimensions section — if found and not "estimated/not
+        specified", draws dimension lines with those exact values. If not
+        found, draws ZERO numbers. Line weights: thick for outer
+        boundary/walls, medium for interior walls, thin for details.
+
+      * FRONT_ELEVATION_PROMPT: Same pure B&W drafting style. "You see
+        ONLY the front face. No sides, no top, no depth." Ground line
+        at base. Conditional measurements same as floor plan. Hardware
+        shown as simple symbolic marks (no textures). "If you can see
+        ANY sides, ANY depth, ANY shading — it is wrong."
+
+    - DSD REVIEW PAGE (app/ui/main.py):
+      * Added a prominent info banner at the top of the DSD review page
+        that is ALWAYS visible: tells users corrections are available
+        before they look at the tabs.
+      * Reordered tabs: "View Specification" → "Correct the Council" →
+        "Edit Fields Manually". Corrections is now the second tab
+        (previously buried as third).
+      * "Correct the Council" tab has clear examples of the kinds of
+        corrections users can make.
+      * Council page: changed the navigation button to be a primary
+        button with clearer label: "Review & Correct the Specification →"
+        and added explanatory text: "If anything is wrong — dimensions,
+        elements, style, layout — you can correct it before any images
+        are generated."
+
+================================================================================
+PHASE 13: COUNCIL-AUTHORED GENERATION PROMPTS
+================================================================================
+
+[✓] PHASE 13: COUNCIL WRITES IMAGE GENERATION PROMPTS
+    Completed: 2026-03-30
+    Changes:
+
+    The fundamental generation architecture was changed. Previously the image
+    generator used a fixed template + generic DSD text description. Now the
+    council (chairman) writes the actual generation prompt for every view during
+    deliberation, based on their forensic analysis and debate.
+
+    ARCHITECTURE — Two-Layer Prompt System:
+    - Layer 1 (Style Wrapper): Enforces visual style rules for the view type
+      (B&W line drawing for technical views, photorealistic for renders)
+    - Layer 2 (Council Content): The chairman's specific, element-by-element
+      description of exactly what to draw for this particular view
+
+    FILES CHANGED:
+
+    app/models/dsd.py — ViewSpec:
+    - Added generation_prompt: str = "" field
+    - The council-authored prompt lives on the ViewSpec for each view
+
+    app/prompts/council_prompts.py — CHAIRMAN_SYNTHESIS_PROMPT:
+    - Extended views_to_generate entries to include generation_prompt field
+    - Added detailed instructions for the chairman on how to write each prompt:
+      * Floor plan: footprint shape, all openings (door swing arcs, windows),
+        interior elements with positions, any specified dimensions
+      * Front elevation: face width/height, every panel/door/drawer with
+        position, handles and hardware, shelf lines, legs/plinth
+      * Side elevation: depth, side-mounted elements, thickness
+      * Realistic render: materials, colors, lighting mood, environment,
+        camera angle, contextual props
+    - Chairman instructed: "Write as if directing an artist who has NEVER
+      seen the sketch and can only work from your words."
+
+    app/agents/chairman.py — _build_dsd:
+    - Parses generation_prompt from each view dict
+    - Filters out placeholder text if the model echoed the instruction
+
+    app/prompts/generation_prompts.py — NEW ARCHITECTURE:
+    - Added 6 STYLE WRAPPERS (one per view type):
+      FLOOR_PLAN_STYLE_WRAPPER, FRONT_ELEVATION_STYLE_WRAPPER,
+      SIDE_ELEVATION_STYLE_WRAPPER, REAR_ELEVATION_STYLE_WRAPPER,
+      PERSPECTIVE_3D_STYLE_WRAPPER, REALISTIC_RENDER_STYLE_WRAPPER
+    - Each wrapper has {council_content} placeholder for the chairman's text
+    - Added build_prompt_from_council(view_type, council_content) function
+    - Existing fixed templates kept as FALLBACK for backward compatibility
+
+    app/agents/generator.py — _generate_single_with_retry:
+    - PRIMARY PATH: if view_spec.generation_prompt is populated (>40 chars),
+      calls build_prompt_from_council(view_name, council_content) to combine
+      style wrapper + council content
+    - FALLBACK PATH: if no council prompt, uses get_generation_prompt()
+      with the DSD description (old behavior)
+    - Logs which path was taken for each view
+
+    RESULT: Every generated image is now driven by the council's expert analysis
+    of the specific design — not a generic "draw a floor plan of this text" prompt.
+    The council's forensic findings, debate resolutions, and position declarations
+    directly translate into the image generation instructions.
+
+================================================================================
+PHASE 13B: FIX JSON BREAKAGE + FLOOR PLAN VIEW + MEASUREMENTS
+================================================================================
+
+[✓] PHASE 13B: CRITICAL FIXES
+    Completed: 2026-03-30
+
+    ROOT CAUSE OF "No project or DSD found" + "name" ERROR:
+    The generation_prompt field was embedded inside the JSON views_to_generate
+    structure. When the chairman wrote a multi-paragraph generation_prompt as a
+    JSON string value, it contained literal newlines and/or unescaped quotes,
+    causing json.loads() to fail. The entire DSD was lost, the project never
+    reached AWAITING_CONFIRMATION, and the user saw "No project or DSD found."
+
+    FIX 1 — council_prompts.py (CHAIRMAN_SYNTHESIS_PROMPT):
+    - Removed generation_prompt from inside the JSON structure entirely.
+    - The DSD JSON is now clean and compact — views_to_generate entries only
+      have type, label, description (no generation_prompt inside JSON).
+    - Added a separate PART 2 section after the JSON using delimiters that can
+      safely hold multi-line content:
+        GENERATION_PROMPTS_START
+        VIEW_PROMPT: [exact label]
+        [content, unlimited lines, no JSON escaping needed]
+        VIEW_PROMPT_END
+        GENERATION_PROMPTS_END
+    - Added strict view-specific instructions for each prompt type:
+      * Floor plan: describe ONLY what is seen from directly above — footprint,
+        wall outlines, door swing arcs, window positions, interior elements
+        as flat outlines. NO heights, NO front-face details.
+      * Front elevation: describe ONLY the flat front face — panels, drawers,
+        handles, shelf lines. NO depth, NO 3D, NO sides.
+    - DIMENSIONS RULE: Never include estimated dimensions in generation_prompts.
+      Only use client-explicitly-stated numbers. Otherwise describe proportions
+      relatively ("left half", "upper third", etc.)
+
+    FIX 2 — chairman.py:
+    - _extract_view_prompts() static method: parses the GENERATION_PROMPTS
+      section using regex. Splits on VIEW_PROMPT: markers, extracts label
+      and content for each block, strips VIEW_PROMPT_END.
+    - synthesize() method: after building the DSD from JSON, calls
+      _extract_view_prompts() and attaches prompts to matching ViewSpecs by
+      label. Logs which views got prompts and which will use fallback.
+    - _build_dsd(): no longer looks for generation_prompt in view dicts
+      (handled in synthesize after the fact).
+
+    FIX 3 — generation_prompts.py (style wrappers):
+    - FLOOR_PLAN_STYLE_WRAPPER: completely rewritten with zero-tolerance language.
+      Lead: "flat top-down diagram — like a printed AutoCAD plan view. NOT a 3D
+      render. NOT a perspective view."
+      Added: "The camera is mounted on the ceiling pointing straight down — zero
+      tilt, zero angle." and "WRONG outputs: anything with depth, shadows, a
+      bird's-eye perspective angle, 3D form, or gray fills."
+    - FRONT_ELEVATION_STYLE_WRAPPER: same zero-tolerance approach.
+      Lead: "flat frontal diagram — like a printed AutoCAD elevation view."
+      Added: "You stand directly in front at infinite distance... face appears
+      as a perfectly flat rectangle. You see NO sides. NO top. NO depth."
+    - MEASUREMENTS rule tightened in both wrappers: "ONLY draw dimension lines
+      if the council content contains a specific stated number. If 'estimated',
+      'approximately', or proportions without numbers — draw ZERO measurements."
+
+================================================================================
+SYSTEM STATUS: PHASE 13B COMPLETE
+================================================================================
+
+================================================================================
+PHASE 14: COUNCIL CRASH FIX + CONSULTANT PASS-THROUGH
+================================================================================
+
+BUG FIX — KeyError: 'name' (council crashed after Round 2)
+---------------------------------------------------------------------------
+Root cause: ROUND2_REVIEW_PROMPT contained the instruction example
+  "CONCEDING to [{name}]"
+The `{name}` inside curly braces was treated by Python's str.format() as a
+format placeholder.  Since 'name' is not a kwarg in the format() call, it
+raised KeyError: 'name' every time Round 2 tried to build the prompt.
+
+Fix (council_prompts.py, line 505):
+  Changed `[{name}]` → `[member name]`
+  Now the instruction is plain text and format() ignores it.
+
+FEATURE — Consultant no longer rewrites the user's description
+---------------------------------------------------------------------------
+Problem: The consultant was rewriting the user's text into a "design brief",
+losing the user's own words and sometimes changing intent.  The user wanted
+the council to receive the raw conversation exactly as typed.
+
+Changes:
+  consultant_prompts.py — complete rewrite
+    - CONSULTANT_SYSTEM_PROMPT: removed all brief-writing rules.  New mandate:
+      "You DO NOT rewrite, rephrase, or improve the client's description."
+      "The client's own words are the brief."
+    - CONSULTANT_ASSESS_PROMPT: returns JSON {has_enough, clarifying_questions,
+      ready_message}.  No brief_if_ready field.  Rules: only ask if the TYPE
+      or CORE REQUEST is genuinely unclear; don't ask about style/dimensions.
+    - CONSULTANT_FOLLOWUP_PROMPT: returns JSON {response_text, done}.
+      No brief markers.  Just conversation + a done signal.
+    - Removed: CONSULTANT_BRIEF_TEMPLATE
+
+  consultant.py — simplified
+    - assess_input(): returns {has_enough, clarifying_questions, ready_message}
+    - continue_conversation(): returns {response_text, done}
+    - Removed: generate_brief_from_assessment() — no longer needed
+
+  main.py — three areas updated
+    1. New helper _format_conversation_for_council(user_text, history, tech_spec):
+       Builds the council input from the user's original text + any user replies
+       during consultation.  Nothing is rewritten.  Format:
+         CLIENT'S DESIGN REQUEST:
+         [original text]
+
+         ADDITIONAL DETAILS PROVIDED BY CLIENT:
+         [user's answers, verbatim]
+
+         CONSTRUCTION ELEMENT SPECIFICATIONS:
+         [only if element specs were selected]
+
+    2. _run_consultant_assessment():
+       - When has_enough=True: builds council input via helper, shows ready
+         message, navigates to consulting page (not directly to council).
+         User sees the ready banner and can add more or click Send.
+       - When has_enough=False: goes to consulting page with questions.
+       - Removed: call to generate_brief_from_assessment().
+
+    3. page_consulting() UI:
+       - Replaced "Design Brief expander" with a simple ✅ ready banner.
+       - Send to Council button always rebuilds the council input from the
+         latest conversation before dispatching.
+       - Chat input remains visible even when ready so the user can keep
+         adding details.
+       - Skip button also uses _format_conversation_for_council instead of
+         the raw text field.
+
+    4. _handle_consultant_reply():
+       - When done=True: calls _format_conversation_for_council to build
+         the council input from the updated history.
+       - Removed: brief extraction from result["brief"].
+
+================================================================================
+SYSTEM STATUS: PHASE 14 COMPLETE
+================================================================================
+
+================================================================================
+PHASE 15: FLOOR PLAN ARC REMOVAL + STEP-BY-STEP GENERATION PROMPTS
+================================================================================
+
+CHANGE 1 — Remove door swing arcs from floor plans
+---------------------------------------------------------------------------
+Problem: The floor plan was drawing door swing arcs (quarter-circle curves)
+for door openings, which the user does not want.
+
+Fix in generation_prompts.py (FLOOR_PLAN_STYLE_WRAPPER):
+  Old: "Doors: thin line for door leaf + quarter-circle arc for swing direction."
+  New: "Door openings: a straight GAP in the wall boundary at the door position
+        + a text label ('DOOR') placed at that gap.
+        NO swing arcs. NO quarter-circle curves. NO curved lines of any kind."
+
+Fix in generation_prompts.py (fallback FLOOR_PLAN_PROMPT):
+  Same change applied to the fallback template's door instruction.
+
+Fix in council_prompts.py (CHAIRMAN_SYNTHESIS_PROMPT — FOR FLOOR PLAN section):
+  Old: "Doors: exact position on wall + swing arc direction"
+  New: "Door openings: a STRAIGHT GAP in the wall boundary at the door position.
+        Write: 'a door opening gap in [position] of [wall], labeled DOOR.'
+        NO swing arcs. NO quarter-circle curves. NO curved lines of any kind."
+
+CHANGE 2 — Step-by-step mandatory structure for VIEW generation prompts
+---------------------------------------------------------------------------
+Problem: The chairman was writing vague, one-paragraph VIEW_PROMPTs like
+"a symmetrical closet with 5 sections" that gave the image model too little
+detail to produce an accurate drawing.
+
+Fix in council_prompts.py (CHAIRMAN_SYNTHESIS_PROMPT — PART 2 full rewrite):
+
+  NEW MANDATORY STRUCTURE for every VIEW_PROMPT:
+    STEP 1 — OVERALL FORM: shape, proportions, general layout
+    STEP 2 — OUTER BOUNDARY: perimeter/frame in full detail
+    STEP 3+ — SECTIONS: walk through left-to-right (or top-to-bottom),
+      naming each section, its proportional width, internal subdivisions,
+      and every element with position and appearance
+    FINAL STEP — CONCLUSION: single summary sentence beginning "CONCLUSION:"
+
+  NEW MANDATORY LENGTH:
+    - Simple piece (1-2 sections): minimum 10 lines
+    - Medium piece (3-4 sections): minimum 15 lines
+    - Complex piece (5+ sections): minimum 20 lines
+    - One-paragraph prompts are explicitly banned
+
+  FLOOR PLAN specific rules updated:
+    - No door arcs; door openings described as gaps + "DOOR" label
+    - Every zone described as a flat 2D shape from above
+    - Text annotations identifying each zone by name
+
+  FRONT ELEVATION specific rules updated:
+    - Step-by-step left-to-right section walk-through
+    - Every section's proportional width stated
+    - Every hardware item described with type and position
+    - Ground line required
+
+================================================================================
+SYSTEM STATUS: PHASE 15 COMPLETE
+================================================================================
