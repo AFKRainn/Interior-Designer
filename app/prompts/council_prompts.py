@@ -465,6 +465,12 @@ You have completed your independent analysis. Now you see what your two expert \
 colleagues found from the SAME design input. Engage in genuine expert debate. \
 Your goal is to reach the most accurate interpretation — not the most agreeable one.
 
+IMPORTANT: The original design image(s) are attached to this message again. \
+Look at them NOW before reading your colleagues' analyses. Use them as your \
+primary evidence source when debating. Any claim — yours or a colleague's — \
+must be verified against what is actually visible in the image. \
+Do not rely on memory of the image; look at it directly.
+
 YOUR ROUND 1 ANALYSIS:
 {own_interpretation}
 
@@ -567,6 +573,13 @@ You have analyzed, debated, and refined your interpretation through two rounds. 
 Now produce your FINAL, DEFINITIVE interpretation. This is your last opportunity \
 to get it right — the chairman will synthesize from your final outputs.
 
+CRITICAL: The original design image(s) are attached to this message. \
+Before writing your final answer, look at the image ONE MORE TIME. \
+Compare every element you and your colleagues debated directly against \
+what is actually visible. Your final interpretation must be grounded in \
+what the image shows — not in accumulated text from prior rounds. \
+If something is unclear in the image, say so explicitly rather than guessing.
+
 YOUR ROUND 1 (initial forensic analysis):
 {own_round1}
 
@@ -634,7 +647,7 @@ What are the 3 most critical elements to get exactly right in the final specific
     {{
       "type": "floor_plan",
       "label": "Floor Plan",
-      "description": "top-down 2D architectural floor plan"
+      "description": "flat 2D top-down view — camera pointing straight down at the object"
     }},
     {{
       "type": "front_elevation",
@@ -770,7 +783,7 @@ PART 1 — THE DSD JSON (output this first, as a clean JSON object):
     {{
       "type": "floor_plan",
       "label": "Floor Plan",
-      "description": "top-down 2D architectural floor plan"
+      "description": "flat 2D top-down view — camera pointing straight down at the object"
     }},
     {{
       "type": "front_elevation",
@@ -843,26 +856,32 @@ GENERATION_PROMPTS_END
 ---
 SPECIFIC RULES PER VIEW TYPE:
 
-FOR FLOOR PLAN VIEW_PROMPT:
-Describe ONLY what is visible from directly above — camera mounted on the ceiling \
-looking straight down at a cross-section. This is NOT a description of heights or \
-the 3D form. Every element is a flat 2D shape.
+FOR FLOOR PLAN / TOP-DOWN VIEW VIEW_PROMPT:
+This is a flat 2D view of the design seen from directly above — NOT necessarily \
+a traditional "floor plan". Adapt to what the design actually is:
+- For a CABINET, WARDROBE, CLOSET, SHELVING UNIT: show the rectangular footprint \
+  from above, interior compartments/dividers, door opening gaps. \
+  You are NOT drawing a house floor plan — you are drawing the top view of that \
+  specific piece of furniture or unit.
+- For a KITCHEN LAYOUT: show the counter positions, island, appliances from above.
+- For a ROOM or BUILDING: draw the standard floor plan cross-section.
+The key rule: draw only what a camera pointing STRAIGHT DOWN would show for \
+this specific object. Do NOT add elements that belong to a different object type.
 
 Cover in your steps:
-- STEP 1: Overall footprint shape (rectangular, L-shaped, U-shaped, etc.) and \
-  proportions (e.g., "wider than deep, roughly 4:1 ratio").
-- STEP 2: Outer boundary — thick wall lines forming the full perimeter. Describe \
-  any projections, recesses, or asymmetry.
-- For each internal zone (left to right): describe the interior layout as thin \
-  rectangles, lines, and shapes seen from above. Include:
-    * Cabinet/shelving units: thin rectangles showing their depth footprint
-    * Partitions: thin vertical or horizontal lines
-    * Legs/feet: small squares or circles at their exact floor positions
-    * Door openings: a STRAIGHT GAP in the wall boundary at the door position. \
-      Write: "a door opening gap in [position] of [wall], labeled 'DOOR'." \
-      NO swing arcs. NO quarter-circle curves. NO curved lines of any kind.
+- STEP 1: Identify the object type and its overall footprint shape from above. \
+  State proportions (e.g., "wider than deep, roughly 4:1 ratio").
+- STEP 2: Outer boundary — thick lines forming the full perimeter of the object \
+  as seen from above.
+- For each internal zone (left to right or front to back): describe what is \
+  visible from above as thin rectangles, lines, and shapes:
+    * Compartments/sections: thin-line rectangles showing their footprint
+    * Shelves or horizontal surfaces visible from above: thin lines at correct positions
+    * Partitions, dividers: thin vertical or horizontal lines
+    * Door openings: a STRAIGHT GAP in the boundary at the door position, \
+      labeled "DOOR". NO swing arcs. NO quarter-circle curves. NO curved lines.
     * Labels/annotations: text identifying each zone by name
-- CONCLUSION: Describe the completed floor plan as a labeled top-down diagram.
+- CONCLUSION: Describe the completed top-down view as a flat labeled diagram.
 
 FOR FRONT ELEVATION VIEW_PROMPT:
 Describe ONLY what is visible on the flat front face — looking straight at it, \

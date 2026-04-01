@@ -17,13 +17,12 @@ Base pipeline (7 phases) complete. All 5 enhancements implemented:
 
 Pipeline flow (updated):
   Input (text + multiple images + element selections)
-  -> Design Consultant (clarifies intent, produces brief)
-  -> Council deliberation (3 LLMs)
+  -> Design Consultant (clarifies intent, collects raw conversation)
+  -> Council deliberation (3 LLMs with reasoning)
   -> DSD creation + inline editing
-  -> Technical drawings (floor plan + elevation) -> User approval
+  -> Technical drawings (floor plan/top-down + elevation) -> User approval
   -> Realistic lifestyle render
-  -> Quality review
-  -> Gallery + Refinement
+  -> Gallery + Refinement  [Quality review removed — user inspects directly]
 
 ================================================================================
 PHASE PROGRESS
@@ -1007,4 +1006,132 @@ Fix in council_prompts.py (CHAIRMAN_SYNTHESIS_PROMPT — PART 2 full rewrite):
 
 ================================================================================
 SYSTEM STATUS: PHASE 15 COMPLETE
+================================================================================
+
+================================================================================
+PHASE 16: ACCURACY OVERHAUL — IMAGES IN ALL ROUNDS + REASONING + PROMPT LOGGING
+================================================================================
+
+Project moved to Interior-Designer/ git directory.
+
+CHANGE 1 — Images re-sent in every council round (council.py)
+---------------------------------------------------------------------------
+Previously, design images were only sent to council members in Round 1.
+Rounds 2 and 3 received only text (previous round responses), meaning models
+debated from memory rather than the actual source material.
+
+Fix: _run_round2() and _run_round3() now accept all_images / image_data /
+image_mime_type parameters and pass them to every _query_member() call.
+The council member in every round receives:
+  Round 2: their own R1 analysis + both colleagues' R1 analyses + the images
+  Round 3: all R1+R2 analyses + the images
+This forces each member to verify their arguments against the actual image
+in every round rather than working from degrading text recollections.
+
+CHANGE 2 — Extended Thinking / Reasoning mode (config.py + openrouter.py)
+---------------------------------------------------------------------------
+Added supports_reasoning and reasoning_budget_tokens to each COUNCIL_MODEL:
+  claude:  supports_reasoning=True,  budget=10000 tokens
+  gpt:     supports_reasoning=False  (gpt-5.4 is not o-series)
+  gemini:  supports_reasoning=True,  budget=8000 tokens
+
+openrouter.py changes:
+  - chat_completion(): new params use_reasoning, reasoning_budget_tokens
+    When use_reasoning=True: temperature forced to 1.0, max_tokens raised
+    to budget+8192, payload["reasoning"] = {"effort":"high","max_tokens":N}
+  - vision_completion(): same additions
+  - vision_completion_multi(): same additions
+  - extract_text(): now filters out thinking/redacted_thinking content blocks
+    so only the model's actual reply text is returned (extended thinking
+    produces additional "thinking" blocks in the response content list)
+
+council.py: _query_member() reads model_info["supports_reasoning"] and
+  model_info["reasoning_budget_tokens"] and forwards them to the openrouter
+  call. All three rounds use reasoning when the model supports it.
+
+CHANGE 3 — Council prompts explicitly re-acknowledge images (council_prompts.py)
+---------------------------------------------------------------------------
+ROUND2_REVIEW_PROMPT: added opening paragraph:
+  "The original design image(s) are attached to this message again.
+   Look at them NOW before reading your colleagues' analyses.
+   Use them as your primary evidence source when debating."
+
+ROUND3_CONVERGENCE_PROMPT: added opening paragraph:
+  "CRITICAL: The original design image(s) are attached to this message.
+   Before writing your final answer, look at the image ONE MORE TIME.
+   Compare every element against what is actually visible. If something
+   is unclear in the image, say so explicitly rather than guessing."
+
+CHANGE 4 — Full generation prompts printed to terminal (generator.py)
+---------------------------------------------------------------------------
+Before each image generation call, the complete prompt is printed to stdout
+with clear separators showing view label, type, and whether it came from
+the council or the fallback template. Allows developer to review and debug
+prompt quality in real time without digging through logs.
+
+ABOUT THE "3D RENDER USES OLD FLOOR PLAN" CONCERN:
+The generator does not pass generated floor plan/elevation images as
+reference images to the realistic render. Each view is generated from its
+text prompt only. The DSD in session state is always the latest saved
+version, so modifications are picked up correctly. Not a code bug.
+
+================================================================================
+SYSTEM STATUS: PHASE 16 COMPLETE
+================================================================================
+
+================================================================================
+PHASE 17 — REMOVE QUALITY REVIEW + FLOOR PLAN VIEW REFRAME
+================================================================================
+Date: 2026-03-30
+
+CHANGE 1 — Quality review step removed entirely (main.py)
+---------------------------------------------------------------------------
+The AI quality review step (page_quality_review, Reviewer agent, _show_review_results,
+_render_score_bar) has been removed from the pipeline. User reviews images themselves
+in the gallery. Changes made:
+- _PIPELINE_STEPS: removed ("quality_review", "Quality Review") entry.
+- _STATUS_TO_STEP: quality_review now maps to step 6 (same as complete) as a
+  legacy fallback. "complete" and "refining" are now step 6.
+- Session state: removed review_done, review_results, review_messages init keys.
+- All page routing to "quality_review" now routes to "gallery" instead.
+- ProjectStatus.QUALITY_REVIEW in "done generating" contexts replaced with
+  ProjectStatus.COMPLETE.
+- page_quality_review() replaced with a tiny legacy redirect stub that marks
+  the project COMPLETE and routes to gallery (handles old saved sessions).
+- _show_review_results() and _render_score_bar() functions removed.
+- PAGE_MAP still maps "quality_review" → page_quality_review (legacy stub) to
+  avoid KeyError if old sessions land there.
+- Sidebar: removed "Quality Review" button for QUALITY_REVIEW status.
+- Gallery button now only appears for COMPLETE status.
+
+Flow after render generation:
+  Before: → quality_review → gallery
+  After:  → gallery (status set to COMPLETE immediately)
+
+CHANGE 2 — Floor plan reframed as generic "top-down view" (generation_prompts.py, council_prompts.py)
+---------------------------------------------------------------------------
+The floor plan is no longer described as a strict "architectural floor plan".
+It is now understood as a flat 2D top-down view that adapts to the object type:
+- Cabinet/closet/wardrobe: shows the footprint from above (outer boundary,
+  compartments, door gaps). NOT a building floor plan.
+- Kitchen: shows counter layout, island, appliances from above.
+- Room/building: shows the standard cross-section floor plan.
+
+Files changed:
+- generation_prompts.py FLOOR_PLAN_STYLE_WRAPPER: complete rewrite. New opening
+  explains the adaptive nature: "This is NOT necessarily an architectural floor
+  plan — adapt to whatever the design is." Lists examples for cabinet, kitchen,
+  room. Removed AutoCAD/blueprint references. LABEL now says "TOP VIEW",
+  "FLOOR PLAN", or "PLAN VIEW" — whichever fits.
+- generation_prompts.py FLOOR_PLAN_PROMPT: same rewrite applied to fallback template.
+- council_prompts.py FOR FLOOR PLAN VIEW_PROMPT section: rewritten to explain the
+  adaptive nature to the chairman. Added explicit rule: "Do NOT add elements that
+  belong to a different object type." Step-by-step instructions updated to say
+  "Identify the object type first" and describe footprint accordingly.
+- council_prompts.py DSD view description: both occurrences of
+  "top-down 2D architectural floor plan" changed to
+  "flat 2D top-down view — camera pointing straight down at the object".
+
+================================================================================
+SYSTEM STATUS: PHASE 17 COMPLETE
 ================================================================================

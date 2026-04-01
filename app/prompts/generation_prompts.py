@@ -29,14 +29,19 @@ The separation of concerns means:
 # ---------------------------------------------------------------------------
 
 FLOOR_PLAN_STYLE_WRAPPER = """\
-Generate a PURE 2D ARCHITECTURAL FLOOR PLAN. This is a flat top-down diagram — \
-like a printed AutoCAD plan view or a hand-drafted blueprint. \
-NOT a 3D render. NOT a perspective view. NOT an isometric view. \
-A flat 2D diagram with black lines on white paper, period.
+Generate a FLAT 2D TOP-DOWN VIEW of the design — the view you see when looking \
+straight down at the object from directly above. Camera points straight down, \
+zero tilt, zero angle.
 
-Think of it as: you cut the building/object horizontally at mid-height and \
-look straight down at the cross-section from directly above. \
-The camera is mounted on the ceiling pointing straight down — zero tilt, zero angle.
+This is NOT necessarily an "architectural floor plan" in the traditional sense. \
+Adapt to whatever the design is:
+- A cabinet, closet, wardrobe, or shelving unit: draw its rectangular footprint \
+  from above — outer boundary, interior compartments/divisions as seen from the top, \
+  door openings as gaps, any visible structure.
+- A kitchen layout: draw the counters, island, appliances, and work zones from above.
+- A room or full-floor layout: draw walls, doors, windows, and interior layout.
+Do NOT force architectural floor plan conventions onto furniture or a simple unit. \
+Draw what a camera pointing straight down would actually see for that specific object.
 
 WHAT TO DRAW (exact content from expert council analysis):
 {council_content}
@@ -44,27 +49,25 @@ WHAT TO DRAW (exact content from expert council analysis):
 VISUAL REQUIREMENTS — ZERO TOLERANCE:
 - Background: pure white (#FFFFFF). Nothing else.
 - Lines: pure black (#000000). No gray, no color, no gradient anywhere.
-- Walls: thick solid black lines forming the boundary and partitions.
-- Interior elements (shelves, counters, islands): thin black outlines as seen from above.
-- Door openings: a straight GAP in the wall boundary at the door position + a text
-  label ("DOOR") placed at that gap. NO swing arcs. NO quarter-circle curves.
-  NO rounded lines. NO curves of any kind anywhere in the drawing.
-- Windows: three thin parallel lines across the wall opening.
-- NO shading. NO shadows. NO gradients. NO fills. Every surface is white.
+- Outer boundary: thick solid black lines.
+- Interior divisions (shelves, walls, counters seen from above): thin black lines.
+- Door openings: a straight GAP in the boundary + a short text label ("DOOR").
+  NO swing arcs. NO quarter-circle curves. NO curves anywhere in the drawing.
+- NO shading. NO shadows. NO gradients. NO fills. All surfaces are white.
 - NO 3D effects. NO perspective. NO isometric. NO depth cues of any kind.
-- NO diagonal view. The projection is perfectly orthographic from directly above.
+- The projection is perfectly orthographic from directly above.
 
 MEASUREMENTS:
 ONLY draw dimension lines if the council content above contains a specific \
 stated measurement with a number (e.g., "120cm", "6 feet"). \
-If the council content uses words like "estimated", "approximately", "typical", \
-or describes proportions without numbers — draw ZERO measurements, ZERO dimension \
-lines, ZERO numbers of any kind.
+If no explicit numbers are given — draw ZERO measurements, ZERO dimension lines, \
+ZERO numbers of any kind.
 
-LABEL: "FLOOR PLAN" at the bottom center.
+LABEL: A short label at the bottom center identifying the view \
+(e.g., "TOP VIEW", "FLOOR PLAN", "PLAN VIEW" — whichever fits the object).
 
-WRONG outputs: anything with depth, shadows, a bird's-eye perspective angle, \
-3D form, or gray fills. If it looks like a render — it is wrong.\
+WRONG outputs: anything with depth, shadows, a perspective angle, 3D form, or \
+gray fills. This must look like a flat line drawing viewed from directly above.\
 """
 
 FRONT_ELEVATION_STYLE_WRAPPER = """\
@@ -236,71 +239,59 @@ DESIGN SPECIFICATION:
 # ---------------------------------------------------------------------------
 
 FLOOR_PLAN_PROMPT = BASE_GENERATION_INSTRUCTION + """
-VIEW TYPE: FLOOR PLAN — 2D ARCHITECTURAL TOP-DOWN DRAWING
+VIEW TYPE: TOP-DOWN VIEW (flat 2D overhead drawing)
 
-GENERATE: A professional architectural floor plan — exactly as drawn by \
-architects and interior designers: clean black lines on a pure white background, \
-viewed directly from above, completely flat. Think AutoCAD floor plan drawing or \
-a hand-drafted plan on drafting paper.
+GENERATE: A flat 2D top-down view of the design — the view you see when you \
+look straight down at the object from directly above. Camera points 90 degrees \
+straight down, zero tilt, zero angle.
 
-WHAT THIS IS:
-A floor plan cuts the building/object horizontally and shows the layout when \
-viewed straight down from above. It is a TECHNICAL DRAWING — not an \
-illustration, not a render, not a perspective.
+THIS IS NOT STRICTLY AN "ARCHITECTURAL FLOOR PLAN":
+Adapt to whatever the design actually is:
+- A cabinet, wardrobe, closet, or shelving unit: draw its rectangular footprint \
+  from above — outer walls, interior compartments/dividers, door openings as gaps.
+- A kitchen layout: counters, island, appliances, work zones seen from above.
+- A room or full-floor layout: walls, doors, windows, and floor layout.
+Do NOT impose formal architectural floor plan conventions on furniture or a \
+simple unit. Draw what a camera pointing straight down would actually show.
 
 IMAGE STYLE — ABSOLUTE REQUIREMENTS:
-1. BACKGROUND: Pure white. Nothing else. No gray tones, no gradients.
-2. LINES: Pure black only. No color. No gray fills. No gradients.
+1. BACKGROUND: Pure white. Nothing else.
+2. LINES: Pure black only. No gray, no color, no fills, no gradients.
 3. LINE WEIGHTS:
-   - Thick solid black lines for outer walls and structural boundaries
-   - Medium lines for interior walls, partitions
-   - Thin lines for interior details (shelves, counters, furniture outlines)
-   - Very thin lines for dimension lines and annotations
-4. NO SHADING WHATSOEVER: No shadows. No fills. No hatching fills. No depth \
-   effects of any kind. All surfaces are white.
-5. NO 3D EFFECTS: No perspective. No isometric. No depth. No foreshortening.
-6. FLAT: This must look exactly like a line drawing on white paper — as if \
-   drawn with a technical pen. Nothing suggests depth or volume.
+   - Thick solid black lines for outer boundary
+   - Thin lines for interior divisions, shelves, counters as seen from above
+4. NO SHADING. NO SHADOWS. NO FILLS. NO HATCHING. All surfaces white.
+5. NO 3D EFFECTS. No perspective. No isometric. No depth. Completely flat.
 
 VIEWPOINT:
-- Camera looking STRAIGHT DOWN — 90 degrees perpendicular to the floor plane
-- No tilt, no angle, no rotation whatsoever
-- The entire drawing is a flat 2D projection
+- Camera looking STRAIGHT DOWN — 90 degrees perpendicular to the base
+- No tilt, no angle whatsoever
+- Pure 2D orthographic projection
 
 WHAT TO DRAW:
-- Outer boundary: thick black lines forming the perimeter shape
-- Interior walls: thick solid black lines
-- Doors: a straight gap in the wall at the door position + a text label "DOOR". NO arcs. NO curves.
-- Windows: three thin parallel lines in the wall opening (standard symbol)
-- Shelves / counters / surfaces: thin rectangles as seen from directly above
-- Furniture or built-in elements: simple thin-line outlines only, from above
-- Structural columns: solid black squares or circles
+- Outer boundary: thick black lines
+- Interior divisions or walls: thinner black lines
+- Doors: a straight gap at the door position + short text label "DOOR". NO arcs. NO curves.
+- Windows (if applicable): three thin parallel lines across the opening
+- Interior elements: simple outlines as seen from directly above
 
 MEASUREMENTS — CHECK THE SPECIFICATION:
-Look at the DESIGN SPECIFICATION at the top of this prompt. Find the \
-"Dimensions:" section.
-- IF specific measurements are listed (e.g., Width: 120cm, Height: 200cm) \
-  AND the notes do NOT say "estimated" or "not specified": \
-  ADD dimension lines with those exact values. Use standard notation — \
-  arrows or tick marks at each end, measurement number centered above the line.
-- IF no Dimensions section appears, OR if the notes say "estimated", \
-  "APPROXIMATE", or "not specified by client": \
-  Draw NO measurements, NO numbers, NO dimension lines. Zero numbers.
+- IF specific measurements are stated with numbers (e.g., "120cm", "6 feet"): \
+  ADD dimension lines with those exact values.
+- IF no explicit numbers given, or notes say "estimated"/"approximate": \
+  Draw ZERO measurements, ZERO numbers, ZERO dimension lines.
 
-LABELS: "FLOOR PLAN" text label at the bottom center. Nothing else.
+LABEL: A short label at the bottom center (e.g., "TOP VIEW", "PLAN VIEW", \
+or "FLOOR PLAN" — whichever fits the object type).
 
-WHAT MUST NOT APPEAR — ANY OF THESE INVALIDATES THE OUTPUT:
-- 3D perspective or depth of any kind
-- Isometric or axonometric view
-- Shading, shadows, or gradients
-- Any gray fills or color
-- Photorealistic materials or textures
-- Anything that makes this look "rendered" instead of "drafted"
-- A bird's-eye perspective angle (must be pure 90-degree overhead, not angled)
+WHAT MUST NOT APPEAR:
+- 3D perspective, depth, or volume of any kind
+- Isometric or angled view
+- Shading, shadows, gradients, gray fills
+- Anything that looks rendered instead of flat-drafted
 
-FINAL CHECK: Does this look like a flat 2D architectural line drawing that an \
-architect drafted with a pen on white paper? If there is ANY depth, ANY \
-shading, ANY perspective angle, ANY gray fills — it is wrong."""
+FINAL CHECK: Does this look like a flat line drawing on white paper viewed \
+straight from above? If there is ANY depth, shadow, angle, or gray — it is wrong."""
 
 FRONT_ELEVATION_PROMPT = BASE_GENERATION_INSTRUCTION + """
 VIEW TYPE: FRONT ELEVATION — 2D ARCHITECTURAL FRONTAL DRAWING

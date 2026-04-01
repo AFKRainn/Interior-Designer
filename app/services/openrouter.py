@@ -45,7 +45,8 @@ class CostTracker:
         """Record a single API call's usage."""
         prompt_tokens = usage.get("prompt_tokens", 0)
         completion_tokens = usage.get("completion_tokens", 0)
-        total_tokens = usage.get("total_tokens", prompt_tokens + completion_tokens)
+        total_tokens = usage.get(
+            "total_tokens", prompt_tokens + completion_tokens)
         cost = usage.get("cost", 0.0)
 
         # OpenRouter sometimes returns cost as string
@@ -213,6 +214,7 @@ class OpenRouterClient:
         temperature: float = 0.7,
         max_tokens: int = 4096,
         response_format: dict | None = None,
+        reasoning_effort: str = "none",
     ) -> dict:
         """
         Send a text chat completion request.
@@ -221,20 +223,29 @@ class OpenRouterClient:
             model: OpenRouter model ID (e.g. "anthropic/claude-sonnet-4")
             messages: List of message dicts with 'role' and 'content'
             temperature: Sampling temperature (0-2)
-            max_tokens: Maximum tokens in response
+            max_tokens: Ignored — no output token limit is sent to the API.
             response_format: Optional (e.g. {"type": "json_object"})
+            reasoning_effort: Reasoning effort level: "none" | "low" | "medium" | "high".
+                              When not "none", temperature is forced to 1.0
+                              (required by reasoning-capable models).
 
         Returns:
             Full API response dict
         """
+        if reasoning_effort != "none":
+            # Required by Anthropic and other reasoning-capable models
+            temperature = 1.0
+
         payload = {
             "model": model,
             "messages": messages,
             "temperature": temperature,
-            "max_tokens": max_tokens,
+            # max_tokens intentionally omitted — models output freely
         }
         if response_format:
             payload["response_format"] = response_format
+        if reasoning_effort != "none":
+            payload["reasoning"] = {"effort": reasoning_effort}
 
         return await self._make_request(payload)
 
@@ -247,6 +258,7 @@ class OpenRouterClient:
         temperature: float = 0.7,
         max_tokens: int = 4096,
         system_prompt: str | None = None,
+        reasoning_effort: str = "none",
     ) -> dict:
         """
         Send a vision (image + text) request.
@@ -257,12 +269,16 @@ class OpenRouterClient:
             image_data: Base64-encoded image string OR raw bytes
             image_mime_type: MIME type of the image
             temperature: Sampling temperature
-            max_tokens: Maximum tokens in response
+            max_tokens: Ignored — no output token limit is sent to the API.
             system_prompt: Optional system message
+            reasoning_effort: Reasoning effort level: "none" | "low" | "medium" | "high".
 
         Returns:
             Full API response dict
         """
+        if reasoning_effort != "none":
+            temperature = 1.0
+
         # Ensure base64 string
         if isinstance(image_data, bytes):
             image_b64 = base64.b64encode(image_data).decode("utf-8")
@@ -290,8 +306,10 @@ class OpenRouterClient:
             "model": model,
             "messages": messages,
             "temperature": temperature,
-            "max_tokens": max_tokens,
+            # max_tokens intentionally omitted — models output freely
         }
+        if reasoning_effort != "none":
+            payload["reasoning"] = {"effort": reasoning_effort}
 
         return await self._make_request(payload)
 
@@ -303,6 +321,7 @@ class OpenRouterClient:
         temperature: float = 0.7,
         max_tokens: int = 4096,
         system_prompt: str | None = None,
+        reasoning_effort: str = "none",
     ) -> dict:
         """
         Send a vision request with MULTIPLE images.
@@ -312,12 +331,16 @@ class OpenRouterClient:
             prompt: Text prompt
             images: List of (image_data, mime_type) tuples
             temperature: Sampling temperature
-            max_tokens: Max tokens
+            max_tokens: Ignored — no output token limit is sent to the API.
             system_prompt: Optional system message
+            reasoning_effort: Reasoning effort level: "none" | "low" | "medium" | "high".
 
         Returns:
             Full API response dict
         """
+        if reasoning_effort != "none":
+            temperature = 1.0
+
         messages: list[dict] = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
@@ -340,8 +363,10 @@ class OpenRouterClient:
             "model": model,
             "messages": messages,
             "temperature": temperature,
-            "max_tokens": max_tokens,
+            # max_tokens intentionally omitted — models output freely
         }
+        if reasoning_effort != "none":
+            payload["reasoning"] = {"effort": reasoning_effort}
 
         return await self._make_request(payload)
 
@@ -386,7 +411,8 @@ class OpenRouterClient:
             })
 
         _MODALITIES_MODELS = ("black-forest-labs/",)
-        is_modalities_model = any(model.startswith(p) for p in _MODALITIES_MODELS)
+        is_modalities_model = any(model.startswith(p)
+                                  for p in _MODALITIES_MODELS)
 
         if is_modalities_model and len(content_parts) == 1:
             messages = [{"role": "user", "content": content_parts[0]["text"]}]
@@ -411,7 +437,14 @@ class OpenRouterClient:
     # ------------------------------------------------------------------
 
     def extract_text(self, response: dict) -> str:
-        """Extract text content from a chat completion response."""
+        """
+        Extract text content from a chat completion response.
+
+        Filters out extended-thinking / reasoning blocks so only the
+        model's actual reply text is returned.  Thinking blocks appear
+        when reasoning mode is enabled (type == "thinking" or
+        type == "redacted_thinking").
+        """
         try:
             content = response["choices"][0]["message"]["content"]
             if content is None:
@@ -421,8 +454,12 @@ class OpenRouterClient:
             if isinstance(content, list):
                 texts = []
                 for part in content:
-                    if isinstance(part, dict) and part.get("type") == "text":
-                        texts.append(part.get("text", ""))
+                    if isinstance(part, dict):
+                        # Skip extended-thinking blocks — keep only actual text
+                        if part.get("type") in ("thinking", "redacted_thinking"):
+                            continue
+                        if part.get("type") == "text":
+                            texts.append(part.get("text", ""))
                 return " ".join(texts)
             return str(content)
         except (KeyError, IndexError) as e:
@@ -462,11 +499,12 @@ class OpenRouterClient:
                     depth -= 1
                     if depth == 0:
                         try:
-                            return json.loads(text[start_idx : i + 1])
+                            return json.loads(text[start_idx: i + 1])
                         except json.JSONDecodeError:
                             break
 
-        logger.warning(f"Could not extract JSON from response: {text[:200]}...")
+        logger.warning(
+            f"Could not extract JSON from response: {text[:200]}...")
         return None
 
     def _parse_image_response(self, response: dict) -> dict:

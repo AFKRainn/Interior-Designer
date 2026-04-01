@@ -37,6 +37,8 @@ class Consultant:
         from config import COUNCIL_MODELS
         self.client = client or OpenRouterClient()
         self.model = COUNCIL_MODELS["claude"]["id"]
+        self.reasoning_effort = COUNCIL_MODELS["claude"].get(
+            "reasoning_effort", "none")
 
     async def assess_input(
         self,
@@ -75,7 +77,7 @@ class Consultant:
             model=self.model,
             messages=messages,
             temperature=0.4,
-            max_tokens=1024,
+            reasoning_effort=self.reasoning_effort,
         )
 
         parsed = self.client.extract_json(response)
@@ -127,7 +129,7 @@ class Consultant:
             model=self.model,
             messages=messages,
             temperature=0.4,
-            max_tokens=1024,
+            reasoning_effort=self.reasoning_effort,
         )
 
         parsed = self.client.extract_json(response)

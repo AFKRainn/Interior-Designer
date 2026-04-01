@@ -1,0 +1,65 @@
+{
+  "id": "59e874e9-a683-43d7-9107-de4373d7e23a",
+  "name": "take 5",
+  "status": "complete",
+  "created_at": "2026-04-01T00:06:59.216872",
+  "updated_at": "2026-04-01T00:27:15.853972",
+  "input_data": {
+    "text_description": "Do the cabinet in the image",
+    "image_paths": [
+      "F:\\Arciticture agents\\Interior-Designer\\data\\projects\\59e874e9-a683-43d7-9107-de4373d7e23a\\uploads\\Screenshot 2026-03-26 214234.png"
+    ],
+    "input_type": "mixed"
+  },
+  "dsd_id": "59e874e9-a683-43d7-9107-de4373d7e23a",
+  "images": [
+    {
+      "id": "b99f1308",
+      "view_type": "floor_plan",
+      "view_label": "Floor Plan",
+      "view_spec_id": "8ab4cf72",
+      "file_path": "F:\\Arciticture agents\\Interior-Designer\\data\\projects\\59e874e9-a683-43d7-9107-de4373d7e23a\\images\\floor_plan_8ab4cf72_v1.jpg",
+      "dsd_version": 1,
+      "quality_score": null,
+      "quality_feedback": null,
+      "review_result": null,
+      "generation_prompt": "Generate a FLAT 2D TOP-DOWN VIEW of the design — the view you see when looking straight down at the object from directly above. Camera points straight down, zero tilt, zero angle.\n\nThis is NOT necessarily an \"architectural floor plan\" in the traditional sense. Adapt to whatever the design is:\n- A cabinet, closet, wardrobe, or shelving unit: draw its rectangular footprint   from above — outer boundary, interior compartments/divisions as seen from the top,   door openings as gaps, any visible stru",
+      "generated_at": "2026-04-01T00:24:49.884574",
+      "approved": false,
+      "review_attempts": 0
+    },
+    {
+      "id": "0a11e733",
+      "view_type": "front_elevation",
+      "view_label": "Front Elevation — Main Cabinet Face",
+      "view_spec_id": "54478c44",
+      "file_path": "F:\\Arciticture agents\\Interior-Designer\\data\\projects\\59e874e9-a683-43d7-9107-de4373d7e23a\\images\\front_elevation_54478c44_v1.jpg",
+      "dsd_version": 1,
+      "quality_score": null,
+      "quality_feedback": null,
+      "review_result": null,
+      "generation_prompt": "Generate a PURE 2D ARCHITECTURAL FRONT ELEVATION. This is a flat frontal diagram — like a printed AutoCAD elevation view or a hand-drafted architectural elevation. NOT a 3D render. NOT a perspective drawing. A flat 2D diagram with black lines on white paper showing the front face only.\n\nThink of it as: you stand directly in front of the object at infinite distance and look straight at the face. The face appears as a perfectly flat rectangle. You see NO sides. NO top. NO depth. ONLY the flat fron",
+      "generated_at": "2026-04-01T00:25:10.254620",
+      "approved": false,
+      "review_attempts": 0
+    },
+    {
+      "id": "edd9a2f0",
+      "view_type": "realistic_render",
+      "view_label": "Realistic Lifestyle Render",
+      "view_spec_id": "11f5fad8",
+      "file_path": "F:\\Arciticture agents\\Interior-Designer\\data\\projects\\59e874e9-a683-43d7-9107-de4373d7e23a\\images\\realistic_render_11f5fad8_v1.jpg",
+      "dsd_version": 1,
+      "quality_score": null,
+      "quality_feedback": null,
+      "review_result": null,
+      "generation_prompt": "Generate a professional architectural image based on the design specification below. Follow the style and format rules exactly.\n\nDESIGN SPECIFICATION:\nDesign: Custom Built-In-Style Painted Wall Unit with End Towers, Cubbies, and Overhead Cabinets\nType: furniture\nDescription: A large, symmetrical, floor-standing custom wall unit in light beige painted wood, composed as one continuous built-in-style piece. Narrow outer framing stiles and a slim full-width top cap enclose two full-height end towers",
+      "generated_at": "2026-04-01T00:27:15.852967",
+      "approved": false,
+      "review_attempts": 0
+    }
+  ],
+  "dsd_versions": [
+    1
+  ]
+}

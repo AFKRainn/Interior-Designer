@@ -38,22 +38,27 @@ RETRY_DELAY = 2  # seconds between retries
 # ---------------------------------------------------------------------------
 COUNCIL_MODELS = {
     "claude": {
-        "id": "anthropic/claude-sonnet-4.6",
+        "id": "google/gemini-3.1-pro-preview",
         "name": "Claude 4.6 (Anthropic)",
         "role": "Structured analysis & detail extraction",
         "supports_vision": True,
+        # Reasoning effort: "none" | "low" | "medium" | "high"
+        # Temperature is forced to 1.0 automatically when effort != "none".
+        "reasoning_effort": "high",
     },
     "gpt": {
-        "id": "openai/gpt-5.4",
+        "id": "google/gemini-3.1-pro-preview",
         "name": "GPT-5.4 (OpenAI)",
         "role": "Creative interpretation & spatial reasoning",
         "supports_vision": True,
+        "reasoning_effort": "high",
     },
     "gemini": {
         "id": "google/gemini-3.1-pro-preview",
         "name": "Gemini Pro (Google)",
         "role": "Visual understanding & multimodal analysis",
         "supports_vision": True,
+        "reasoning_effort": "high",
     },
 }
 
@@ -71,7 +76,7 @@ IMAGE_GEN_MODEL = {
 # ---------------------------------------------------------------------------
 COUNCIL_MAX_ROUNDS = 3
 COUNCIL_CONSENSUS_THRESHOLD = 2  # At least 2 out of 3 must agree
-CHAIRMAN_MODEL = "claude"  # Default chairman for synthesis
+CHAIRMAN_MODEL = "gpt"  # Default chairman for synthesis
 
 # ---------------------------------------------------------------------------
 # Quality Review Settings

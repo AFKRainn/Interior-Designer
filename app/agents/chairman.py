@@ -40,6 +40,8 @@ class Chairman:
         self.client = client or OpenRouterClient()
         self.chairman_key = CHAIRMAN_MODEL
         self.chairman_model = COUNCIL_MODELS[CHAIRMAN_MODEL]["id"]
+        self.reasoning_effort = COUNCIL_MODELS[CHAIRMAN_MODEL].get(
+            "reasoning_effort", "none")
 
     async def synthesize(
         self, state: CouncilState, project_id: str
@@ -72,12 +74,13 @@ class Chairman:
             model=self.chairman_model,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
-            max_tokens=16384,
+            reasoning_effort=self.reasoning_effort,
         )
 
         # Parse the response — two parts: JSON DSD + view generation prompts
         raw_text = self.client.extract_text(response) or ""
-        logger.info(f"Chairman raw response (first 1200 chars): {raw_text[:1200]}")
+        logger.info(
+            f"Chairman raw response (first 1200 chars): {raw_text[:1200]}")
 
         parsed = self._extract_dict_json(raw_text)
 
@@ -95,7 +98,8 @@ class Chairman:
                 f"{list(view_prompts.keys())}"
             )
         else:
-            logger.warning("No view generation prompts found in chairman response.")
+            logger.warning(
+                "No view generation prompts found in chairman response.")
 
         state.chairman_id = self.chairman_key
         dsd = self._build_dsd(parsed, project_id)
@@ -176,7 +180,8 @@ class Chairman:
             content_raw = lines[1] if len(lines) > 1 else ""
 
             # Strip the VIEW_PROMPT_END marker and trailing whitespace
-            content = re.sub(r"\s*VIEW_PROMPT_END\s*$", "", content_raw, flags=re.DOTALL)
+            content = re.sub(r"\s*VIEW_PROMPT_END\s*$", "",
+                             content_raw, flags=re.DOTALL)
             content = content.strip()
 
             if label and content:
@@ -225,7 +230,7 @@ class Chairman:
                     elif text[j] == "}":
                         depth -= 1
                     if depth == 0:
-                        snippet = text[i : j + 1]
+                        snippet = text[i: j + 1]
                         if len(snippet) > best_len:
                             try:
                                 candidate = json.loads(snippet)
@@ -267,7 +272,8 @@ class Chairman:
             design_type = DesignType.FURNITURE
 
         # Map views — expects list of dicts with type/label/description/generation_prompt
-        views_raw = data.get("views_to_generate", data.get("views_recommended", []))
+        views_raw = data.get("views_to_generate",
+                             data.get("views_recommended", []))
         views: list[ViewSpec] = []
         for v in views_raw:
             if isinstance(v, dict):

@@ -41,7 +41,8 @@ class Council:
         self.client = client or OpenRouterClient()
         self.models = COUNCIL_MODELS
         self.max_rounds = COUNCIL_MAX_ROUNDS
-        self.member_ids = list(self.models.keys())  # ["claude", "gpt", "gemini"]
+        # ["claude", "gpt", "gemini"]
+        self.member_ids = list(self.models.keys())
 
     async def deliberate(
         self,
@@ -82,21 +83,34 @@ class Council:
 
         try:
             # ---- Round 1: Independent Analysis ----
-            progress("[Round 1] Each council member is independently analyzing the input...")
+            progress(
+                "[Round 1] Each council member is independently analyzing the input...")
             await self._run_round1(
                 state, user_text, image_data, image_mime_type,
                 all_images=all_images,
             )
             progress("[Round 1] Complete - all three interpretations received.")
 
-            # ---- Round 2: Cross-Review ----
-            progress("[Round 2] Council members are reviewing each other's interpretations...")
-            await self._run_round2(state)
+            # ---- Round 2: Cross-Review (images re-sent) ----
+            progress(
+                "[Round 2] Council members are reviewing each other's interpretations...")
+            await self._run_round2(
+                state,
+                all_images=all_images,
+                image_data=image_data,
+                image_mime_type=image_mime_type,
+            )
             progress("[Round 2] Complete - cross-reviews received.")
 
-            # ---- Round 3: Convergence ----
-            progress("[Round 3] Council members are converging on a unified interpretation...")
-            await self._run_round3(state)
+            # ---- Round 3: Convergence (images re-sent) ----
+            progress(
+                "[Round 3] Council members are converging on a unified interpretation...")
+            await self._run_round3(
+                state,
+                all_images=all_images,
+                image_data=image_data,
+                image_mime_type=image_mime_type,
+            )
             progress("[Round 3] Complete - final interpretations received.")
 
             # ---- Consensus Check ----
@@ -104,11 +118,14 @@ class Council:
             consensus = self._check_consensus(state)
 
             if consensus:
-                state.mark_complete(ConsensusStatus.REACHED, "Council reached consensus.")
+                state.mark_complete(ConsensusStatus.REACHED,
+                                    "Council reached consensus.")
                 progress("[Consensus] Reached!")
             else:
-                state.mark_complete(ConsensusStatus.FORCED, "Chairman made final decision.")
-                progress("[Consensus] No full consensus - Chairman will synthesize.")
+                state.mark_complete(ConsensusStatus.FORCED,
+                                    "Chairman made final decision.")
+                progress(
+                    "[Consensus] No full consensus - Chairman will synthesize.")
 
             # ---- Chairman Synthesis ----
             progress("[Chairman] Synthesizing the final Design Specification...")
@@ -174,9 +191,12 @@ class Council:
                 prompt = ROUND1_MIXED_PROMPT.format(user_text=user_text)
             elif has_image:
                 additional = f"User's text: {user_text}" if user_text else ""
-                prompt = ROUND1_IMAGE_PROMPT.format(additional_context=additional)
+                prompt = ROUND1_IMAGE_PROMPT.format(
+                    additional_context=additional)
             else:
                 prompt = ROUND1_TEXT_PROMPT.format(user_input=user_text or "")
+
+            reasoning_effort = model_info.get("reasoning_effort", "none")
 
             task = self._query_member(
                 member_id=member_id,
@@ -184,9 +204,11 @@ class Council:
                 prompt=prompt,
                 system_prompt=system_prompt,
                 round_number=1,
-                image_data=image_data if (has_image and not all_images) else None,
+                image_data=image_data if (
+                    has_image and not all_images) else None,
                 image_mime_type=image_mime_type,
                 all_images=all_images if all_images else None,
+                reasoning_effort=reasoning_effort,
             )
             tasks.append(task)
 
@@ -207,8 +229,18 @@ class Council:
 
         rnd.mark_complete()
 
-    async def _run_round2(self, state: CouncilState):
-        """Round 2: Each member reviews the other two members' Round 1 responses."""
+    async def _run_round2(
+        self,
+        state: CouncilState,
+        all_images: list[dict] | None = None,
+        image_data: str | None = None,
+        image_mime_type: str = "image/png",
+    ):
+        """
+        Round 2: Each member reviews the other two members' Round 1 responses.
+        The original design image(s) are re-sent alongside the debate text
+        so members can verify their arguments against the actual source material.
+        """
         from app.prompts.council_prompts import ROUND2_REVIEW_PROMPT
 
         rnd = state.add_round("cross_review")
@@ -226,11 +258,11 @@ class Council:
                 continue
 
             model_info = self.models[member_id]
-            others = [m for m in self.member_ids if m != member_id and m in r1_by_member]
+            others = [m for m in self.member_ids if m !=
+                      member_id and m in r1_by_member]
             if len(others) == 0:
                 continue
 
-            # If only 1 other member responded, adapt the prompt
             if len(others) == 1:
                 prompt = ROUND2_REVIEW_PROMPT.format(
                     own_interpretation=r1_by_member[member_id],
@@ -248,11 +280,18 @@ class Council:
                     other_interpretation_2=r1_by_member[others[1]],
                 )
 
+            reasoning_effort = model_info.get("reasoning_effort", "none")
+
             task = self._query_member(
                 member_id=member_id,
                 model_id=model_info["id"],
                 prompt=prompt,
                 round_number=2,
+                image_data=image_data if (
+                    not all_images and image_data) else None,
+                image_mime_type=image_mime_type,
+                all_images=all_images if all_images else None,
+                reasoning_effort=reasoning_effort,
             )
             tasks.append(task)
 
@@ -265,8 +304,18 @@ class Council:
 
         rnd.mark_complete()
 
-    async def _run_round3(self, state: CouncilState):
-        """Round 3: Each member produces their final converged interpretation."""
+    async def _run_round3(
+        self,
+        state: CouncilState,
+        all_images: list[dict] | None = None,
+        image_data: str | None = None,
+        image_mime_type: str = "image/png",
+    ):
+        """
+        Round 3: Each member produces their final converged interpretation.
+        The original design image(s) are re-sent so members can make their
+        final determination by looking directly at the source material.
+        """
         from app.prompts.council_prompts import ROUND3_CONVERGENCE_PROMPT
 
         rnd = state.add_round("convergence")
@@ -299,11 +348,18 @@ class Council:
                 other_round2_2=r2_by_member.get(others[1], "N/A"),
             )
 
+            reasoning_effort = model_info.get("reasoning_effort", "none")
+
             task = self._query_member(
                 member_id=member_id,
                 model_id=model_info["id"],
                 prompt=prompt,
                 round_number=3,
+                image_data=image_data if (
+                    not all_images and image_data) else None,
+                image_mime_type=image_mime_type,
+                all_images=all_images if all_images else None,
+                reasoning_effort=reasoning_effort,
             )
             tasks.append(task)
 
@@ -326,8 +382,10 @@ class Council:
         """
         from config import COUNCIL_CONSENSUS_THRESHOLD
 
-        round3_responses = state.rounds[2].responses if len(state.rounds) >= 3 else []
-        valid_count = sum(1 for r in round3_responses if not r.error and r.response_text)
+        round3_responses = state.rounds[2].responses if len(
+            state.rounds) >= 3 else []
+        valid_count = sum(
+            1 for r in round3_responses if not r.error and r.response_text)
         return valid_count >= COUNCIL_CONSENSUS_THRESHOLD
 
     async def _chairman_synthesis(
@@ -353,15 +411,17 @@ class Council:
         image_data: str | None = None,
         image_mime_type: str = "image/png",
         all_images: list[dict] | None = None,
+        reasoning_effort: str = "none",
     ) -> MemberResponse:
         """
         Send a prompt to a single council member and return their response.
         Uses vision endpoint if image data is provided.
         Supports multiple images via all_images parameter.
+        reasoning_effort controls the reasoning depth: "none"|"low"|"medium"|"high".
+        When not "none", temperature is forced to 1.0 and no token limits are set.
         """
         try:
             if all_images and len(all_images) > 1:
-                # Multiple images — use multi-image vision endpoint
                 images_tuples = [
                     (img["data"], img["mime_type"]) for img in all_images
                 ]
@@ -371,7 +431,7 @@ class Council:
                     images=images_tuples,
                     system_prompt=system_prompt,
                     temperature=0.4,
-                    max_tokens=4096,
+                    reasoning_effort=reasoning_effort,
                 )
             elif all_images and len(all_images) == 1:
                 response = await self.client.vision_completion(
@@ -381,7 +441,7 @@ class Council:
                     image_mime_type=all_images[0]["mime_type"],
                     system_prompt=system_prompt,
                     temperature=0.4,
-                    max_tokens=4096,
+                    reasoning_effort=reasoning_effort,
                 )
             elif image_data:
                 response = await self.client.vision_completion(
@@ -391,19 +451,20 @@ class Council:
                     image_mime_type=image_mime_type,
                     system_prompt=system_prompt,
                     temperature=0.4,
-                    max_tokens=4096,
+                    reasoning_effort=reasoning_effort,
                 )
             else:
                 messages = []
                 if system_prompt:
-                    messages.append({"role": "system", "content": system_prompt})
+                    messages.append(
+                        {"role": "system", "content": system_prompt})
                 messages.append({"role": "user", "content": prompt})
 
                 response = await self.client.chat_completion(
                     model=model_id,
                     messages=messages,
                     temperature=0.4,
-                    max_tokens=4096,
+                    reasoning_effort=reasoning_effort,
                 )
 
             text = self.client.extract_text(response)

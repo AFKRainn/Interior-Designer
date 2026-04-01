@@ -85,7 +85,7 @@ def _restore_session():
                     if status == "complete":
                         st.session_state.current_page = "gallery"
                     elif status == "quality_review":
-                        st.session_state.current_page = "quality_review"
+                        st.session_state.current_page = "gallery"
                     elif status == "drawings_review":
                         st.session_state.current_page = "drawings_review"
                     elif status == "generating_render":
@@ -101,7 +101,7 @@ def _restore_session():
                         else:
                             st.session_state.current_page = "council"
                     elif page in (
-                        "gallery", "review_dsd", "quality_review",
+                        "gallery", "review_dsd",
                         "drawings_review", "generating_render",
                         "council", "generating", "refine",
                         "consulting",
@@ -154,14 +154,7 @@ if "element_selections" not in st.session_state:
 if "render_done" not in st.session_state:
     st.session_state.render_done = False
 
-if "review_done" not in st.session_state:
-    st.session_state.review_done = False
-
-if "review_results" not in st.session_state:
-    st.session_state.review_results = []
-
-if "review_messages" not in st.session_state:
-    st.session_state.review_messages = []
+# (review_done / review_results / review_messages removed — quality review step removed)
 
 # Restore session from disk on first load
 if "session_restored" not in st.session_state:
@@ -179,7 +172,6 @@ _PIPELINE_STEPS = [
     ("generating", "Technical Drawings"),
     ("drawings_review", "Drawings Review"),
     ("generating_render", "Realistic Render"),
-    ("quality_review", "Quality Review"),
     ("complete", "Complete"),
 ]
 
@@ -191,9 +183,9 @@ _STATUS_TO_STEP = {
     "generating": 3,
     "drawings_review": 4,
     "generating_render": 5,
-    "quality_review": 6,
-    "complete": 7,
-    "refining": 7,
+    "complete": 6,
+    "refining": 6,
+    "quality_review": 6,  # Legacy status — treated as complete
 }
 
 
@@ -280,15 +272,7 @@ with st.sidebar:
                     st.session_state.current_page = "generating_render"
                     st.rerun()
 
-            if project.status == ProjectStatus.QUALITY_REVIEW:
-                if st.button("🔍 Quality Review", use_container_width=True):
-                    st.session_state.current_page = "quality_review"
-                    st.rerun()
-
-            if project.status in (
-                ProjectStatus.COMPLETE,
-                ProjectStatus.QUALITY_REVIEW,
-            ):
+            if project.status == ProjectStatus.COMPLETE:
                 if st.button("🖼️ Gallery", use_container_width=True):
                     st.session_state.current_page = "gallery"
                     st.rerun()
@@ -1497,9 +1481,9 @@ def page_generating_render():
 
     # Check if render was already run (avoid double-run on rerun)
     if st.session_state.get("render_done"):
-        st.success("Realistic render complete! Proceeding to quality review...")
+        st.success("Realistic render complete! Proceeding to gallery...")
         st.session_state.render_done = False
-        st.session_state.current_page = "quality_review"
+        st.session_state.current_page = "gallery"
         st.rerun()
         return
 
@@ -1548,15 +1532,13 @@ def page_generating_render():
             if project:
                 for img in generated_images:
                     project.add_image(img)
-                project.update_status(ProjectStatus.QUALITY_REVIEW)
+                project.update_status(ProjectStatus.COMPLETE)
                 store.save_project(project)
 
             if generated_images:
-                st.success(
-                    "Realistic render generated! Starting quality review..."
-                )
+                st.success("Realistic render generated! Going to gallery...")
                 st.session_state.render_done = True
-                st.session_state.current_page = "quality_review"
+                st.session_state.current_page = "gallery"
                 st.rerun()
             else:
                 st.error("Render generation failed. Please try again.")
@@ -1574,226 +1556,26 @@ def page_generating_render():
 
 
 # ---------------------------------------------------------------------------
-# Page: Quality Review
+# Page: Quality Review — REMOVED (user inspects images themselves in gallery)
+# This stub exists only to redirect legacy sessions that still carry the
+# quality_review status.
 # ---------------------------------------------------------------------------
 def page_quality_review():
-    render_header()
-    st.markdown("### 🔍 Quality Review")
-
+    """Legacy redirect — quality review step has been removed."""
+    store: ProjectStore = st.session_state.store
     project_id = st.session_state.current_project_id
-    dsd = st.session_state.current_dsd
-
-    if not project_id or not dsd:
-        st.warning("No project or DSD found. Please start a new project.")
-        return
-
-    store: ProjectStore = st.session_state.store
-    project = store.load_project(project_id)
-    if not project or not project.images:
-        st.warning("No images found to review.")
-        return
-
-    latest_images = project.get_latest_images()
-
-    # If review is already done, show results
-    if st.session_state.get("review_done"):
-        _show_review_results(project, latest_images)
-        return
-
-    # Run quality review
-    st.markdown(
-        f"**Reviewing {len(latest_images)} image(s)** against the Design Specification..."
-    )
-    st.markdown(
-        "The review model will score each image on dimensional accuracy, "
-        "material/color accuracy, style adherence, view correctness, "
-        "and overall quality."
-    )
-    st.markdown("---")
-
-    progress_container = st.container()
-    review_messages = []
-
-    def on_progress(msg: str):
-        review_messages.append(msg)
-
-    from app.agents.reviewer import Reviewer
-    from app.services.openrouter import run_async
-
-    with st.spinner("Running quality review... This may take a few minutes."):
-        try:
-            reviewer = Reviewer()
-            final_images, all_reviews = run_async(
-                reviewer.review_and_regenerate(
-                    images=latest_images,
-                    dsd=dsd,
-                    project_id=project_id,
-                    on_progress=on_progress,
-                )
-            )
-
-            # Show progress messages
-            with progress_container:
-                for msg in review_messages:
-                    st.markdown(msg)
-
-            # Update project with reviewed/regenerated images
-            # Replace images that were regenerated
-            existing_ids = {img.id for img in project.images}
-            for img in final_images:
-                if img.id not in existing_ids:
-                    project.add_image(img)
-                else:
-                    # Update existing image with review data
-                    for i, existing in enumerate(project.images):
-                        if existing.id == img.id:
-                            project.images[i] = img
-                            break
-
-            # Check if all approved
-            all_approved = all(
-                img.approved for img in final_images
-            )
-            if all_approved:
-                project.update_status(ProjectStatus.COMPLETE)
-            else:
-                project.update_status(ProjectStatus.QUALITY_REVIEW)
-
-            store.save_project(project)
-
-            st.session_state.review_results = all_reviews
-            st.session_state.review_messages = review_messages
-            st.session_state.review_done = True
-            st.rerun()
-
-        except Exception as e:
-            with progress_container:
-                for msg in review_messages:
-                    st.markdown(msg)
-            st.error(f"Quality review failed: {e}")
-            if st.button("🔄 Retry Review"):
-                st.rerun()
-            if st.button("Skip Review -> Gallery"):
-                project.update_status(ProjectStatus.COMPLETE)
-                store.save_project(project)
-                st.session_state.current_page = "gallery"
-                st.rerun()
-
-
-def _show_review_results(project, latest_images):
-    """Display review results after the review is complete."""
-    store: ProjectStore = st.session_state.store
-
-    all_approved = all(img.approved for img in latest_images)
-
-    if all_approved:
-        st.success("All images passed quality review!")
-    else:
-        approved_count = sum(1 for img in latest_images if img.approved)
-        st.warning(
-            f"{approved_count}/{len(latest_images)} images approved. "
-            f"Review the details below."
-        )
-
-    # Show each image with its review
-    for img in latest_images:
-        view_name = img.display_label
-        status_icon = "✅" if img.approved else "⚠️"
-
-        with st.expander(
-            f"{status_icon} {view_name} — "
-            f"Score: {img.quality_score:.1f}/10" if img.quality_score else f"{status_icon} {view_name}",
-            expanded=not img.approved,
-        ):
-            col_img, col_info = st.columns([1, 1])
-
-            with col_img:
-                img_path = Path(img.file_path)
-                if img_path.exists():
-                    st.image(str(img_path), use_container_width=True)
-                else:
-                    st.warning("Image file not found.")
-
-            with col_info:
-                if img.review_result:
-                    review = img.review_result
-                    # Score breakdown
-                    st.markdown("**Score Breakdown:**")
-                    scores = review.scores
-                    _render_score_bar("Dimensional Accuracy", scores.dimensional_accuracy)
-                    _render_score_bar("Material & Color", scores.material_color_accuracy)
-                    _render_score_bar("Style Adherence", scores.style_adherence)
-                    _render_score_bar("View Correctness", scores.view_correctness)
-                    _render_score_bar("Overall Quality", scores.overall_quality)
-
-                    st.markdown(f"**Average: {review.average_score:.1f}/10**")
-
-                    # Feedback
-                    if review.feedback.strengths:
-                        st.markdown("**Strengths:**")
-                        for s in review.feedback.strengths:
-                            st.markdown(f"- {s}")
-
-                    if review.feedback.issues:
-                        st.markdown("**Issues:**")
-                        for issue in review.feedback.issues:
-                            st.markdown(f"- {issue}")
-
-                    if review.feedback.suggestions:
-                        st.markdown("**Suggestions:**")
-                        for sug in review.feedback.suggestions:
-                            st.markdown(f"- {sug}")
-
-                elif img.quality_feedback:
-                    st.markdown(img.quality_feedback)
-
-                st.markdown(f"**Review attempts:** {img.review_attempts}")
-
-    # Show progress log
-    if st.session_state.review_messages:
-        with st.expander("📋 Review Log", expanded=False):
-            for msg in st.session_state.review_messages:
-                st.markdown(msg)
-
-    # Actions
-    st.markdown("---")
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        if st.button("🖼️ Go to Gallery", type="primary", use_container_width=True):
-            # Mark all as approved and go to gallery
+    if project_id:
+        project = store.load_project(project_id)
+        if project:
             project.update_status(ProjectStatus.COMPLETE)
-            for img in project.images:
-                if not img.approved:
-                    img.approved = True
             store.save_project(project)
-            st.session_state.review_done = False
-            st.session_state.current_page = "gallery"
-            st.rerun()
-
-    with col2:
-        if st.button("🔄 Re-run Review", use_container_width=True):
-            st.session_state.review_done = False
-            st.session_state.review_results = []
-            st.session_state.review_messages = []
-            st.rerun()
-
-    with col3:
-        if st.button("📋 View DSD", use_container_width=True):
-            st.session_state.review_done = False
-            st.session_state.current_page = "review_dsd"
-            st.rerun()
+    st.session_state.current_page = "gallery"
+    st.rerun()
 
 
-def _render_score_bar(label: str, score: float):
-    """Render a score as a colored progress-like display."""
-    if score >= 8:
-        color = "🟢"
-    elif score >= 6:
-        color = "🟡"
-    else:
-        color = "🔴"
-    st.markdown(f"{color} **{label}:** {score:.1f}/10")
+# ---------------------------------------------------------------------------
+# (Placeholder to keep line reference intact — _show_review_results removed)
+# ---------------------------------------------------------------------------
 
 
 # ---------------------------------------------------------------------------
@@ -2275,7 +2057,7 @@ def page_projects():
                     elif status == "generating_render":
                         st.session_state.current_page = "generating_render"
                     elif status == "quality_review":
-                        st.session_state.current_page = "quality_review"
+                        st.session_state.current_page = "gallery"
                     elif status == "complete":
                         st.session_state.current_page = "gallery"
                     else:
@@ -2302,7 +2084,7 @@ PAGE_MAP = {
     "generating": page_generating,
     "drawings_review": page_drawings_review,
     "generating_render": page_generating_render,
-    "quality_review": page_quality_review,
+    "quality_review": page_quality_review,  # Legacy redirect only
     "gallery": page_gallery,
     "refine": page_refine,
     "projects": page_projects,

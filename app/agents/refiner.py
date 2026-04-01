@@ -43,6 +43,12 @@ class Refiner:
         self.client = client or OpenRouterClient()
         # Use Claude for classification and DSD editing (best structured output)
         self._model = COUNCIL_MODELS["claude"]["id"]
+        self._reasoning_effort = COUNCIL_MODELS["claude"].get("reasoning_effort", "none")
+        # Map model_id → reasoning_effort for multi-model calls
+        self._model_reasoning = {
+            info["id"]: info.get("reasoning_effort", "none")
+            for info in COUNCIL_MODELS.values()
+        }
 
     # ------------------------------------------------------------------
     # 1. Classify a change request
@@ -75,6 +81,7 @@ class Refiner:
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
             max_tokens=1024,
+            reasoning_effort=self._reasoning_effort,
         )
 
         parsed = self.client.extract_json(response)
@@ -138,6 +145,7 @@ class Refiner:
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
             max_tokens=4096,
+            reasoning_effort=self._reasoning_effort,
         )
 
         parsed = self.client.extract_json(response)
@@ -325,6 +333,7 @@ class Refiner:
                     messages=[{"role": "user", "content": prompt}],
                     temperature=0.3,
                     max_tokens=1024,
+                    reasoning_effort=self._model_reasoning.get(model_id, "none"),
                 )
                 parsed = self.client.extract_json(resp)
                 if isinstance(parsed, dict):

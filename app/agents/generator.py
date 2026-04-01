@@ -233,6 +233,16 @@ class Generator:
                 f"{extra_instructions}"
             )
 
+        # ── Developer review: print full prompt to terminal ──────────────
+        separator = "=" * 80
+        print(f"\n{separator}")
+        print(f"[GENERATION PROMPT] View: {view_label}  |  Type: {view_name}")
+        print(f"  Source: {'council-authored' if (council_content and len(council_content.strip()) > 40) else 'fallback template'}")
+        print(separator)
+        print(prompt)
+        print(f"{separator}\n")
+        # ─────────────────────────────────────────────────────────────────
+
         # Use view_spec.id for unique filenames (avoids overwriting
         # when there are multiple front_elevation views)
         safe_label = view_spec.id

@@ -1,0 +1,161 @@
+{
+  "project_id": "f2e985f7-434d-4773-ac1c-046024b758f4",
+  "version": 1,
+  "created_at": "2026-04-01T00:37:00.919076",
+  "updated_at": "2026-04-01T00:39:07.224431",
+  "type": "furniture",
+  "name": "Bespoke Light Beige Architectural Storage Wall",
+  "description": "A monolithic, built-in custom casement storage wall constructed entirely from monochromatic light beige painted material with a perfectly flat, grainless slab ('plaine') finish. The unit is bounded by two vertically-symmetrical, full-height deep perimeter towers, each explicitly trimmed to the wall with structural scribing/filler posts. Between these outer towers lies a deep work counter resting upon a unified base that features outer swinging cupboards and dual central columns of three-drawer banks. Resting perfectly flush upon the countertop in the upper central spanned section are two slender, tall slab doors equipped with minimalist vertical bar pulls. These central doors are flanked by complex, asymmetrical open-shelving grids that also rest directly flush on the countertop. The entire structure is unified by a continuous top frieze band mathematically subdivided into exactly six identical flush cabinet doors.",
+  "dimensions": {
+    "width": null,
+    "height": null,
+    "depth": null,
+    "notes": "not specified by client. All dimensions discussed by the council were approximate visual scaling estimates."
+  },
+  "style": {
+    "aesthetic": "Modern Minimalist / Utilitarian",
+    "era": "Contemporary",
+    "influences": [
+      "Scandinavian Bespoke Joinery",
+      "Architectural Built-in Casework"
+    ]
+  },
+  "materials": [
+    {
+      "name": "Painted MDF / Cabinet-grade Solid Wood",
+      "usage": "Carcass frameworks, open shelves, plinth, and all strictly flat slab door/drawer front pieces",
+      "finish": "Light beige. Flat matte or eggshell finish. Absolutely no wood grain visible."
+    },
+    {
+      "name": "Metal or Machined Wood Bar Pulls",
+      "usage": "Exclusively mounted on the two tall upper center doors",
+      "finish": "Monochromatic matching light beige, or sleek modern subtle metal (unobtrusive)"
+    },
+    {
+      "name": "Concealed Hardware",
+      "usage": "Internal drawer runners and push-to-open stealth hinges for the vast majority of panels",
+      "finish": "Concealed/Unseen from exterior"
+    }
+  ],
+  "colors": {
+    "primary": "Light Beige",
+    "secondary": null,
+    "accent": null,
+    "notes": "Client explicitly mandated flat 'light beige painted wood' exclusively; absolute monolithic coloration."
+  },
+  "structural_elements": [
+    {
+      "id": "e6dca560",
+      "name": "Outer Scribing / Filler Posts",
+      "description": "Solid, static vertical face-framing strips indicating a built-in architectural installation bridging the cabinet perfectly to the flanking side walls.",
+      "dimensions": null,
+      "material": "Painted MDF / Wood",
+      "position": "Extreme far left and extreme far right structural outer edges",
+      "count": 2
+    },
+    {
+      "id": "31d52465",
+      "name": "Symmetrical Flanking Towers",
+      "description": "Two deep full-height vertical columns enclosing the casework. Each features an upper cabinet door, a central open display cubby (with one shelf), and a matching tall lower closed utility door.",
+      "dimensions": null,
+      "material": "Painted MDF / Wood",
+      "position": "Far left border and far right border, just inside the scribe posts",
+      "count": 2
+    },
+    {
+      "id": "e2df70da",
+      "name": "Continuous Base Plinth",
+      "description": "Recessed horizontal toe-kick raising the entire casework off the floor.",
+      "dimensions": null,
+      "material": "Painted MDF / Wood",
+      "position": "Running continuously across the entire bottom threshold",
+      "count": 1
+    },
+    {
+      "id": "139ebbe0",
+      "name": "Lower Base Cupboards",
+      "description": "Single-bay flat panel push-to-open doors.",
+      "dimensions": null,
+      "material": "Painted MDF / Wood",
+      "position": "Lower base interior flanks, immediately inside each tall tower",
+      "count": 2
+    },
+    {
+      "id": "46ccdc7e",
+      "name": "Lower Base Drawer Banks",
+      "description": "Wide, pure flat-slab pulling drawers stacked precisely three-high.",
+      "dimensions": null,
+      "material": "Painted MDF / Wood",
+      "position": "Lower base absolute center, forming two adjacent vertical columns of 3 drawers",
+      "count": 2
+    },
+    {
+      "id": "50010bdf",
+      "name": "Deep Continuous Countertop",
+      "description": "A thick, unified horizontal planar working surface extending cleanly from the inner wall of the left tower directly across to the inner wall of the right tower.",
+      "dimensions": null,
+      "material": "Painted MDF / Wood",
+      "position": "Mid-height intersecting plane serving as the top of the base components",
+      "count": 1
+    },
+    {
+      "id": "caa25cec",
+      "name": "Tall Central Upper Doors",
+      "description": "Two slender vertical flat-slab doors stretching downward to structurally rest entirely flush upon the top surface of the main counter. They feature tall straight functional handles.",
+      "dimensions": null,
+      "material": "Painted MDF / Wood, Bar Handles",
+      "position": "Exact upper center, directly resting upon the countertop",
+      "count": 2
+    },
+    {
+      "id": "cc75855a",
+      "name": "Asymmetrical Cubby Nests",
+      "description": "Highly staggered asymmetrical grids of open display cubbies. They anchor directly downward, resting entirely flush against the horizontal countertop with no floating gap.",
+      "dimensions": null,
+      "material": "Painted MDF / Wood",
+      "position": "Upper span, flanking the center doors, enclosed by the outer towers",
+      "count": 2
+    },
+    {
+      "id": "8da40daf",
+      "name": "Top Frieze Architrave Cabinets",
+      "description": "A continuous horizontal upper enclosing row spanning the gap between towers. Subdivided clearly into exactly six distinct flat-panel slab doors (2 left, 2 center, 2 right).",
+      "dimensions": null,
+      "material": "Painted MDF / Wood",
+      "position": "Uppermost interior horizontal span capping the central work zone",
+      "count": 6
+    }
+  ],
+  "spatial_layout": "A planar, completely flush built-in wall unit utilizing strict perimeter symmetry around a central stepped-back core. Features a deep lower base and deep side towers, establishing a thick continuous mid-height work surface, out of which rises a shallower row of aggressive, asymmetrical open shelving contrasting with austere, handle-equipped central closed cabinetry.",
+  "context": {
+    "placement": "Built strictly wall-to-wall within a recess or across an entire interior face.",
+    "surroundings": "Modern utilitarian, Scandinavian studio, or high-end residential study over tiled flooring.",
+    "scale_reference": "Human scale dictated by waist-height central drawer banks and countertop plane."
+  },
+  "views_to_generate": [
+    {
+      "type": "floor_plan",
+      "label": "Floor Plan",
+      "description": "A 2D top-down view showing the rectangular footprint of the storage unit, detailing the depth differences between the deep base/towers and the shallower upper casework.",
+      "generation_prompt": "STEP 1 — OVERALL FORM: A wide, completely flat rectilinear top-down footprint of a massive wall-to-wall built-in storage unit, consisting of a deep, wide outer U-shape enclosing a flush, stepped-back shallower rear rectangle. Proportions are roughly 5:1 width-to-depth layout.\nSTEP 2 — OUTER BOUNDARY: A thick continuous line denoting the rearmost wall, flanked by deep side walls. At the far extreme left and extreme right front corners, thin narrow rectangle blocks represent the architectural filler/scribing posts meeting a flanking room wall.\nSTEP 3 — SIDES AND TOWERS: Immediately inside the outer scribing posts, two identical deep rectangular footprints represent the wide flanking tall towers. They are drawn to the full depth of the casework. A distinct narrow gap labeled \"DOOR\" breaks the front perimeter of each tower rectangle to denote flush-closing operable mechanisms. No swinging arcs.\nSTEP 4 — CONTINUOUS COUNTERTOP / LOWER BASE: Spanning the entire gap between the deep left and deep right towers is a single, deep rectangular surface representing the continuous countertop protruding forward to match the towers' absolute forward depth.\nSTEP 5 — UPPER CENTRAL CASEWORK (RECESSED): Anchored flat to the rear wall line between the towers, drawn as a secondary, shallower thin rectangle (approximately half the depth of the main counter) is the upper casework.\nSTEP 6 — UPPER SUBDIVISIONS: This shallow recessed upper zone is divided vertically into three sections. The far left shallow section represents the left open shelving grid. The exact center shallow section is enclosed at the front with a straight gap labeled \"DOOR\" to signify the tall upper double doors, complete with two tiny projecting lines for the sleek vertical handles. The far right shallow section represents the right open shelving grid.\nCONCLUSION: The completed top-down floor plan strictly conveys the profound bi-level depth variation: deeply projecting identical side towers flanking a continuous deep counter, above which rests a strictly shallow, stepped-back rectilinear shelf and utility cabinet array.",
+      "id": "69d18fcd"
+    },
+    {
+      "type": "front_elevation",
+      "label": "Front Elevation - Main Casework Layout",
+      "description": "A strictly 2D flat frontal view of the entire storage wall, capturing all exact grid subdivisions, panel flushness, asymmetric cubby overlaps, and hardware.",
+      "generation_prompt": "STEP 1 — OVERALL FORM: A massive, dominating monolithic wall-to-wall rectangular framework. Landscape orientation, roughly 2.5:1 width-to-height ratio, drawn in a strictly flat, 2D straight-on architectural projection lacking all perspective or depth convergence.\nSTEP 2 — OUTER BOUNDARY & PLINTH: A continuous, perfectly level thin horizontal line runs completely across the bottom quarter-inch representing a recessed plinth/toe-kick. The extreme left and extreme right outer edges are framed by very narrow vertical strips running from the ceiling to the floor, representing the built-in filler/scribing panels.\nSTEP 3 — LEFT & RIGHT SYMMETRICAL TOWERS: Immediately inside the scribe panels, two wide vertical columns serve as the bounding towers. They are identically subdivided: the top fifth is a closed horizontal door (a pure blank flat rectangle), the middle section is an open square display niche neatly bisected by one horizontal shelf, and the substantial bottom half consists of a remarkably tall closed door. Both sides mirror each other flawlessly in height and mass.\nSTEP 4 — LOWER BASE CENTRAL BLOCK: Anchored identically between the left and right towers, directly above the continuous plinth. Proceeding left to right inside the base: first, a single wide, flat cabinet door. Second, a vertical column of exactly three wide, identically sized rectangular drawer panels. Third, another identical vertical column of exactly three flat drawer panels. Finally, on the right, another single wide flat cabinet door. All surfaces are completely devoid of any handles, panels, or shaker detailing.\nSTEP 5 — CONTINUOUS COUNTERTOP: Directly above the lower base block, a thick, uninterrupted, perfectly straight horizontal line spans straight across from the interior wall of the left tower to the interior wall of the right tower, establishing the deep desk surface.\nSTEP 6 — ASYMMETRICAL LEFT CUBBY GRID: Sitting absolutely flush on the left third of the exposed countertop, extending upwards, is an open rectangular grid. It features numerous thin, staggered vertical and horizontal internal partition lines creating asymmetrical square and rectangular pigeon-hole cubbies.\nSTEP 7 — TALL CENTER DOORS: In the exact vertical center, sitting absolutely flush directly on the continuous countertop, are two slender, tall vertical doors. Drawn straight and clean, perfectly flat. Down their central meeting crack, each door features a single, distinct vertical line near the midpoint denoting long parallel minimalist bar handles.\nSTEP 8 — ASYMMETRICAL RIGHT CUBBY GRID: Sitting absolutely flush on the right third of the countertop is another open rectangular grid. It differs slightly in its internal thin partition layout from the left side, featuring its own unique staggered array of thin horizontal and vertical shelving dividers.\nSTEP 9 — CONTINUOUS TOP FRIEZE: Defining the entire uppermost horizontal gap bridging between the two outer towers (floating squarely above the cubbies and center doors) is a single, unified top band. This thick rectangular band is rigidly subdivided by precise vertical lines into exactly six adjacent, identical cabinet doors. Proceeding left to right: two directly above the left cubbies, two directly above the tall center doors, two directly above the right cubbies.\nCONCLUSION: The resulting frontal 2D architectural elevation displays an immense, seamlessly built-in monolithic cabinet grid in flat light beige; anchoring strict macro-symmetry on its base, top frieze, and outer towers, whilst introducing vivid utilitarian asymmetry into the completely flush, zero-backsplash upper open shelf partitions.",
+      "id": "a383ae9d"
+    }
+  ],
+  "generation_notes": "RENDER PRIORITY: Generate EXCLUSIVELY in flat painted 'Light Beige'; completely eradicate all wood grain or veneer textures. Ensure every panel is a flush 'plaine' slab-door (zero shaker framing, zero interior bevels). Include outer architectural wall-scribing strips. Ensure ALL upper central items (tall handled doors AND left/right asymmetric open cubbies) rest directly flush onto the thick mid-height countertop; do NOT draw an open wall background void beneath the cubbies. Ensure the topmost frieze panel spanning the inner area is subdivided exactly into 6 vertical rectangles. Do not include any dimensions or numeric measurements in the output images.",
+  "change_history": [],
+  "baseline_locked": true,
+  "locked_fields": [
+    "type",
+    "dimensions",
+    "spatial_layout",
+    "structural_elements",
+    "style.aesthetic"
+  ]
+}
