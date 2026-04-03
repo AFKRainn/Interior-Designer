@@ -22,6 +22,8 @@ from typing import Any, Optional
 
 import httpx
 
+from app.json_parse import parse_json_from_text
+
 logger = logging.getLogger(__name__)
 
 
@@ -374,6 +376,9 @@ class OpenRouterClient:
         self,
         prompt: str,
         model: str | None = None,
+        reference_images: list[dict] | None = None,
+        # Legacy single-image params kept for backwards compat (ignored if
+        # reference_images is provided)
         reference_image: str | bytes | None = None,
         reference_mime_type: str = "image/png",
     ) -> dict:
@@ -381,15 +386,20 @@ class OpenRouterClient:
         Generate an image using the configured image model.
 
         Args:
-            prompt: Detailed prompt for image generation
-            model: Model ID (defaults to IMAGE_GEN_MODEL from config)
-            reference_image: Optional reference image for editing
-            reference_mime_type: MIME type of reference image
+            prompt:           Detailed prompt for image generation.
+            model:            Model ID (defaults to IMAGE_GEN_MODEL from config).
+            reference_images: Optional list of reference images for editing.
+                              Each item: {"data": base64_str, "mime_type": str}.
+                              Supports multiple images (e.g. floor plan + elevation
+                              for a realistic render).
+            reference_image:  Legacy single reference image (bytes or base64 str).
+                              Ignored when reference_images is provided.
+            reference_mime_type: MIME type for legacy reference_image param.
 
         Returns:
             Dict with keys:
-              'text'   — any text in the response
-              'images' — list of dicts with 'data' (base64) and 'mime_type'
+              'text'         — any text in the response
+              'images'       — list of dicts with 'data' (base64) and 'mime_type'
               'raw_response' — the full API response
         """
         from config import IMAGE_GEN_MODEL
@@ -398,7 +408,20 @@ class OpenRouterClient:
 
         content_parts: list[dict] = [{"type": "text", "text": prompt}]
 
-        if reference_image is not None:
+        # Multi-image references take priority
+        if reference_images:
+            for ref in reference_images:
+                data = ref.get("data", "")
+                mime = ref.get("mime_type", "image/png")
+                if isinstance(data, bytes):
+                    data = base64.b64encode(data).decode("utf-8")
+                if data:
+                    content_parts.append({
+                        "type": "image_url",
+                        "image_url": {"url": f"data:{mime};base64,{data}"},
+                    })
+        elif reference_image is not None:
+            # Legacy single-image path
             if isinstance(reference_image, bytes):
                 ref_b64 = base64.b64encode(reference_image).decode("utf-8")
             else:
@@ -472,40 +495,11 @@ class OpenRouterClient:
         if not text:
             return None
 
-        # Direct parse
-        try:
-            return json.loads(text)
-        except json.JSONDecodeError:
-            pass
-
-        # JSON inside markdown code blocks
-        json_match = re.search(r"```(?:json)?\s*\n(.*?)\n```", text, re.DOTALL)
-        if json_match:
-            try:
-                return json.loads(json_match.group(1))
-            except json.JSONDecodeError:
-                pass
-
-        # Find first JSON object or array in raw text
-        for start_char, end_char in [("{", "}"), ("[", "]")]:
-            start_idx = text.find(start_char)
-            if start_idx == -1:
-                continue
-            depth = 0
-            for i in range(start_idx, len(text)):
-                if text[i] == start_char:
-                    depth += 1
-                elif text[i] == end_char:
-                    depth -= 1
-                    if depth == 0:
-                        try:
-                            return json.loads(text[start_idx: i + 1])
-                        except json.JSONDecodeError:
-                            break
-
-        logger.warning(
-            f"Could not extract JSON from response: {text[:200]}...")
-        return None
+        parsed = parse_json_from_text(text)
+        if parsed is None:
+            logger.warning(
+                f"Could not extract JSON from response: {text[:200]}...")
+        return parsed
 
     def _parse_image_response(self, response: dict) -> dict:
         """

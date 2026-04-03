@@ -2,27 +2,28 @@
                   ARCHITECTURE AGENT — PROGRESS TRACKER
 ================================================================================
 Created: 2026-03-25
-Last Updated: 2026-03-27
+Last Updated: 2026-03-30
 
 ================================================================================
-CURRENT STATUS: PHASE 8 (ENHANCEMENTS) COMPLETE
+CURRENT STATUS: PHASE 18 — MAJOR ARCHITECTURAL OVERHAUL COMPLETE
 ================================================================================
 
-Base pipeline (7 phases) complete. All 5 enhancements implemented:
-- Phase 8A: Design Consultant chat layer + single unified input   [DONE]
-- Phase 8B: Multiple images support everywhere                    [DONE]
-- Phase 8C: Built-in element library with defaults                [DONE]
-- Phase 8D: Domain knowledge & logical completeness               [DONE]
-- Phase 8E: Design intent preservation across modifications       [DONE]
+Complete pipeline redesign. Old 3-model council replaced with a
+Consultant → Reviewer → Chairman → Step-by-step generation architecture.
 
-Pipeline flow (updated):
-  Input (text + multiple images + element selections)
-  -> Design Consultant (clarifies intent, collects raw conversation)
-  -> Council deliberation (3 LLMs with reasoning)
-  -> DSD creation + inline editing
-  -> Technical drawings (floor plan/top-down + elevation) -> User approval
-  -> Realistic lifestyle render
-  -> Gallery + Refinement  [Quality review removed — user inspects directly]
+Pipeline flow (new):
+  Input (text + images)
+  -> Consultant (Gemini) — chat loop, bay-by-bay analysis, two modes
+  -> User confirms with "yes/confirm"
+  -> Council Reviewer (GPT) — checks summary against image for missed details
+     -> If issues: back to Consultant → user resolves → confirm again
+     -> If approved: Chairman generates prompts
+  -> Chairman (Gemini) — generates 3 clean image prompts
+  -> Floor Plan generated → user approves (or requests modification)
+  -> Front Elevation generated (floor plan as reference) → user approves
+  -> 3D Realistic Render generated (both as references) → user approves
+  -> Gallery
+  Modifications: return to Consultant conversation → re-review → regenerate step
 
 ================================================================================
 PHASE PROGRESS
@@ -1134,4 +1135,113 @@ Files changed:
 
 ================================================================================
 SYSTEM STATUS: PHASE 17 COMPLETE
+================================================================================
+
+================================================================================
+PHASE 18 — MAJOR ARCHITECTURAL OVERHAUL (2026-03-30)
+================================================================================
+
+Complete redesign of the Consultant → Council → Chairman pipeline.
+The old 3-model deliberation council is replaced with a simpler, faster,
+and more accurate Consultant + single Reviewer + Chairman flow.
+
+MODELS
+-------
+- Consultant: google/gemini-3.1-pro-preview (reasoning_effort: high)
+- Council Reviewer: openai/gpt-5.4 (reasoning_effort: high)
+- Chairman: google/gemini-3.1-pro-preview (reasoning_effort: high)
+- Image generation: unchanged (Gemini Flash Image Preview)
+
+NEW CONSULTANT (app/agents/consultant.py + app/prompts/consultant_prompts.py)
+-------
+Two modes, auto-detected by the model from context:
+
+Mode 1 — Image Analysis:
+  - Splits design into numbered bays (left to right), walls for multi-wall layouts
+  - States only what it is CONFIDENT about; asks about the rest
+  - Gives 2-3 examples when asking about visual/decorative details
+  - Checks: top trim/cornice, side columns thickness, grooves, door types, hardware,
+    shelf positions, bay alignment, base treatment, layout
+  - Asks explicit layout question (which bays are on same wall, facing each other, etc.)
+  - Loops until user confirms
+
+Mode 2 — Participant Design:
+  - Acts as a design partner making specific suggestions
+  - Checks practicality, proportions, usability
+  - Adds design insights when relevant
+  - Loops until user confirms
+
+Output is always JSON: {"response": "...", "status": "chat"|"confirmed", "final_summary": "..."}
+When status == "confirmed", final_summary is the complete structured design description.
+
+NEW COUNCIL REVIEWER (app/agents/council.py + app/prompts/council_prompts.py)
+-------
+Single GPT model that reviews the consultant's Final Design Summary against
+the original image(s). Checks specifically for:
+  - Top trim/cornice type
+  - Side column details and grooves
+  - All bay door/opening types
+  - Hardware type and placement
+  - Shelf positions inside open sections
+  - Bay alignment (height differences)
+  - Base treatment
+  - Any detail visible in image but missing from summary
+  - Layout clarity
+
+Returns: {"approved": bool, "issues": ["one-liner per issue"]}
+If issues: Consultant reformulates them as natural questions to the client,
+  then the loop continues. If approved: Chairman generates prompts.
+
+NEW CHAIRMAN (app/agents/chairman.py)
+-------
+Receives full conversation. Generates 3 clean, direct image prompts:
+1. Floor plan: top-down 2D, B&W, lines only, dimensions only if given
+2. Front elevation: left to right bay-by-bay, B&W, 2D
+3. Realistic render: photorealistic 3D, materials, natural lighting
+
+Prompts are printed to terminal for developer review before generation.
+
+NEW GENERATOR (app/agents/generator.py)
+-------
+New method generate_step(prompt, view_type, project_id, reference_images).
+No DSD dependency. Step-by-step:
+  - floor_plan: no references
+  - front_elevation: floor plan as reference
+  - realistic_render: floor plan + front elevation as references
+Reference images are read back from disk after generation and passed to next step.
+openrouter.generate_image updated to support multiple reference_images.
+
+NEW UI FLOW (app/ui/main.py)
+-------
+New session state:
+  - consulting_messages: full API message history for Consultant
+  - consulting_phase: "chat" | "council_reviewing" | "chairman_generating"
+  - consulting_final_summary: the approved design description
+  - chairman_prompts: {"floor_plan", "front_elevation", "realistic_render"}
+  - image_step_current: which generation step is active
+  - image_step_generated: dict of generated images (path + b64 + mime)
+  - modification_for: which step is being modified
+
+New pages:
+  - consulting: full consultant chat loop + auto-executes council review and chairman
+  - image_step: step-by-step generation (generate → show → approve or modify)
+Old pages stubbed with immediate redirect:
+  - council, review_dsd, generating, drawings_review, generating_render
+
+New pipeline steps:
+  Consultation → Design Review → Floor Plan → Front Elevation → 3D Render → Complete
+
+Modification flow:
+  User types modification in image_step → sent to Consultant as continuation
+  → consultant loops with user → user confirms → council reviews → chairman
+  regenerates that step's prompt → image_step regenerates that step (and clears
+  all subsequent steps)
+
+Config changes (config.py):
+  - Added CONSULTANT_MODEL, COUNCIL_REVIEWER_MODEL, CHAIRMAN_MODEL_CFG
+  - Legacy COUNCIL_MODELS kept (2 models: gpt, gemini) for refiner.py
+  - COUNCIL_MAX_ROUNDS, COUNCIL_CONSENSUS_THRESHOLD, CHAIRMAN_MODEL removed
+
+================================================================================
+SYSTEM STATUS: PHASE 18 COMPLETE
 ================================================================================

@@ -28,6 +28,7 @@ from app.ui.components import (
 )
 from app.services.project_store import ProjectStore
 from app.services.image_service import ImageService
+from app.json_parse import parse_json_from_text
 from app.models.project import Project, ProjectStatus, InputData
 
 # ---------------------------------------------------------------------------
@@ -156,6 +157,28 @@ if "render_done" not in st.session_state:
 
 # (review_done / review_results / review_messages removed — quality review step removed)
 
+# New consultant/council/image-step state
+if "consulting_messages" not in st.session_state:
+    st.session_state.consulting_messages = []  # Full API message history
+
+if "consulting_phase" not in st.session_state:
+    st.session_state.consulting_phase = "chat"  # chat|council_reviewing|chairman_generating
+
+if "consulting_final_summary" not in st.session_state:
+    st.session_state.consulting_final_summary = None
+
+if "chairman_prompts" not in st.session_state:
+    st.session_state.chairman_prompts = None  # {"floor_plan": ..., "front_elevation": ..., "realistic_render": ...}
+
+if "image_step_current" not in st.session_state:
+    st.session_state.image_step_current = "floor_plan"
+
+if "image_step_generated" not in st.session_state:
+    st.session_state.image_step_generated = {}  # view_type -> {"path": str, "data": b64, "mime": str}
+
+if "modification_for" not in st.session_state:
+    st.session_state.modification_for = None  # Which step is being modified
+
 # Restore session from disk on first load
 if "session_restored" not in st.session_state:
     _restore_session()
@@ -166,12 +189,11 @@ if "session_restored" not in st.session_state:
 # Pipeline Progress Indicator (defined before sidebar so it's available)
 # ---------------------------------------------------------------------------
 _PIPELINE_STEPS = [
-    ("consulting", "Design Consultation"),
-    ("council_review", "Council Deliberation"),
-    ("awaiting_confirmation", "DSD Review"),
-    ("generating", "Technical Drawings"),
-    ("drawings_review", "Drawings Review"),
-    ("generating_render", "Realistic Render"),
+    ("consulting", "Consultation"),
+    ("council_review", "Design Review"),
+    ("floor_plan", "Floor Plan"),
+    ("front_elevation", "Front Elevation"),
+    ("realistic_render", "3D Render"),
     ("complete", "Complete"),
 ]
 
@@ -179,13 +201,17 @@ _STATUS_TO_STEP = {
     "draft": -1,
     "consulting": 0,
     "council_review": 1,
-    "awaiting_confirmation": 2,
-    "generating": 3,
-    "drawings_review": 4,
-    "generating_render": 5,
-    "complete": 6,
-    "refining": 6,
-    "quality_review": 6,  # Legacy status — treated as complete
+    "floor_plan": 2,
+    "front_elevation": 3,
+    "realistic_render": 4,
+    "complete": 5,
+    "refining": 5,
+    # Legacy statuses
+    "awaiting_confirmation": 1,
+    "generating": 2,
+    "drawings_review": 2,
+    "generating_render": 3,
+    "quality_review": 5,
 }
 
 
@@ -314,10 +340,11 @@ def page_new_project():
 
     render_info_card(
         "How it works",
-        "Describe your design (and/or upload sketches) → "
-        "A design consultant refines your brief → "
-        "The Council (3 AI architects) deliberates → "
-        "You review technical drawings → A realistic render is generated.",
+        "Describe your design (and/or upload a sketch) → "
+        "Chat with the design consultant until your design is clear → "
+        "The council reviews the analysis → "
+        "Images are generated step by step — floor plan, front elevation, 3D render — "
+        "and you approve each one.",
     )
 
     st.markdown("### Start a New Design")
@@ -435,8 +462,10 @@ def _start_project(
     uploaded_files: list | None = None,
     element_selections=None,
 ):
-    """Create a new project and start the design consultation."""
+    """Create a new project and start the new consultant conversation."""
+    from app.agents.consultant import Consultant
     from app.models.elements import ElementSelections
+    from app.services.openrouter import run_async
 
     store: ProjectStore = st.session_state.store
 
@@ -455,7 +484,6 @@ def _start_project(
         ("image" if has_images else "text")
     )
 
-    # Create project
     project = Project(
         name=name or "Untitled Design",
         input_data=InputData(
@@ -464,34 +492,50 @@ def _start_project(
         ),
     )
 
-    # Save all uploaded images
-    images_data = []  # list of (b64, mime) tuples for API calls
+    images_data = []
     for uploaded_file in (uploaded_files or []):
         file_bytes = uploaded_file.read()
         saved_path = store.save_uploaded_image(
             project.id, file_bytes, uploaded_file.name
         )
         project.input_data.image_paths.append(str(saved_path))
-
-        # Encode for API
-        b64, mime = ImageService.encode_uploaded_bytes(
-            file_bytes, uploaded_file.name
-        )
+        b64, mime = ImageService.encode_uploaded_bytes(file_bytes, uploaded_file.name)
         images_data.append({"data": b64, "mime_type": mime})
 
-    # Update status and save
     project.update_status(ProjectStatus.CONSULTING)
     store.save_project(project)
 
-    # Store in session
+    # Reset all consulting/generation state
     st.session_state.current_project_id = project.id
-    st.session_state.consultant_history = []
-    st.session_state.consultant_brief = None
     st.session_state.images_data = images_data
     st.session_state.element_selections = element_selections
+    st.session_state.consulting_messages = []
+    st.session_state.consulting_phase = "chat"
+    st.session_state.consulting_final_summary = None
+    st.session_state.chairman_prompts = None
+    st.session_state.image_step_current = "floor_plan"
+    st.session_state.image_step_generated = {}
+    st.session_state.modification_for = None
+    st.session_state.current_dsd = None
 
-    # Run the consultant assessment
-    _run_consultant_assessment(project, images_data, element_selections)
+    # Start the consultant conversation
+    with st.spinner("Starting consultation..."):
+        try:
+            consultant = Consultant()
+            result = run_async(
+                consultant.start(
+                    user_text=text_input,
+                    images=images_data if images_data else None,
+                )
+            )
+            st.session_state.consulting_messages = result["messages"]
+            # No phase change — consultant always starts in "chat"
+        except Exception as e:
+            st.error(f"Could not start consultation: {e}")
+            return
+
+    st.session_state.current_page = "consulting"
+    st.rerun()
 
 
 def _format_conversation_for_council(
@@ -499,165 +543,32 @@ def _format_conversation_for_council(
     history: list[dict],
     tech_spec: str = "",
 ) -> str:
-    """
-    Build the text that the council receives.
-
-    Contains the user's original words plus any answers they gave during
-    the consultation.  Nothing is rewritten or summarised.
-    """
+    # Legacy helper — kept for any old code that still calls it
     parts = []
-
     if user_text:
         parts.append(f"CLIENT'S DESIGN REQUEST:\n{user_text}")
-
-    # Collect genuine user replies from the conversation (skip the very first
-    # assistant greeting, which is not a question-answer exchange)
     user_replies = [m["content"] for m in history if m["role"] == "user"]
     if user_replies:
-        combined = "\n\n".join(user_replies)
-        parts.append(f"ADDITIONAL DETAILS PROVIDED BY CLIENT:\n{combined}")
-
+        parts.append("ADDITIONAL DETAILS:\n" + "\n\n".join(user_replies))
     if tech_spec:
-        parts.append(f"CONSTRUCTION ELEMENT SPECIFICATIONS:\n{tech_spec}")
-
+        parts.append(f"CONSTRUCTION ELEMENTS:\n{tech_spec}")
     return "\n\n".join(parts) if parts else (user_text or "")
 
 
-def _run_consultant_assessment(project, images_data, element_selections=None):
-    """Assess input completeness and decide whether to chat or proceed."""
-    from app.agents.consultant import Consultant
-    from app.models.elements import ElementSelections
-    from app.services.openrouter import run_async
-
-    if element_selections is None:
-        element_selections = ElementSelections()
-
-    elements_desc = element_selections.to_description()
-
-    try:
-        consultant = Consultant()
-        assessment = run_async(
-            consultant.assess_input(
-                user_text=project.input_data.text_description,
-                image_count=len(images_data),
-                element_selections=elements_desc,
-            )
-        )
-
-        ready_message = assessment.get(
-            "ready_message",
-            "Your request is clear! Add any extra details below if you like, "
-            "then send it to the council.",
-        )
-
-        if assessment.get("has_enough"):
-            # Enough info — build the council input from the raw text and go
-            # to the consulting page so the user can add more or proceed.
-            tech_spec = element_selections.to_technical_spec()
-            council_input = _format_conversation_for_council(
-                project.input_data.text_description,
-                [],
-                tech_spec=tech_spec,
-            )
-            st.session_state.consultant_brief = council_input
-            st.session_state.consultant_history = [
-                {"role": "assistant", "content": ready_message}
-            ]
-        else:
-            # Need to chat — open the consulting page with questions
-            questions = assessment.get("clarifying_questions", [])
-            intro_msg = "I have a couple of quick questions before we proceed:"
-            if questions:
-                intro_msg += "\n\n" + "\n".join(f"• {q}" for q in questions)
-
-            st.session_state.consultant_history = [
-                {"role": "assistant", "content": intro_msg}
-            ]
-            st.session_state.consultant_brief = None
-
-        st.session_state.current_page = "consulting"
-        st.rerun()
-
-    except Exception as e:
-        st.error(f"Consultant error: {e}")
-        # Fallback — pass raw input straight to council
-        st.session_state.consultant_brief = project.input_data.text_description
-        st.session_state.consultant_history = [
-            {
-                "role": "assistant",
-                "content": "Ready to proceed. Click 'Send to Council' below.",
-            }
-        ]
-        st.session_state.current_page = "consulting"
-        st.rerun()
-
-
-def _run_council(
-    project_id: str,
-    user_text: str | None,
-    image_data: str | None,
-    image_mime_type: str,
-    all_images: list[dict] | None = None,
-):
-    """Run the council deliberation (called after consultation)."""
-    from app.agents.council import Council
-    from app.services.openrouter import run_async
-
-    store: ProjectStore = st.session_state.store
-
-    # Progress messages will be collected
-    messages = []
-
-    def on_progress(msg: str):
-        messages.append(msg)
-
-    try:
-        council = Council()
-        state, dsd = run_async(
-            council.deliberate(
-                project_id=project_id,
-                user_text=user_text,
-                image_data=image_data,
-                image_mime_type=image_mime_type,
-                on_progress=on_progress,
-                all_images=all_images,
-            )
-        )
-
-        # Save results
-        st.session_state.council_state = state
-        st.session_state.council_messages = messages
-
-        if dsd:
-            store.save_dsd(project_id, dsd)
-            st.session_state.current_dsd = dsd
-
-            # Update project
-            project = store.load_project(project_id)
-            if project:
-                project.dsd_id = dsd.project_id
-                project.dsd_versions.append(dsd.version)
-                project.update_status(ProjectStatus.AWAITING_CONFIRMATION)
-                store.save_project(project)
-
-            st.session_state.current_page = "review_dsd"
-
-    except Exception as e:
-        st.session_state.council_messages = messages + [f"❌ Error: {e}"]
-
-    st.rerun()
-
-
 # ---------------------------------------------------------------------------
-# Page: Design Consultation (chat with consultant)
+# Page: Design Consultation (new flow)
 # ---------------------------------------------------------------------------
 def page_consulting():
+    """
+    Main consultation loop.
+
+    Phase state machine (st.session_state.consulting_phase):
+      "chat"                — consultant is chatting with the user
+      "council_reviewing"   — running the council reviewer (auto-executes)
+      "chairman_generating" — running the chairman to get prompts (auto-executes)
+    """
     render_header()
-    st.markdown("### 💬 Design Consultation")
-    st.caption(
-        "The design consultant is clarifying your requirements before "
-        "sending them to the council."
-    )
+    st.markdown("### Design Consultation")
 
     project_id = st.session_state.current_project_id
     if not project_id:
@@ -670,299 +581,206 @@ def page_consulting():
         st.warning("Project not found.")
         return
 
-    # Show the original input for context
-    with st.expander("📎 Your Original Input", expanded=False):
-        if project.input_data.text_description:
-            st.markdown(project.input_data.text_description)
-        for img_path in project.input_data.image_paths:
-            p = Path(img_path)
-            if p.exists():
-                st.image(str(p), width=250)
+    phase = st.session_state.get("consulting_phase", "chat")
 
-    st.markdown("---")
+    # ── Auto-execute phases ────────────────────────────────────────────────
+    if phase == "council_reviewing":
+        _run_council_review(project, store)
+        return
 
-    # Display conversation history
-    for msg in st.session_state.consultant_history:
-        role = msg["role"]
-        content = msg["content"]
+    if phase == "chairman_generating":
+        _run_chairman(project, store)
+        return
+
+    # ── Show original input ────────────────────────────────────────────────
+    if project.input_data.image_paths:
+        with st.expander("Your uploaded image(s)", expanded=False):
+            for img_path in project.input_data.image_paths:
+                p = Path(img_path)
+                if p.exists():
+                    st.image(str(p), width=280)
+
+    # ── Show conversation history ──────────────────────────────────────────
+    messages = st.session_state.get("consulting_messages", [])
+    for msg in messages:
+        role = msg.get("role")
+        if role == "system":
+            continue
+        content = msg.get("content", "")
+        if isinstance(content, list):
+            # Extract text parts
+            text_parts = [
+                p.get("text", "") for p in content
+                if isinstance(p, dict) and p.get("type") == "text"
+            ]
+            content = " ".join(text_parts)
+
         if role == "assistant":
-            st.markdown(f"**🏛️ Consultant:** {content}")
-        else:
+            parsed = parse_json_from_text(content)
+            if isinstance(parsed, dict) and parsed.get("response") is not None:
+                display_text = str(parsed["response"])
+            else:
+                display_text = content
+            st.markdown("**🏛️ Consultant:**")
+            st.markdown(display_text)
+        elif role == "user":
+            if content.startswith("[INTERNAL"):
+                continue  # Don't show internal council feedback injections
             st.markdown(f"**You:** {content}")
 
-    # Ready banner — shown when enough info is available
-    if st.session_state.consultant_brief:
-        st.success(
-            "✅ Ready to send to the council. "
-            "You can still add more details below, or click **Send to Council** to proceed."
-        )
-        if st.button("✅ Send to Council", type="primary", use_container_width=True):
-            # Rebuild council input one final time to capture any last additions
-            elem_sel = st.session_state.get("element_selections")
-            tech_spec = elem_sel.to_technical_spec() if elem_sel else ""
-            council_input = _format_conversation_for_council(
-                project.input_data.text_description,
-                st.session_state.consultant_history,
-                tech_spec=tech_spec,
-            )
-
-            project.update_status(ProjectStatus.COUNCIL_REVIEW)
-            store.save_project(project)
-
-            st.session_state.current_page = "council"
-            st.session_state.council_messages = []
-
-            images_data = st.session_state.images_data
-            image_data = images_data[0]["data"] if images_data else None
-            image_mime = images_data[0]["mime_type"] if images_data else "image/png"
-
-            _run_council(
-                project.id,
-                council_input,
-                image_data,
-                image_mime,
-                all_images=images_data,
-            )
-
     st.markdown("---")
 
-    # Chat input — always visible so the user can keep adding details
-    user_reply = st.text_input(
-        "Add more details (optional)",
-        placeholder="Anything else you want the council to know...",
-        key="consultant_input",
-    )
-
-    # Image attachment in chat
-    chat_images = st.file_uploader(
-        "Attach images *(optional — these will be sent to the council)*",
-        type=["png", "jpg", "jpeg", "webp"],
-        accept_multiple_files=True,
-        key="consultant_chat_images",
-    )
-    if chat_images:
-        cols = st.columns(min(len(chat_images), 4))
-        for i, f in enumerate(chat_images):
-            with cols[i % len(cols)]:
-                st.image(f, caption=f.name, use_container_width=True)
-
-    col_send, col_skip = st.columns([2, 1])
-
-    with col_send:
-        if st.button("📨 Send", type="primary", use_container_width=True):
-            if user_reply.strip() or chat_images:
-                # Process any newly attached images
-                if chat_images:
-                    _add_chat_images_to_project(project, store, chat_images)
-
-                msg = user_reply.strip()
-                if chat_images and msg:
-                    msg += f" (attached {len(chat_images)} image(s))"
-                elif chat_images:
-                    msg = f"(attached {len(chat_images)} image(s))"
-                _handle_consultant_reply(project, msg)
-
-    with col_skip:
-        if st.button(
-            "⏭️ Skip — Send to Council",
-            use_container_width=True,
-        ):
-            # Process any attached images before skipping
-            if chat_images:
-                _add_chat_images_to_project(project, store, chat_images)
-
-            project.update_status(ProjectStatus.COUNCIL_REVIEW)
-            store.save_project(project)
-
-            st.session_state.current_page = "council"
-            st.session_state.council_messages = []
-
-            images_data = st.session_state.images_data
-            image_data = images_data[0]["data"] if images_data else None
-            image_mime = (
-                images_data[0]["mime_type"] if images_data else "image/png"
-            )
-
-            elem_sel = st.session_state.get("element_selections")
-            tech_spec = elem_sel.to_technical_spec() if elem_sel else ""
-            council_input = _format_conversation_for_council(
-                project.input_data.text_description,
-                st.session_state.consultant_history,
-                tech_spec=tech_spec,
-            )
-
-            _run_council(
-                project.id,
-                council_input,
-                image_data,
-                image_mime,
-                all_images=images_data,
-            )
-
-
-def _add_chat_images_to_project(project, store: ProjectStore, uploaded_files):
-    """Save images attached during consultant chat and add to session data."""
-    for uploaded_file in uploaded_files:
-        file_bytes = uploaded_file.read()
-        saved_path = store.save_uploaded_image(
-            project.id, file_bytes, uploaded_file.name
+    # ── Chat input ─────────────────────────────────────────────────────────
+    modification_for = st.session_state.get("modification_for")
+    if modification_for:
+        st.info(
+            f"You are modifying the **{modification_for.replace('_', ' ').title()}**. "
+            "Describe what needs to change and the consultant will update the design."
         )
-        project.input_data.image_paths.append(str(saved_path))
 
-        b64, mime = ImageService.encode_uploaded_bytes(
-            file_bytes, uploaded_file.name
-        )
-        st.session_state.images_data.append({"data": b64, "mime_type": mime})
+    user_input = st.chat_input("Reply to the consultant...")
 
-    store.save_project(project)
+    if user_input and user_input.strip():
+        _consultant_reply(user_input.strip())
 
 
-def _handle_consultant_reply(project, user_message: str):
-    """Process the user's reply in the consultant chat."""
+def _consultant_reply(user_text: str):
+    """Send a user message to the consultant and handle the response."""
     from app.agents.consultant import Consultant
     from app.services.openrouter import run_async
 
-    # Add user message to history first so it appears in the conversation
-    st.session_state.consultant_history.append(
-        {"role": "user", "content": user_message}
-    )
+    messages = st.session_state.get("consulting_messages", [])
 
-    with st.spinner("Consultant is thinking..."):
+    with st.spinner("Thinking..."):
         try:
             consultant = Consultant()
             result = run_async(
-                consultant.continue_conversation(
-                    conversation_history=st.session_state.consultant_history,
-                    user_message=user_message,
+                consultant.continue_chat(
+                    messages=messages,
+                    user_text=user_text,
+                )
+            )
+            st.session_state.consulting_messages = result["messages"]
+
+            if result.get("status") == "confirmed":
+                st.session_state.consulting_final_summary = result.get("final_summary")
+                st.session_state.consulting_phase = "council_reviewing"
+        except Exception as e:
+            import json as _json
+            err_msg = str(e).replace('"', "'")
+            st.session_state.consulting_messages = messages + [
+                {"role": "user", "content": user_text},
+                {"role": "assistant", "content": _json.dumps({"response": f"Something went wrong: {err_msg}. Please try again.", "status": "chat"})},
+            ]
+    st.rerun()
+
+
+def _run_council_review(project, store: ProjectStore):
+    """Run the council reviewer. Called when consulting_phase == 'council_reviewing'."""
+    from app.agents.council import CouncilReviewer
+    from app.services.openrouter import run_async
+
+    st.markdown("### Design Review")
+
+    with st.spinner("Reviewing the design analysis for completeness..."):
+        try:
+            reviewer = CouncilReviewer()
+            result = run_async(
+                reviewer.review(
+                    messages=st.session_state.consulting_messages,
+                    final_summary=st.session_state.consulting_final_summary or "",
+                    images=st.session_state.images_data or None,
                 )
             )
 
-            # Add consultant response to history
-            st.session_state.consultant_history.append(
-                {"role": "assistant", "content": result["response_text"]}
-            )
-
-            # When done, build the council input from the raw conversation
-            if result.get("done"):
-                elem_sel = st.session_state.get("element_selections")
-                tech_spec = elem_sel.to_technical_spec() if elem_sel else ""
-                st.session_state.consultant_brief = _format_conversation_for_council(
-                    project.input_data.text_description,
-                    st.session_state.consultant_history,
-                    tech_spec=tech_spec,
-                )
+            if result.get("approved"):
+                st.session_state.consulting_phase = "chairman_generating"
+                project.update_status(ProjectStatus.COUNCIL_REVIEW)
+                store.save_project(project)
+            else:
+                issues = result.get("issues", [])
+                # Inject council feedback into the conversation via the consultant
+                _inject_council_feedback(issues)
+                st.session_state.consulting_phase = "chat"
+                st.session_state.consulting_final_summary = None
 
         except Exception as e:
-            st.session_state.consultant_history.append(
-                {
-                    "role": "assistant",
-                    "content": f"(Error: {e}) — You can proceed with what we have.",
-                }
+            st.error(f"Review error: {e}")
+            # On error, proceed anyway
+            st.session_state.consulting_phase = "chairman_generating"
+
+    st.rerun()
+
+
+def _inject_council_feedback(issues: list[str]):
+    """Have the consultant reformulate council issues as a message to the user."""
+    from app.agents.consultant import Consultant
+    from app.services.openrouter import run_async
+
+    try:
+        consultant = Consultant()
+        result = run_async(
+            consultant.handle_council_feedback(
+                messages=st.session_state.consulting_messages,
+                issues=issues,
             )
-            # On error, pass the raw input through
-            st.session_state.consultant_brief = (
-                project.input_data.text_description or "Design as described."
+        )
+        st.session_state.consulting_messages = result["messages"]
+    except Exception as e:
+        # Fallback: directly inject a plain message
+        issues_text = "\n".join(f"- {i}" for i in issues)
+        fallback = (
+            f'{{"response": "I want to double-check a few things before we continue:\\n{issues_text}", "status": "chat"}}'
+        )
+        st.session_state.consulting_messages = st.session_state.consulting_messages + [
+            {"role": "assistant", "content": fallback},
+        ]
+
+
+def _run_chairman(project, store: ProjectStore):
+    """Generate image prompts from the approved design. Called when phase == 'chairman_generating'."""
+    from app.agents.chairman import Chairman
+    from app.services.openrouter import run_async
+
+    st.markdown("### Preparing Image Generation")
+
+    with st.spinner("Generating image prompts from the approved design..."):
+        try:
+            chairman = Chairman()
+            prompts = run_async(
+                chairman.generate_prompts(
+                    messages=st.session_state.consulting_messages,
+                )
             )
+            st.session_state.chairman_prompts = prompts
+            st.session_state.image_step_current = "floor_plan"
+            st.session_state.image_step_generated = {}
+            st.session_state.modification_for = None
+            project.update_status(ProjectStatus.GENERATING)
+            store.save_project(project)
+            st.session_state.current_page = "image_step"
+        except Exception as e:
+            st.error(f"Could not generate image prompts: {e}")
+            st.session_state.consulting_phase = "chat"
 
     st.rerun()
 
 
 # ---------------------------------------------------------------------------
-# Page: Council View
+# Page: Council (legacy stub — redirects to consulting)
 # ---------------------------------------------------------------------------
 def page_council():
-    render_header()
-    st.markdown("### 🔍 Council Deliberation")
-
-    store: ProjectStore = st.session_state.store
-    project_id = st.session_state.current_project_id
-
-    # Show progress messages
-    if st.session_state.council_messages:
-        for msg in st.session_state.council_messages:
-            st.markdown(msg)
-
-    # Show detailed council state
-    if st.session_state.council_state:
-        st.markdown("---")
-        st.markdown("### Deliberation Details")
-        render_council_progress(st.session_state.council_state)
-
-    # --- Recovery: no session data but project exists ---
-    has_session_data = bool(
-        st.session_state.council_messages or st.session_state.council_state
-    )
-
-    if not has_session_data and project_id:
-        # Check if DSD was saved to disk even though session state was lost
-        dsd = store.load_dsd(project_id)
-        if dsd:
-            st.success(
-                "Council deliberation completed previously! "
-                "The Design Specification was recovered from disk."
-            )
-            st.session_state.current_dsd = dsd
-            # Also fix the project status if still stuck
-            project = store.load_project(project_id)
-            if project and project.status == ProjectStatus.COUNCIL_REVIEW:
-                project.dsd_id = dsd.project_id
-                if dsd.version not in project.dsd_versions:
-                    project.dsd_versions.append(dsd.version)
-                project.update_status(ProjectStatus.AWAITING_CONFIRMATION)
-                store.save_project(project)
-        else:
-            # DSD never saved — council results were truly lost
-            project = store.load_project(project_id)
-            if project:
-                st.warning(
-                    "The council deliberation ran but its results were lost "
-                    "due to an earlier error. You can re-run it below — "
-                    "your project input is still saved."
-                )
-                st.markdown(f"**Project:** {project.name}")
-                st.markdown(
-                    f"**Input:** {project.input_data.text_description or 'Image only'}"
-                )
-
-                if st.button("🔄 Re-run Council Deliberation", type="primary"):
-                    # Re-load image data if available
-                    image_data = None
-                    image_mime_type = "image/png"
-                    if project.input_data.image_paths:
-                        img_path = Path(project.input_data.image_paths[0])
-                        if img_path.exists():
-                            file_bytes = img_path.read_bytes()
-                            b64, mime = ImageService.encode_uploaded_bytes(
-                                file_bytes, img_path.name
-                            )
-                            image_data = b64
-                            image_mime_type = mime
-
-                    st.session_state.council_messages = []
-                    _run_council(
-                        project.id,
-                        project.input_data.text_description,
-                        image_data,
-                        image_mime_type,
-                    )
-                return  # Don't show navigation below
-
-    # Navigation
-    if st.session_state.current_dsd:
-        st.markdown(
-            "**The council has finished.** Review the full specification on the "
-            "next page. If anything is wrong — dimensions, elements, style, "
-            "layout — you can correct it before any images are generated."
-        )
-        if st.button("📋 Review & Correct the Specification →", type="primary"):
-            st.session_state.current_page = "review_dsd"
-            st.rerun()
+    st.session_state.current_page = "consulting"
+    st.rerun()
 
 
 # ---------------------------------------------------------------------------
 # Page: Review DSD
 # ---------------------------------------------------------------------------
 def page_review_dsd():
+    # Legacy page — redirect to consulting
+    st.session_state.current_page = "consulting"
+    st.rerun()
     render_header()
     st.markdown("### 📋 Design Specification Review")
 
@@ -1220,6 +1038,9 @@ _TECHNICAL_VIEWS = {"floor_plan", "front_elevation", "side_elevation", "rear_ele
 # Page: Generating Technical Drawings (Stage 1)
 # ---------------------------------------------------------------------------
 def page_generating():
+    # Legacy page — redirect to image_step
+    st.session_state.current_page = "image_step"
+    st.rerun()
     render_header()
     st.markdown("### ⚙️ Generating Technical Drawings...")
 
@@ -1340,6 +1161,9 @@ def page_generating():
 # Page: Drawings Review (user approves technical drawings before render)
 # ---------------------------------------------------------------------------
 def page_drawings_review():
+    # Legacy page — redirect to image_step
+    st.session_state.current_page = "image_step"
+    st.rerun()
     render_header()
     st.markdown("### 📐 Review Technical Drawings")
 
@@ -1460,6 +1284,9 @@ def page_drawings_review():
 # Page: Generating Realistic Render (Stage 2)
 # ---------------------------------------------------------------------------
 def page_generating_render():
+    # Legacy page — redirect to image_step
+    st.session_state.current_page = "image_step"
+    st.rerun()
     render_header()
     st.markdown("### 🎨 Generating Realistic Render...")
 
@@ -1574,8 +1401,261 @@ def page_quality_review():
 
 
 # ---------------------------------------------------------------------------
-# (Placeholder to keep line reference intact — _show_review_results removed)
+# Page: Image Step (step-by-step generation + approval)
 # ---------------------------------------------------------------------------
+_IMAGE_STEP_LABELS = {
+    "floor_plan":        "Floor Plan",
+    "front_elevation":   "Front Elevation",
+    "realistic_render":  "3D Realistic Render",
+}
+_IMAGE_STEP_ORDER = ["floor_plan", "front_elevation", "realistic_render"]
+
+
+def page_image_step():
+    """
+    Step-by-step image generation and approval.
+
+    Flow per step:
+      1. Auto-generate the image (on first render for this step).
+      2. Show the image.
+      3. User clicks Approve → advance to next step.
+      4. User types a modification → go back to consulting.
+
+    Reference chain:
+      floor_plan:        no references
+      front_elevation:   floor_plan as reference
+      realistic_render:  floor_plan + front_elevation as references
+    """
+    render_header()
+
+    project_id = st.session_state.current_project_id
+    if not project_id:
+        st.warning("No active project.")
+        return
+
+    store: ProjectStore = st.session_state.store
+    project = store.load_project(project_id)
+    if not project:
+        st.warning("Project not found.")
+        return
+
+    prompts = st.session_state.get("chairman_prompts")
+    if not prompts:
+        st.warning("No image prompts found. Please restart the consultation.")
+        if st.button("Back to Consultation"):
+            st.session_state.current_page = "consulting"
+            st.rerun()
+        return
+
+    step = st.session_state.get("image_step_current", "floor_plan")
+
+    if step not in _IMAGE_STEP_LABELS:
+        # All steps done
+        st.session_state.current_page = "gallery"
+        st.rerun()
+        return
+
+    label = _IMAGE_STEP_LABELS[step]
+    generated = st.session_state.get("image_step_generated", {})
+
+    st.markdown(f"### {label}")
+
+    # ── Generate if not yet done ──────────────────────────────────────────
+    if step not in generated:
+        _generate_image_step(step, prompts, project_id, project, store)
+        return  # Will rerun after generation
+
+    # ── Show generated image ──────────────────────────────────────────────
+    img_info = generated[step]
+    img_path = img_info.get("path", "")
+    if img_path:
+        p = Path(img_path)
+        if p.exists():
+            st.image(str(p), use_container_width=True)
+        else:
+            st.warning("Image file not found.")
+    else:
+        st.error("Image generation failed. See terminal for details.")
+
+    st.markdown("---")
+
+    # ── Approval or modification ──────────────────────────────────────────
+    col_approve, col_modify = st.columns([1, 1])
+
+    with col_approve:
+        next_idx = _IMAGE_STEP_ORDER.index(step) + 1
+        next_step = _IMAGE_STEP_ORDER[next_idx] if next_idx < len(_IMAGE_STEP_ORDER) else "done"
+        approve_label = (
+            f"Approve — move to {_IMAGE_STEP_LABELS[next_step]}"
+            if next_step != "done" else "Approve — view Gallery"
+        )
+        if st.button(approve_label, type="primary", use_container_width=True):
+            # Mark image as approved in the project
+            _approve_image_step(step, project, store)
+            if next_step == "done":
+                project.update_status(ProjectStatus.COMPLETE)
+                store.save_project(project)
+                st.session_state.current_page = "gallery"
+            else:
+                st.session_state.image_step_current = next_step
+            st.rerun()
+
+    with col_modify:
+        if st.button("Request a Modification", use_container_width=True):
+            st.session_state["show_modify_input"] = True
+            st.rerun()
+
+    if st.session_state.get("show_modify_input"):
+        mod_text = st.text_area(
+            "What needs to change?",
+            placeholder=(
+                "Describe specifically what is wrong or what you want changed. "
+                "The consultant will update the design."
+            ),
+            key="modification_text",
+        )
+        col_send_mod, col_cancel_mod = st.columns(2)
+        with col_send_mod:
+            if st.button("Send to Consultant", type="primary"):
+                if mod_text.strip():
+                    _start_modification(mod_text.strip(), step)
+        with col_cancel_mod:
+            if st.button("Cancel"):
+                st.session_state["show_modify_input"] = False
+                st.rerun()
+
+
+def _generate_image_step(
+    step: str,
+    prompts: dict,
+    project_id: str,
+    project,
+    store: ProjectStore,
+):
+    """Generate the image for a given step and save it to session state."""
+    from app.agents.generator import Generator
+    from app.services.openrouter import run_async
+
+    label = _IMAGE_STEP_LABELS[step]
+    generated = st.session_state.get("image_step_generated", {})
+
+    # Build reference images
+    reference_images = []
+    if step == "front_elevation":
+        fp = generated.get("floor_plan", {})
+        if fp.get("data") and fp.get("mime"):
+            reference_images.append({"data": fp["data"], "mime_type": fp["mime"]})
+    elif step == "realistic_render":
+        for ref_step in ["floor_plan", "front_elevation"]:
+            ref = generated.get(ref_step, {})
+            if ref.get("data") and ref.get("mime"):
+                reference_images.append({"data": ref["data"], "mime_type": ref["mime"]})
+
+    prompt = prompts.get(step, "")
+    if not prompt:
+        st.error(f"No prompt found for {label}.")
+        return
+
+    with st.spinner(f"Generating {label}... this may take a minute."):
+        try:
+            generator = Generator()
+            gen_image = run_async(
+                generator.generate_step(
+                    prompt=prompt,
+                    view_type=step,
+                    project_id=project_id,
+                    reference_images=reference_images if reference_images else None,
+                )
+            )
+
+            if gen_image:
+                # Read back the image file as base64 for use as reference
+                img_path = Path(gen_image.file_path)
+                b64_data = ""
+                mime = "image/png"
+                if img_path.exists():
+                    import base64 as _b64
+                    raw = img_path.read_bytes()
+                    b64_data = _b64.b64encode(raw).decode("utf-8")
+                    ext = img_path.suffix.lower()
+                    mime = {"png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg", "webp": "image/webp"}.get(ext.lstrip("."), "image/png")
+
+                generated[step] = {
+                    "path": gen_image.file_path,
+                    "data": b64_data,
+                    "mime": mime,
+                }
+                st.session_state.image_step_generated = generated
+
+                # Save to project
+                project.add_image(gen_image)
+                store.save_project(project)
+
+                st.success(f"{label} generated!")
+            else:
+                generated[step] = {"path": "", "data": "", "mime": ""}
+                st.session_state.image_step_generated = generated
+                st.error(f"{label} generation failed. See terminal for details.")
+
+        except Exception as e:
+            generated[step] = {"path": "", "data": "", "mime": ""}
+            st.session_state.image_step_generated = generated
+            st.error(f"Error generating {label}: {e}")
+
+    st.rerun()
+
+
+def _approve_image_step(step: str, project, store: ProjectStore):
+    """Mark the current step's image as approved in the project."""
+    for img in project.images:
+        if img.view_type == step and not img.approved:
+            img.approved = True
+    store.save_project(project)
+
+
+def _start_modification(mod_text: str, step: str):
+    """Send a modification request back to the consultant."""
+    from app.agents.consultant import Consultant
+    from app.services.openrouter import run_async
+
+    step_label = _IMAGE_STEP_LABELS.get(step, step)
+    full_message = (
+        f"I need to modify the {step_label}. Here is what needs to change: {mod_text}"
+    )
+
+    messages = st.session_state.get("consulting_messages", [])
+
+    with st.spinner("Sending to consultant..."):
+        try:
+            consultant = Consultant()
+            result = run_async(
+                consultant.continue_chat(
+                    messages=messages,
+                    user_text=full_message,
+                )
+            )
+            st.session_state.consulting_messages = result["messages"]
+            st.session_state.consulting_phase = "chat"
+            st.session_state.modification_for = step
+            st.session_state["show_modify_input"] = False
+
+            if result.get("status") == "confirmed":
+                st.session_state.consulting_final_summary = result.get("final_summary")
+                st.session_state.consulting_phase = "council_reviewing"
+
+            # Clear only the modified step and all subsequent steps
+            generated = st.session_state.get("image_step_generated", {})
+            step_idx = _IMAGE_STEP_ORDER.index(step)
+            for s in _IMAGE_STEP_ORDER[step_idx:]:
+                generated.pop(s, None)
+            st.session_state.image_step_generated = generated
+            st.session_state.image_step_current = step
+
+            st.session_state.current_page = "consulting"
+        except Exception as e:
+            st.error(f"Error sending modification: {e}")
+
+    st.rerun()
 
 
 # ---------------------------------------------------------------------------
@@ -2079,15 +2159,17 @@ def page_projects():
 PAGE_MAP = {
     "new_project": page_new_project,
     "consulting": page_consulting,
+    "image_step": page_image_step,
+    "gallery": page_gallery,
+    "refine": page_refine,
+    "projects": page_projects,
+    # Legacy redirects
     "council": page_council,
     "review_dsd": page_review_dsd,
     "generating": page_generating,
     "drawings_review": page_drawings_review,
     "generating_render": page_generating_render,
-    "quality_review": page_quality_review,  # Legacy redirect only
-    "gallery": page_gallery,
-    "refine": page_refine,
-    "projects": page_projects,
+    "quality_review": page_quality_review,
 }
 
 # Render the current page

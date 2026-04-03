@@ -34,29 +34,46 @@ MAX_RETRIES = 3
 RETRY_DELAY = 2  # seconds between retries
 
 # ---------------------------------------------------------------------------
-# Council Models (Multimodal — can analyze images + text)
+# Role-specific Models
 # ---------------------------------------------------------------------------
+
+# Consultant — analyzes images, chats with user, writes design summary
+CONSULTANT_MODEL = {
+    "id": "google/gemini-3.1-pro-preview",
+    "name": "Gemini Pro (Consultant)",
+    "supports_vision": True,
+    "reasoning_effort": "high",
+}
+
+# Council Reviewer — checks consultant's summary for missed details
+COUNCIL_REVIEWER_MODEL = {
+    "id": "openai/gpt-5.4",
+    "name": "GPT-5.4 (Council Reviewer)",
+    "supports_vision": True,
+    "reasoning_effort": "high",
+}
+
+# Chairman — generates clean image generation prompts
+CHAIRMAN_MODEL_CFG = {
+    "id": "google/gemini-3.1-pro-preview",
+    "name": "Gemini Pro (Chairman)",
+    "supports_vision": False,
+    "reasoning_effort": "high",
+}
+
+# Legacy COUNCIL_MODELS kept for refiner.py compatibility
 COUNCIL_MODELS = {
-    "claude": {
-        "id": "google/gemini-3.1-pro-preview",
-        "name": "Claude 4.6 (Anthropic)",
-        "role": "Structured analysis & detail extraction",
-        "supports_vision": True,
-        # Reasoning effort: "none" | "low" | "medium" | "high"
-        # Temperature is forced to 1.0 automatically when effort != "none".
-        "reasoning_effort": "high",
-    },
     "gpt": {
-        "id": "google/gemini-3.1-pro-preview",
+        "id": "openai/gpt-5.4",
         "name": "GPT-5.4 (OpenAI)",
-        "role": "Creative interpretation & spatial reasoning",
+        "role": "Design reviewer",
         "supports_vision": True,
         "reasoning_effort": "high",
     },
     "gemini": {
         "id": "google/gemini-3.1-pro-preview",
         "name": "Gemini Pro (Google)",
-        "role": "Visual understanding & multimodal analysis",
+        "role": "Design generation",
         "supports_vision": True,
         "reasoning_effort": "high",
     },
@@ -72,17 +89,9 @@ IMAGE_GEN_MODEL = {
 }
 
 # ---------------------------------------------------------------------------
-# Council Settings
+# Generation Settings
 # ---------------------------------------------------------------------------
-COUNCIL_MAX_ROUNDS = 3
-COUNCIL_CONSENSUS_THRESHOLD = 2  # At least 2 out of 3 must agree
-CHAIRMAN_MODEL = "gpt"  # Default chairman for synthesis
-
-# ---------------------------------------------------------------------------
-# Quality Review Settings
-# ---------------------------------------------------------------------------
-QUALITY_MIN_SCORE = 7  # Out of 10 — images scoring below are regenerated
-QUALITY_MAX_RETRIES = 3  # Max regeneration attempts per image
+QUALITY_MAX_RETRIES = 3  # Max generation attempts per image
 
 # ---------------------------------------------------------------------------
 # Generation Settings — View Types

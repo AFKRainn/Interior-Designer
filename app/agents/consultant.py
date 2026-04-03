@@ -1,25 +1,25 @@
 """
-Design Consultant Agent — Pre-Council Chat Layer
+Consultant Agent
 
-A lightweight conversational agent that checks whether the user's input is
-clear enough for the council to begin work.  It does NOT rewrite or improve
-the user's description — the council receives the raw conversation verbatim.
+Expert interior designer / architect that chats with the client to fully
+understand a design before handing off to the Council Reviewer.
 
-Flow:
-  1. User provides initial input (text + optional images)
-  2. Consultant assesses completeness
-  3. If clear  → tells the user they are ready; user can add more or proceed
-  4. If unclear → asks 1-2 focused questions; repeats until clear
-  5. When the user proceeds, the raw conversation is forwarded to the council
+Two modes (auto-detected from context):
+  Mode 1 — Image Analysis: user has a sketch/image to realise.
+  Mode 2 — Participant Design: designing from scratch or with suggestions.
+
+The consultant maintains a conversation history (messages list) that is
+passed back on every call. The full history is forwarded to the council
+and chairman verbatim.
 """
 import json
 import logging
 
 from app.prompts.consultant_prompts import (
     CONSULTANT_SYSTEM_PROMPT,
-    CONSULTANT_ASSESS_PROMPT,
-    CONSULTANT_FOLLOWUP_PROMPT,
+    CONSULTANT_COUNCIL_FEEDBACK_PROMPT,
 )
+from app.json_parse import parse_json_from_text
 from app.services.openrouter import OpenRouterClient
 
 logger = logging.getLogger(__name__)
@@ -27,124 +27,173 @@ logger = logging.getLogger(__name__)
 
 class Consultant:
     """
-    Pre-council design consultant that checks input completeness.
+    Drives the consultant conversation loop.
 
-    Maintains a conversation history.  Once enough information is present,
-    it signals done=True so the UI can offer the "Send to Council" action.
+    Each public method returns a dict:
+      {
+        "response":      str  — the message to show the client,
+        "status":        str  — "chat" | "confirmed",
+        "final_summary": str | None  — populated when status == "confirmed",
+        "messages":      list — updated conversation history,
+      }
     """
 
     def __init__(self, client: OpenRouterClient | None = None):
-        from config import COUNCIL_MODELS
+        from config import CONSULTANT_MODEL
         self.client = client or OpenRouterClient()
-        self.model = COUNCIL_MODELS["claude"]["id"]
-        self.reasoning_effort = COUNCIL_MODELS["claude"].get(
-            "reasoning_effort", "none")
+        self.model = CONSULTANT_MODEL["id"]
+        self.reasoning_effort = CONSULTANT_MODEL.get("reasoning_effort", "none")
 
-    async def assess_input(
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+
+    async def start(
         self,
         user_text: str | None,
-        image_count: int = 0,
-        element_selections: str = "None",
+        images: list[dict] | None = None,
     ) -> dict:
         """
-        Assess the completeness of the user's initial input.
+        Begin a new consultation.
 
-        Returns a dict with:
-          - has_enough: bool
-          - clarifying_questions: list[str]
-          - ready_message: str
-        """
-        image_note = (
-            f"The user uploaded {image_count} reference image(s). "
-            "The council will analyze them directly."
-            if image_count > 0
-            else "No images provided."
-        )
-
-        prompt = CONSULTANT_ASSESS_PROMPT.format(
-            user_text=user_text or "(No text provided)",
-            image_count=image_count,
-            image_note=image_note,
-            element_selections=element_selections or "None",
-        )
-
-        messages = [
-            {"role": "system", "content": CONSULTANT_SYSTEM_PROMPT},
-            {"role": "user", "content": prompt},
-        ]
-
-        response = await self.client.chat_completion(
-            model=self.model,
-            messages=messages,
-            temperature=0.4,
-            reasoning_effort=self.reasoning_effort,
-        )
-
-        parsed = self.client.extract_json(response)
-        if parsed and isinstance(parsed, dict):
-            return parsed
-
-        # Fallback — couldn't parse, assume enough info to proceed
-        raw_text = self.client.extract_text(response) or ""
-        logger.warning(
-            f"Consultant assessment failed to parse JSON. Raw: {raw_text[:300]}"
-        )
-        return {
-            "has_enough": True,
-            "clarifying_questions": [],
-            "ready_message": (
-                "Your request looks good! Add any extra details below, "
-                "or send it straight to the council."
-            ),
-        }
-
-    async def continue_conversation(
-        self,
-        conversation_history: list[dict],
-        user_message: str,
-    ) -> dict:
-        """
-        Continue the consultation conversation.
+        Args:
+            user_text: The client's initial message.
+            images:    List of {"data": base64_str, "mime_type": str}.
 
         Returns:
-          - response_text: The consultant's reply to show the user
-          - done: Whether the consultation is complete (enough info gathered)
+            Consultant response dict (see class docstring).
         """
-        history_text = ""
-        for msg in conversation_history:
-            role = "Consultant" if msg["role"] == "assistant" else "Client"
-            history_text += f"{role}: {msg['content']}\n\n"
+        messages = [{"role": "system", "content": CONSULTANT_SYSTEM_PROMPT}]
 
-        prompt = CONSULTANT_FOLLOWUP_PROMPT.format(
-            conversation_history=history_text,
-            user_message=user_message,
+        user_content = self._build_user_content(user_text, images)
+        messages.append({"role": "user", "content": user_content})
+
+        return await self._call(messages)
+
+    async def continue_chat(
+        self,
+        messages: list[dict],
+        user_text: str,
+    ) -> dict:
+        """
+        Continue the consultation with a new client message.
+
+        Args:
+            messages:  Full conversation history so far.
+            user_text: The client's latest message.
+
+        Returns:
+            Consultant response dict with updated messages.
+        """
+        messages = messages + [{"role": "user", "content": user_text}]
+        return await self._call(messages)
+
+    async def handle_council_feedback(
+        self,
+        messages: list[dict],
+        issues: list[str],
+    ) -> dict:
+        """
+        Inject council reviewer feedback into the conversation.
+
+        The consultant reformulates the issues as a natural question to the
+        client without revealing that an internal reviewer flagged them.
+
+        Args:
+            messages: Full conversation history so far.
+            issues:   List of issue strings from the council reviewer.
+
+        Returns:
+            Consultant response dict with updated messages.
+        """
+        issues_text = "\n".join(f"- {issue}" for issue in issues)
+        feedback_msg = CONSULTANT_COUNCIL_FEEDBACK_PROMPT.format(
+            issues=issues_text
+        )
+        messages = messages + [{"role": "user", "content": feedback_msg}]
+        return await self._call(messages)
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    async def _call(self, messages: list[dict]) -> dict:
+        """Send messages to the model and parse the response."""
+        has_images = any(
+            isinstance(m.get("content"), list)
+            for m in messages
+            if m.get("role") == "user"
         )
 
-        messages = [
-            {"role": "system", "content": CONSULTANT_SYSTEM_PROMPT},
-            {"role": "user", "content": prompt},
+        if has_images:
+            # Build vision call from the message list manually
+            # (openrouter client vision methods are single-turn; for multi-turn
+            #  with vision we use chat_completion with inline image content parts)
+            response = await self.client.chat_completion(
+                model=self.model,
+                messages=messages,
+                temperature=1.0,
+                reasoning_effort=self.reasoning_effort,
+            )
+        else:
+            response = await self.client.chat_completion(
+                model=self.model,
+                messages=messages,
+                temperature=1.0,
+                reasoning_effort=self.reasoning_effort,
+            )
+
+        raw_text = self.client.extract_text(response) or ""
+        parsed = self.client.extract_json(response)
+        if not isinstance(parsed, dict):
+            p2 = parse_json_from_text(raw_text)
+            parsed = p2 if isinstance(p2, dict) else {}
+
+        reply_text = parsed.get("response") or raw_text
+        status = parsed.get("status", "chat")
+        if status not in ("chat", "confirmed"):
+            status = "chat"
+        final_summary = parsed.get("final_summary") if status == "confirmed" else None
+
+        # Store clean JSON only (no markdown fences) so UI and downstream agents read reliably
+        canonical: dict = {"response": reply_text, "status": status}
+        if final_summary:
+            canonical["final_summary"] = final_summary
+        assistant_content = json.dumps(canonical, ensure_ascii=False)
+
+        updated_messages = messages + [
+            {"role": "assistant", "content": assistant_content}
         ]
 
-        response = await self.client.chat_completion(
-            model=self.model,
-            messages=messages,
-            temperature=0.4,
-            reasoning_effort=self.reasoning_effort,
-        )
-
-        parsed = self.client.extract_json(response)
-        if parsed and isinstance(parsed, dict):
-            return {
-                "response_text": parsed.get("response_text", ""),
-                "done": bool(parsed.get("done", False)),
-            }
-
-        # Fallback — couldn't parse, treat as done
-        raw_text = self.client.extract_text(response) or ""
-        logger.warning(
-            f"Consultant follow-up failed to parse JSON. Raw: {raw_text[:300]}"
-        )
         return {
-            "response_text": raw_text or "Looks good — you can send this to the council.",
-            "done": True,
+            "response": reply_text,
+            "status": status,
+            "final_summary": final_summary,
+            "messages": updated_messages,
         }
+
+    @staticmethod
+    def _build_user_content(
+        user_text: str | None,
+        images: list[dict] | None,
+    ) -> list[dict] | str:
+        """
+        Build the user message content.
+        Returns a list (multimodal) if images are provided, else a plain string.
+        """
+        if not images:
+            return user_text or ""
+
+        parts: list[dict] = []
+        if user_text:
+            parts.append({"type": "text", "text": user_text})
+
+        for img in images:
+            data = img.get("data", "")
+            mime = img.get("mime_type", "image/png")
+            parts.append({
+                "type": "image_url",
+                "image_url": {"url": f"data:{mime};base64,{data}"},
+            })
+
+        return parts

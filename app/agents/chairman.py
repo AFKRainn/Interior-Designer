@@ -1,385 +1,154 @@
 """
-Chairman Agent — synthesizes council deliberation into a DSD.
+Chairman Agent
 
-The Chairman takes the final interpretations from all three council
-members and produces a single, authoritative Design Specification Document.
+Receives the full consultant–client conversation (including the approved
+Final Design Summary) and generates three clean, direct image generation
+prompts: floor plan, front elevation, and 3D realistic render.
 """
-import json
 import logging
-from typing import Optional
 
-from app.models.council_state import CouncilState
-from app.models.dsd import (
-    DesignSpecificationDocument,
-    DesignType,
-    ViewSpec,
-    ViewType,
-    Dimensions,
-    StyleSpec,
-    MaterialSpec,
-    ColorSpec,
-    StructuralElement,
-    ContextSpec,
-)
 from app.services.openrouter import OpenRouterClient
 
 logger = logging.getLogger(__name__)
 
+CHAIRMAN_SYSTEM_PROMPT = """\
+You generate prompts for an AI image generation model. Be precise, specific, \
+and short. Do not add rules, restrictions, or disclaimers — just describe \
+exactly what to draw or render.
+"""
+
+CHAIRMAN_PROMPT = """\
+Based on the conversation and Final Design Summary below, generate three image \
+generation prompts.
+
+{conversation}
+
+━━━ INSTRUCTIONS FOR EACH PROMPT ━━━
+
+1. FLOOR PLAN
+Start with: "Generate a floor plan of [describe the overall layout from above: \
+number of bays, their left-to-right arrangement, walls if multi-wall, \
+overall footprint shape]."
+Then add: "Black and white. Lines only. Top-down 2D view. No perspective."
+Then handle dimensions: if the summary includes explicit measurements, add \
+"Label these dimensions: [list each one by bay or element]." \
+If no measurements were given, add "No dimensions. No numbers. No text labels."
+
+2. FRONT ELEVATION
+Start with: "Generate a front elevation drawing of [describe the full design \
+from left to right, bay by bay: for each bay state exactly what it shows — \
+drawer section, panel door, glass door, open shelf, decorative column — \
+its approximate proportional height and width, plus all visible details: \
+cornice or top trim style, any grooves or carved profiles on sides, hardware \
+type and position, shelf lines inside open sections, base or plinth style]."
+Then add: "Black and white. 2D front view. Minimal text — only label things \
+like 'open shelf' or 'glass' where a word genuinely helps."
+
+3. REALISTIC RENDER
+Start with: "Generate a photorealistic 3D image of [describe the full piece: \
+material of each surface, color and finish, hardware style, top trim \
+treatment, base treatment, overall proportions, number and arrangement \
+of bays]."
+Then add context: "[where it sits — e.g. mounted on a wall / freestanding \
+on a floor / built-in kitchen installation]."
+Then add: "Natural lighting. Clean neutral background."
+
+━━━ OUTPUT ━━━
+Return JSON only — no other text:
+{{
+  "floor_plan": "...",
+  "front_elevation": "...",
+  "realistic_render": "..."
+}}
+"""
+
 
 class Chairman:
     """
-    Synthesizes the council's deliberation into a final DSD.
-
-    Uses one of the council models (configured as CHAIRMAN_MODEL)
-    to merge all three final interpretations.
+    Generates three clean image generation prompts from the approved design.
     """
 
     def __init__(self, client: OpenRouterClient | None = None):
-        from config import CHAIRMAN_MODEL, COUNCIL_MODELS
-
+        from config import CHAIRMAN_MODEL_CFG
         self.client = client or OpenRouterClient()
-        self.chairman_key = CHAIRMAN_MODEL
-        self.chairman_model = COUNCIL_MODELS[CHAIRMAN_MODEL]["id"]
-        self.reasoning_effort = COUNCIL_MODELS[CHAIRMAN_MODEL].get(
-            "reasoning_effort", "none")
+        self.model = CHAIRMAN_MODEL_CFG["id"]
+        self.reasoning_effort = CHAIRMAN_MODEL_CFG.get("reasoning_effort", "none")
 
-    async def synthesize(
-        self, state: CouncilState, project_id: str
-    ) -> DesignSpecificationDocument:
+    async def generate_prompts(self, messages: list[dict]) -> dict:
         """
-        Synthesize the council's Round 3 (convergence) responses
-        into a single Design Specification Document.
+        Generate floor plan, front elevation, and realistic render prompts.
+
+        Args:
+            messages: Full consultant–client conversation history (includes
+                      the assistant's final confirmed response with the summary).
+
+        Returns:
+            {"floor_plan": str, "front_elevation": str, "realistic_render": str}
         """
-        from app.prompts.council_prompts import CHAIRMAN_SYNTHESIS_PROMPT
+        conversation_text = self._format_conversation(messages)
 
-        # Collect Round 3 (final) responses
-        if len(state.rounds) < 3:
-            raise ValueError("Council must complete 3 rounds before synthesis")
+        prompt = CHAIRMAN_PROMPT.format(conversation=conversation_text)
 
-        round3 = state.rounds[2]
-        finals = {}
-        for resp in round3.responses:
-            if not resp.error:
-                finals[resp.member_id] = resp.response_text
+        api_messages = [
+            {"role": "system", "content": CHAIRMAN_SYSTEM_PROMPT},
+            {"role": "user", "content": prompt},
+        ]
 
-        # Build the synthesis prompt
-        prompt = CHAIRMAN_SYNTHESIS_PROMPT.format(
-            claude_final=finals.get("claude", "No response"),
-            gpt_final=finals.get("gpt", "No response"),
-            gemini_final=finals.get("gemini", "No response"),
-        )
-
-        # Query the chairman
         response = await self.client.chat_completion(
-            model=self.chairman_model,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.3,
+            model=self.model,
+            messages=api_messages,
+            temperature=1.0,
             reasoning_effort=self.reasoning_effort,
         )
 
-        # Parse the response — two parts: JSON DSD + view generation prompts
-        raw_text = self.client.extract_text(response) or ""
-        logger.info(
-            f"Chairman raw response (first 1200 chars): {raw_text[:1200]}")
+        parsed = self.client.extract_json(response) or {}
+        if not isinstance(parsed, dict):
+            parsed = {}
 
-        parsed = self._extract_dict_json(raw_text)
+        floor_plan = parsed.get("floor_plan", "")
+        front_elevation = parsed.get("front_elevation", "")
+        realistic_render = parsed.get("realistic_render", "")
 
-        if parsed is None:
-            raise ValueError(
-                "Chairman failed to produce a valid JSON object. "
-                f"Raw response: {raw_text[:500]}"
-            )
+        # Log for developer review
+        sep = "=" * 70
+        for label, p in [
+            ("FLOOR PLAN", floor_plan),
+            ("FRONT ELEVATION", front_elevation),
+            ("REALISTIC RENDER", realistic_render),
+        ]:
+            print(f"\n{sep}\n[CHAIRMAN PROMPT] {label}\n{sep}\n{p}\n{sep}\n")
 
-        # Parse the separate GENERATION_PROMPTS section (outside the JSON)
-        view_prompts = self._extract_view_prompts(raw_text)
-        if view_prompts:
-            logger.info(
-                f"Extracted {len(view_prompts)} view generation prompt(s): "
-                f"{list(view_prompts.keys())}"
-            )
-        else:
+        if not floor_plan or not front_elevation or not realistic_render:
             logger.warning(
-                "No view generation prompts found in chairman response.")
-
-        state.chairman_id = self.chairman_key
-        dsd = self._build_dsd(parsed, project_id)
-
-        # Attach council-authored generation prompts to their ViewSpecs
-        if view_prompts:
-            for view_spec in dsd.views_to_generate:
-                prompt_content = view_prompts.get(view_spec.label, "")
-                if prompt_content:
-                    view_spec.generation_prompt = prompt_content
-                    logger.info(
-                        f"Attached generation prompt to '{view_spec.label}' "
-                        f"({len(prompt_content)} chars)"
-                    )
-                else:
-                    logger.warning(
-                        f"No generation prompt found for view '{view_spec.label}'. "
-                        f"Will use fallback template."
-                    )
-
-        return dsd
-
-    @staticmethod
-    def _extract_view_prompts(text: str) -> dict[str, str]:
-        """
-        Parse the GENERATION_PROMPTS_START ... GENERATION_PROMPTS_END section
-        from the chairman's raw response.
-
-        Format expected:
-            GENERATION_PROMPTS_START
-            VIEW_PROMPT: Floor Plan
-            [content lines]
-            VIEW_PROMPT_END
-
-            VIEW_PROMPT: Front Elevation — Wall A
-            [content lines]
-            VIEW_PROMPT_END
-            GENERATION_PROMPTS_END
-
-        Returns:
-            Dict mapping view label -> generation prompt text.
-            Empty dict if the section is not found.
-        """
-        import re
-
-        prompts: dict[str, str] = {}
-
-        # Find the delimited section
-        section_match = re.search(
-            r"GENERATION_PROMPTS_START\s*(.*?)\s*GENERATION_PROMPTS_END",
-            text,
-            re.DOTALL,
-        )
-        if not section_match:
-            # Try without END marker (model may have been cut off)
-            section_match = re.search(
-                r"GENERATION_PROMPTS_START\s*(.*)",
-                text,
-                re.DOTALL,
+                f"Chairman produced incomplete prompts. "
+                f"Raw response: {self.client.extract_text(response)[:500]}"
             )
-            if not section_match:
-                return prompts
 
-        section_text = section_match.group(1)
-
-        # Split into individual VIEW_PROMPT blocks
-        blocks = re.split(r"VIEW_PROMPT:\s*", section_text)
-        for block in blocks:
-            if not block.strip():
-                continue
-
-            # First line is the label; content goes until VIEW_PROMPT_END or next block
-            lines = block.split("\n", 1)
-            label = lines[0].strip().strip('"').strip("'")
-            if not label:
-                continue
-
-            content_raw = lines[1] if len(lines) > 1 else ""
-
-            # Strip the VIEW_PROMPT_END marker and trailing whitespace
-            content = re.sub(r"\s*VIEW_PROMPT_END\s*$", "",
-                             content_raw, flags=re.DOTALL)
-            content = content.strip()
-
-            if label and content:
-                prompts[label] = content
-
-        return prompts
+        return {
+            "floor_plan": floor_plan,
+            "front_elevation": front_elevation,
+            "realistic_render": realistic_render,
+        }
 
     @staticmethod
-    def _extract_dict_json(text: str) -> dict | None:
-        """
-        Extract the first JSON **object** (dict) from text, ignoring arrays.
-        Tries multiple strategies:
-          1. JSON object inside a markdown code block
-          2. The largest top-level { ... } in the raw text
-          3. Direct parse of the whole text (only if result is a dict)
-        """
-        if not text:
-            return None
+    def _format_conversation(messages: list[dict]) -> str:
+        """Format the full conversation as readable text for the chairman."""
+        lines = []
+        for msg in messages:
+            role = msg.get("role", "unknown")
+            content = msg.get("content", "")
 
-        # Strategy 1: JSON object inside ```json ... ``` code block
-        import re
-        # Match code blocks with or without closing fence (handles truncation)
-        code_blocks = re.findall(
-            r"```(?:json)?\s*\n(.*?)(?:\n```|$)", text, re.DOTALL
-        )
-        for block in code_blocks:
-            block = block.strip()
-            if block.startswith("{"):
-                try:
-                    candidate = json.loads(block)
-                    if isinstance(candidate, dict):
-                        return candidate
-                except json.JSONDecodeError:
-                    pass
+            if role == "system":
+                continue
 
-        # Strategy 2: Find the largest { ... } in the raw text
-        best = None
-        best_len = 0
-        i = 0
-        while i < len(text):
-            if text[i] == "{":
-                depth = 0
-                for j in range(i, len(text)):
-                    if text[j] == "{":
-                        depth += 1
-                    elif text[j] == "}":
-                        depth -= 1
-                    if depth == 0:
-                        snippet = text[i: j + 1]
-                        if len(snippet) > best_len:
-                            try:
-                                candidate = json.loads(snippet)
-                                if isinstance(candidate, dict):
-                                    best = candidate
-                                    best_len = len(snippet)
-                            except json.JSONDecodeError:
-                                pass
-                        i = j + 1
-                        break
-                else:
-                    break  # unmatched brace, stop
-            else:
-                i += 1
+            if isinstance(content, list):
+                text_parts = [
+                    p.get("text", "") for p in content
+                    if isinstance(p, dict) and p.get("type") == "text"
+                ]
+                content = " ".join(text_parts)
 
-        if best is not None:
-            return best
+            label = "Client" if role == "user" else "Consultant"
+            lines.append(f"{label}: {content}")
 
-        # Strategy 3: Direct parse (only accept dicts)
-        try:
-            candidate = json.loads(text)
-            if isinstance(candidate, dict):
-                return candidate
-        except json.JSONDecodeError:
-            pass
-
-        return None
-
-    def _build_dsd(self, data: dict, project_id: str) -> DesignSpecificationDocument:
-        """
-        Build a DSD from the chairman's parsed JSON output.
-        Handles missing fields gracefully with defaults.
-        """
-        # Map the design type
-        type_str = data.get("type", "furniture").lower()
-        try:
-            design_type = DesignType(type_str)
-        except ValueError:
-            design_type = DesignType.FURNITURE
-
-        # Map views — expects list of dicts with type/label/description/generation_prompt
-        views_raw = data.get("views_to_generate",
-                             data.get("views_recommended", []))
-        views: list[ViewSpec] = []
-        for v in views_raw:
-            if isinstance(v, dict):
-                vtype = v.get("type", "")
-                try:
-                    ViewType(vtype)  # validate type
-                except ValueError:
-                    logger.warning(f"Unknown view type from chairman: {vtype}")
-                    continue
-
-                views.append(ViewSpec(
-                    type=vtype,
-                    label=v.get("label", vtype.replace("_", " ").title()),
-                    description=v.get("description", ""),
-                    # generation_prompt is assigned after _build_dsd returns,
-                    # from the parsed GENERATION_PROMPTS section
-                    generation_prompt="",
-                ))
-            elif isinstance(v, str):
-                # Legacy format: plain string like "floor_plan"
-                try:
-                    ViewType(v)
-                except ValueError:
-                    logger.warning(f"Unknown view type from chairman: {v}")
-                    continue
-                views.append(ViewSpec(
-                    type=v,
-                    label=v.replace("_", " ").title(),
-                    description="",
-                    generation_prompt="",
-                ))
-            # Note: generation_prompt is populated after _build_dsd returns
-
-        # Build dimensions
-        dims_data = data.get("dimensions", {})
-        dimensions = Dimensions(
-            width=dims_data.get("width"),
-            height=dims_data.get("height"),
-            depth=dims_data.get("depth"),
-            notes=dims_data.get("notes"),
-        )
-
-        # Build style
-        style_data = data.get("style", {})
-        style = StyleSpec(
-            aesthetic=style_data.get("aesthetic", ""),
-            era=style_data.get("era", ""),
-            influences=style_data.get("influences", []),
-        )
-
-        # Build materials
-        materials = []
-        for m in data.get("materials", []):
-            if isinstance(m, dict):
-                materials.append(MaterialSpec(
-                    name=m.get("name", "unknown"),
-                    usage=m.get("usage", ""),
-                    finish=m.get("finish", ""),
-                ))
-
-        # Build colors
-        colors_data = data.get("colors", {})
-        colors = ColorSpec(
-            primary=colors_data.get("primary"),
-            secondary=colors_data.get("secondary"),
-            accent=colors_data.get("accent"),
-            notes=colors_data.get("notes"),
-        )
-
-        # Build structural elements
-        elements = []
-        for e in data.get("structural_elements", []):
-            if isinstance(e, dict):
-                elem_dims = None
-                if "dimensions" in e and isinstance(e["dimensions"], dict):
-                    elem_dims = Dimensions(**e["dimensions"])
-                elements.append(StructuralElement(
-                    name=e.get("name", "unnamed"),
-                    description=e.get("description", ""),
-                    dimensions=elem_dims,
-                    material=e.get("material"),
-                    position=e.get("position", ""),
-                    count=e.get("count", 1),
-                ))
-
-        # Build context
-        ctx_data = data.get("context", {})
-        context = ContextSpec(
-            placement=ctx_data.get("placement", ""),
-            surroundings=ctx_data.get("surroundings", ""),
-            scale_reference=ctx_data.get("scale_reference", ""),
-        )
-
-        return DesignSpecificationDocument(
-            project_id=project_id,
-            version=1,
-            type=design_type,
-            name=data.get("name", "Untitled Design"),
-            description=data.get("description", ""),
-            dimensions=dimensions,
-            style=style,
-            materials=materials,
-            colors=colors,
-            structural_elements=elements,
-            spatial_layout=data.get("spatial_layout", ""),
-            context=context,
-            views_to_generate=views,
-            generation_notes=data.get("generation_notes", ""),
-        )
+        return "\n\n".join(lines)
