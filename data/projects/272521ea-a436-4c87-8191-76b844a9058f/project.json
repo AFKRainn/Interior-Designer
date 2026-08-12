@@ -1,0 +1,63 @@
+{
+  "id": "272521ea-a436-4c87-8191-76b844a9058f",
+  "name": "Take 1 of cabinet",
+  "status": "complete",
+  "created_at": "2026-04-10T02:08:47.231892",
+  "updated_at": "2026-04-10T03:29:36.049444",
+  "input_data": {
+    "text_description": "I provided a cabinet.",
+    "image_paths": [
+      "F:\\Arciticture agents\\Interior-Designer\\data\\projects\\272521ea-a436-4c87-8191-76b844a9058f\\uploads\\Screenshot 2026-03-26 214234.png"
+    ],
+    "input_type": "mixed"
+  },
+  "dsd_id": null,
+  "images": [
+    {
+      "id": "f002576d",
+      "view_type": "floor_plan",
+      "view_label": "Floor Plan",
+      "view_spec_id": "",
+      "file_path": "F:\\Arciticture agents\\Interior-Designer\\data\\projects\\272521ea-a436-4c87-8191-76b844a9058f\\images\\floor_plan_20260410_032725.jpg",
+      "dsd_version": 1,
+      "quality_score": null,
+      "quality_feedback": null,
+      "review_result": null,
+      "generation_prompt": "[width:depth ratio 8:1 — very long and shallow, extremely wide rectangle.] Generate a top-down floor plan of a 400 cm wide × 50 cm deep straight rectangular unit. Inside, 4 vertical dividing lines at 60 cm, 150 cm, 250 cm, and 340 cm create 5 sections from left to right, each 60 cm, 90 cm, 100 cm, 90 cm, and 60 cm wide. The front edge shows closed flat doors as thin lines flush with the front edge across all outer and central bays. The outer towers and lower base share the 50 cm depth, while the",
+      "generated_at": "2026-04-10T03:27:25.978226",
+      "approved": true,
+      "review_attempts": 0
+    },
+    {
+      "id": "57bf317c",
+      "view_type": "front_elevation",
+      "view_label": "Front Elevation",
+      "view_spec_id": "",
+      "file_path": "F:\\Arciticture agents\\Interior-Designer\\data\\projects\\272521ea-a436-4c87-8191-76b844a9058f\\images\\front_elevation_20260410_032840.png",
+      "dsd_version": 1,
+      "quality_score": null,
+      "quality_feedback": null,
+      "review_result": null,
+      "generation_prompt": "[width:height ratio 5:3 — wider than it is tall, horizontal rectangle. The drawing must be 1.66 times wider than it is tall. Do not widen or compress the drawing.] Generate a front elevation drawing of a symmetrical 5-bay built-in wall unit. Finished top with a 13 cm classic stepped cornice and bottom with a 10 cm flush base plinth. All doors and drawers are flat slab style with straight black bar pulls. Bay 1 (Left): 60 cm wide outer column with top and bottom carved rosettes, 163 cm lower soli",
+      "generated_at": "2026-04-10T03:28:40.777425",
+      "approved": true,
+      "review_attempts": 0
+    },
+    {
+      "id": "193ee1ef",
+      "view_type": "realistic_render",
+      "view_label": "Realistic Render",
+      "view_spec_id": "",
+      "file_path": "F:\\Arciticture agents\\Interior-Designer\\data\\projects\\272521ea-a436-4c87-8191-76b844a9058f\\images\\realistic_render_20260410_032921.png",
+      "dsd_version": 1,
+      "quality_score": null,
+      "quality_feedback": null,
+      "review_result": null,
+      "generation_prompt": "[width:height ratio 5:3 — wider than it is tall, horizontal rectangle — the unit is exactly 1.66 times wider than it is tall. Render it at this ratio. Do not widen it.] Generate a realistic render of a large 5-bay symmetrical built-in wall unit entirely finished in painted light beige wood with flat slab doors and drawer fronts. Hardware features straight black bar pulls. The unit has a 10 cm flush base plinth and a continuous 13 cm classic stepped cornice. Bay 1 (Left) is a 60 cm wide full-heig",
+      "generated_at": "2026-04-10T03:29:21.552160",
+      "approved": true,
+      "review_attempts": 0
+    }
+  ],
+  "dsd_versions": []
+}

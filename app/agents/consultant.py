@@ -14,15 +14,26 @@ and chairman verbatim.
 """
 import json
 import logging
+import re
 
 from app.prompts.consultant_prompts import (
     CONSULTANT_SYSTEM_PROMPT,
     CONSULTANT_COUNCIL_FEEDBACK_PROMPT,
+    CONSULTANT_SYNTHESIS_SYSTEM_PROMPT,
 )
 from app.json_parse import parse_json_from_text
 from app.services.openrouter import OpenRouterClient
 
 logger = logging.getLogger(__name__)
+
+# Client clearly ended Q&A — if the model still returns chat, we run a synthesis pass.
+_USER_DEMANDS_FINALIZE = re.compile(
+    r"(?i)(\bmove on\b|\bstop asking\b|\bno more questions\b|won'?t be answering|won'?t answer|"
+    r"not answering|\bconfirm for all\b|\bconfirm all\b|\bthat'?s enough\b|\benough already\b|"
+    r"\bjust proceed\b|\bget (this |it )?done\b|\bprefer not to answer\b|"
+    r"\bskip (the )?questions\b|\bi'?m done\b|\bdone answering\b|\bgave enough\b|\bi gave enough\b|"
+    r"without answering|not be answering more)",
+)
 
 
 class Consultant:
@@ -86,7 +97,14 @@ class Consultant:
             Consultant response dict with updated messages.
         """
         messages = messages + [{"role": "user", "content": user_text}]
-        return await self._call(messages)
+        result = await self._call(messages)
+        if result.get("status") != "confirmed" and _USER_DEMANDS_FINALIZE.search(
+            user_text
+        ):
+            synth = await self._synthesize_confirmed(result["messages"])
+            if synth is not None:
+                return synth
+        return result
 
     async def handle_council_feedback(
         self,
@@ -113,12 +131,77 @@ class Consultant:
         messages = messages + [{"role": "user", "content": feedback_msg}]
         return await self._call(messages)
 
+    async def force_finalize(self, messages: list[dict]) -> dict:
+        """
+        Client used explicit UI control to end consultation. Synthesize confirmed
+        JSON from the full thread (no new user message).
+        """
+        synth = await self._synthesize_confirmed(messages)
+        if synth is not None:
+            return synth
+        return {
+            "response": "Could not finalize automatically. Try one more short reply or start over.",
+            "status": "chat",
+            "final_summary": None,
+            "messages": messages,
+        }
+
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
 
-    async def _call(self, messages: list[dict]) -> dict:
-        """Send messages to the model and parse the response."""
+    async def _synthesize_confirmed(
+        self, full_messages: list[dict]
+    ) -> dict | None:
+        """
+        Replace trailing assistant behavior: one call with a strict system prompt
+        so the thread ends with status=confirmed + final_summary.
+        Returns None if synthesis did not produce a valid confirmation.
+        """
+        if not full_messages:
+            return None
+
+        synth_messages: list[dict] = [
+            {"role": "system", "content": CONSULTANT_SYNTHESIS_SYSTEM_PROMPT},
+        ]
+        if full_messages[0].get("role") == "system":
+            synth_messages.extend(full_messages[1:])
+        else:
+            synth_messages.extend(full_messages)
+
+        synth_messages.append({
+            "role": "user",
+            "content": (
+                "The client has ended the Q&A phase. Produce the single JSON object "
+                "now (status confirmed, full final_summary, short response). "
+                "Synthesize only what is already agreed in the thread."
+            ),
+        })
+
+        out = await self._call_raw(synth_messages)
+        if out.get("status") != "confirmed" or not out.get("final_summary"):
+            logger.warning(
+                "Synthesis pass did not return confirmed with final_summary; "
+                "keeping prior assistant message"
+            )
+            return None
+
+        base = (
+            full_messages[:-1]
+            if full_messages[-1].get("role") == "assistant"
+            else full_messages
+        )
+        new_content = out["messages"][-1]["content"]
+        fixed_messages = base + [{"role": "assistant", "content": new_content}]
+        return {
+            "response": out["response"],
+            "status": out["status"],
+            "final_summary": out["final_summary"],
+            "messages": fixed_messages,
+        }
+
+    async def _call_raw(self, messages: list[dict]) -> dict:
+        """API round-trip + parse + normalize; returns dict with messages including assistant."""
         has_images = any(
             isinstance(m.get("content"), list)
             for m in messages
@@ -126,9 +209,6 @@ class Consultant:
         )
 
         if has_images:
-            # Build vision call from the message list manually
-            # (openrouter client vision methods are single-turn; for multi-turn
-            #  with vision we use chat_completion with inline image content parts)
             response = await self.client.chat_completion(
                 model=self.model,
                 messages=messages,
@@ -149,20 +229,15 @@ class Consultant:
             p2 = parse_json_from_text(raw_text)
             parsed = p2 if isinstance(p2, dict) else {}
 
-        reply_text = parsed.get("response") or raw_text
-        status = parsed.get("status", "chat")
-        if status not in ("chat", "confirmed"):
-            status = "chat"
-        final_summary = parsed.get("final_summary") if status == "confirmed" else None
+        reply_text, status, final_summary = self._normalize_parsed(parsed, raw_text)
 
-        # Store clean JSON only (no markdown fences) so UI and downstream agents read reliably
         canonical: dict = {"response": reply_text, "status": status}
         if final_summary:
             canonical["final_summary"] = final_summary
         assistant_content = json.dumps(canonical, ensure_ascii=False)
 
         updated_messages = messages + [
-            {"role": "assistant", "content": assistant_content}
+            {"role": "assistant", "content": assistant_content},
         ]
 
         return {
@@ -171,6 +246,33 @@ class Consultant:
             "final_summary": final_summary,
             "messages": updated_messages,
         }
+
+    @staticmethod
+    def _normalize_parsed(parsed: dict, raw_text: str) -> tuple[str, str, str | None]:
+        """Fix model mistakes: summary with chat status, or confirmed without summary."""
+        reply_text = parsed.get("response") or raw_text
+        status = parsed.get("status", "chat")
+        if status not in ("chat", "confirmed"):
+            status = "chat"
+
+        final_summary = parsed.get("final_summary")
+        fs = final_summary if isinstance(final_summary, str) else None
+
+        # Model wrote a full summary but forgot to flip status → unblock pipeline
+        if status == "chat" and fs and len(fs.strip()) > 250:
+            status = "confirmed"
+        elif status == "confirmed" and (not fs or len(fs.strip()) < 80):
+            status = "chat"
+            fs = None
+
+        if status != "confirmed":
+            fs = None
+
+        return reply_text, status, fs
+
+    async def _call(self, messages: list[dict]) -> dict:
+        """Send messages to the model and parse the response."""
+        return await self._call_raw(messages)
 
     @staticmethod
     def _build_user_content(

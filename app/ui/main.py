@@ -5,8 +5,11 @@ This is the entry point for the Streamlit UI.
 Provides a multi-page interface for the full design pipeline.
 """
 import json
+import logging
 import sys
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 # Add project root to Python path so imports work
 PROJECT_ROOT = Path(__file__).parent.parent.parent
@@ -49,6 +52,87 @@ st.markdown(MAIN_CSS, unsafe_allow_html=True)
 # Session Persistence Helpers
 # ---------------------------------------------------------------------------
 _SESSION_FILE = DATA_DIR / ".last_session.json"
+_SESSION_EXTRA_FILE = DATA_DIR / ".last_session_extra.json"
+
+
+# ---------------------------------------------------------------------------
+# Helpers: strip / restore base64 image payloads in message lists
+# ---------------------------------------------------------------------------
+
+def _strip_images_from_messages(messages: list) -> list:
+    """
+    Return a copy of messages with base64 image data removed.
+    Image-bearing user messages have their content list reduced to text-only.
+    A sentinel `{"type": "image_stripped"}` entry is kept so we know to
+    reconstruct the images on restore.
+    """
+    import copy
+    stripped = []
+    for msg in copy.deepcopy(messages):
+        content = msg.get("content")
+        if isinstance(content, list):
+            new_parts = []
+            had_image = False
+            for part in content:
+                if isinstance(part, dict) and part.get("type") == "image_url":
+                    had_image = True
+                else:
+                    new_parts.append(part)
+            if had_image:
+                new_parts.append({"type": "image_stripped"})
+            msg["content"] = new_parts
+        stripped.append(msg)
+    return stripped
+
+
+def _restore_images_in_messages(messages: list, image_paths: list[str]) -> list:
+    """
+    Re-inject base64 image data into messages that have an `image_stripped`
+    sentinel, using the saved project image file paths.
+    """
+    import base64 as _b64
+    import copy
+
+    if not image_paths:
+        return messages
+
+    # Pre-load images from disk once
+    images_data = []
+    for p in image_paths:
+        fp = Path(p)
+        if fp.exists():
+            raw = fp.read_bytes()
+            b64 = _b64.b64encode(raw).decode("utf-8")
+            ext = fp.suffix.lower().lstrip(".")
+            mime = {"jpg": "image/jpeg", "jpeg": "image/jpeg",
+                    "png": "image/png", "webp": "image/webp"}.get(ext, "image/png")
+            images_data.append({"data": b64, "mime_type": mime})
+
+    if not images_data:
+        return messages
+
+    restored = []
+    for msg in copy.deepcopy(messages):
+        content = msg.get("content")
+        if isinstance(content, list):
+            has_sentinel = any(
+                isinstance(p, dict) and p.get("type") == "image_stripped"
+                for p in content
+            )
+            if has_sentinel:
+                new_parts = [p for p in content if not (
+                    isinstance(p, dict) and p.get("type") == "image_stripped"
+                )]
+                for img in images_data:
+                    new_parts.append({
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:{img['mime_type']};base64,{img['data']}"
+                        },
+                    })
+                msg["content"] = new_parts
+        restored.append(msg)
+    return restored
 
 
 def _save_session():
@@ -60,6 +144,32 @@ def _save_session():
             "page": st.session_state.get("current_page", "new_project"),
         }
         _SESSION_FILE.write_text(json.dumps(data), encoding="utf-8")
+    except Exception:
+        pass  # Non-critical — silent fail
+
+    # Save the richer consulting/generation state to a second file.
+    try:
+        generated_raw = st.session_state.get("image_step_generated") or {}
+        # Strip large base64 blobs — store only path + mime (reconstructed on load)
+        generated_slim = {
+            step: {"path": v.get("path", ""), "mime": v.get("mime", "")}
+            for step, v in generated_raw.items()
+        }
+        extra = {
+            "consulting_phase": st.session_state.get("consulting_phase", "chat"),
+            "consulting_final_summary": st.session_state.get("consulting_final_summary"),
+            "chairman_prompts": st.session_state.get("chairman_prompts"),
+            "image_step_current": st.session_state.get("image_step_current", "floor_plan"),
+            "image_step_generated": generated_slim,
+            "council_review_attempts": st.session_state.get("council_review_attempts", 0),
+            # Strip image payloads — reconstructed from project file paths on load
+            "consulting_messages": _strip_images_from_messages(
+                st.session_state.get("consulting_messages") or []
+            ),
+        }
+        _SESSION_EXTRA_FILE.write_text(
+            json.dumps(extra, ensure_ascii=False), encoding="utf-8"
+        )
     except Exception:
         pass  # Non-critical — silent fail
 
@@ -105,9 +215,63 @@ def _restore_session():
                         "gallery", "review_dsd",
                         "drawings_review", "generating_render",
                         "council", "generating", "refine",
-                        "consulting",
+                        "consulting", "image_step",
                     ):
                         st.session_state.current_page = page
+
+                    # ── Restore extra consulting/generation state ──────────
+                    if _SESSION_EXTRA_FILE.exists():
+                        try:
+                            extra = json.loads(
+                                _SESSION_EXTRA_FILE.read_text(encoding="utf-8")
+                            )
+                            st.session_state.consulting_phase = extra.get(
+                                "consulting_phase", "chat"
+                            )
+                            st.session_state.consulting_final_summary = extra.get(
+                                "consulting_final_summary"
+                            )
+                            st.session_state.chairman_prompts = extra.get(
+                                "chairman_prompts"
+                            )
+                            st.session_state.image_step_current = extra.get(
+                                "image_step_current", "floor_plan"
+                            )
+                            st.session_state.council_review_attempts = extra.get(
+                                "council_review_attempts", 0
+                            )
+
+                            # Restore messages — re-inject images from disk
+                            saved_msgs = extra.get("consulting_messages") or []
+                            image_paths = (
+                                project.input_data.image_paths
+                                if project and hasattr(project, "input_data")
+                                else []
+                            )
+                            st.session_state.consulting_messages = (
+                                _restore_images_in_messages(saved_msgs, image_paths)
+                            )
+
+                            # Restore image_step_generated — reload base64 from files
+                            import base64 as _b64
+                            generated_slim = extra.get("image_step_generated") or {}
+                            generated_full = {}
+                            for step, v in generated_slim.items():
+                                path = v.get("path", "")
+                                mime = v.get("mime", "image/png")
+                                b64 = ""
+                                if path:
+                                    fp = Path(path)
+                                    if fp.exists():
+                                        b64 = _b64.b64encode(
+                                            fp.read_bytes()
+                                        ).decode("utf-8")
+                                generated_full[step] = {
+                                    "path": path, "data": b64, "mime": mime
+                                }
+                            st.session_state.image_step_generated = generated_full
+                        except Exception:
+                            pass  # Extra state is best-effort
         except Exception:
             pass  # Non-critical — silent fail
 
@@ -178,6 +342,9 @@ if "image_step_generated" not in st.session_state:
 
 if "modification_for" not in st.session_state:
     st.session_state.modification_for = None  # Which step is being modified
+
+if "council_review_attempts" not in st.session_state:
+    st.session_state.council_review_attempts = 0  # Break infinite council-reject loop
 
 # Restore session from disk on first load
 if "session_restored" not in st.session_state:
@@ -643,6 +810,44 @@ def page_consulting():
     if user_input and user_input.strip():
         _consultant_reply(user_input.strip())
 
+    with st.expander("Stuck in the chat loop?", expanded=False):
+        st.caption(
+            "If the consultant keeps asking the same things but your answers are already "
+            "in the thread, you can force the next step: we compile one final summary "
+            "from the conversation and send it to design review."
+        )
+        if st.button("Finalize from chat & send to design review", type="secondary"):
+            _consultant_force_finalize()
+
+
+def _consultant_force_finalize():
+    """Synthesize status=confirmed from full thread; then council runs on next phase."""
+    from app.agents.consultant import Consultant
+    from app.services.openrouter import run_async
+
+    messages = st.session_state.get("consulting_messages", [])
+    if not messages:
+        st.error("No conversation yet.")
+        return
+
+    with st.spinner("Building final summary from your conversation..."):
+        try:
+            consultant = Consultant()
+            result = run_async(consultant.force_finalize(messages))
+            st.session_state.consulting_messages = result["messages"]
+            if result.get("status") == "confirmed" and result.get("final_summary"):
+                st.session_state.consulting_final_summary = result.get("final_summary")
+                st.session_state.consulting_phase = "council_reviewing"
+                st.session_state.council_review_attempts = 0
+            else:
+                st.warning(
+                    "Could not auto-finalize. Try sending one message such as "
+                    "'Please finalize with what we agreed — no more questions.'"
+                )
+        except Exception as e:
+            st.error(str(e))
+    st.rerun()
+
 
 def _consultant_reply(user_text: str):
     """Send a user message to the consultant and handle the response."""
@@ -665,6 +870,7 @@ def _consultant_reply(user_text: str):
             if result.get("status") == "confirmed":
                 st.session_state.consulting_final_summary = result.get("final_summary")
                 st.session_state.consulting_phase = "council_reviewing"
+                st.session_state.council_review_attempts = 0
         except Exception as e:
             import json as _json
             err_msg = str(e).replace('"', "'")
@@ -675,14 +881,26 @@ def _consultant_reply(user_text: str):
     st.rerun()
 
 
+_COUNCIL_MAX_ATTEMPTS = 2  # After this many rejects, proceed regardless
+
 def _run_council_review(project, store: ProjectStore):
     """Run the council reviewer. Called when consulting_phase == 'council_reviewing'."""
     from app.agents.council import CouncilReviewer
     from app.services.openrouter import run_async
 
-    st.markdown("### Design Review")
+    attempt = st.session_state.council_review_attempts + 1
+    st.session_state.council_review_attempts = attempt
 
-    with st.spinner("Reviewing the design analysis for completeness..."):
+    # Safety valve: if council has already rejected twice, skip it and go to chairman
+    if attempt > _COUNCIL_MAX_ATTEMPTS:
+        st.session_state.council_review_attempts = 0
+        st.session_state.consulting_phase = "chairman_generating"
+        project.update_status(ProjectStatus.COUNCIL_REVIEW)
+        store.save_project(project)
+        st.rerun()
+        return
+
+    with st.spinner("Reviewing the design analysis..."):
         try:
             reviewer = CouncilReviewer()
             result = run_async(
@@ -694,20 +912,29 @@ def _run_council_review(project, store: ProjectStore):
             )
 
             if result.get("approved"):
+                st.session_state.council_review_attempts = 0
                 st.session_state.consulting_phase = "chairman_generating"
                 project.update_status(ProjectStatus.COUNCIL_REVIEW)
                 store.save_project(project)
             else:
                 issues = result.get("issues", [])
-                # Inject council feedback into the conversation via the consultant
-                _inject_council_feedback(issues)
-                st.session_state.consulting_phase = "chat"
-                st.session_state.consulting_final_summary = None
+                if issues:
+                    _inject_council_feedback(issues)
+                    st.session_state.consulting_phase = "chat"
+                    st.session_state.consulting_final_summary = None
+                else:
+                    # No issues listed but not approved — treat as approved
+                    st.session_state.council_review_attempts = 0
+                    st.session_state.consulting_phase = "chairman_generating"
+                    project.update_status(ProjectStatus.COUNCIL_REVIEW)
+                    store.save_project(project)
 
         except Exception as e:
-            st.error(f"Review error: {e}")
-            # On error, proceed anyway
+            logger.error(f"Council review error: {e}")
+            st.session_state.council_review_attempts = 0
             st.session_state.consulting_phase = "chairman_generating"
+            project.update_status(ProjectStatus.COUNCIL_REVIEW)
+            store.save_project(project)
 
     st.rerun()
 
@@ -1503,26 +1730,75 @@ def page_image_step():
     with col_modify:
         if st.button("Request a Modification", use_container_width=True):
             st.session_state["show_modify_input"] = True
+            st.session_state["modify_mode"] = None
             st.rerun()
 
     if st.session_state.get("show_modify_input"):
-        mod_text = st.text_area(
-            "What needs to change?",
-            placeholder=(
-                "Describe specifically what is wrong or what you want changed. "
-                "The consultant will update the design."
-            ),
-            key="modification_text",
-        )
-        col_send_mod, col_cancel_mod = st.columns(2)
-        with col_send_mod:
-            if st.button("Send to Consultant", type="primary"):
-                if mod_text.strip():
-                    _start_modification(mod_text.strip(), step)
-        with col_cancel_mod:
-            if st.button("Cancel"):
+        modify_mode = st.session_state.get("modify_mode")
+
+        if modify_mode is None:
+            st.markdown("**What kind of modification?**")
+            st.caption(
+                "Choose based on what is wrong — this determines whether the "
+                "design needs to be updated or just the image re-generated."
+            )
+            col_a, col_b = st.columns(2)
+            with col_a:
+                if st.button(
+                    "The design needs to change",
+                    use_container_width=True,
+                    help="Something in the actual design is wrong or you want to add/remove/change an element.",
+                ):
+                    st.session_state["modify_mode"] = "design"
+                    st.rerun()
+            with col_b:
+                if st.button(
+                    "The image looks wrong (design is correct)",
+                    use_container_width=True,
+                    help="The design spec is right but the image model rendered it incorrectly — wrong proportions, appliance not fitting, wrong material, etc.",
+                ):
+                    st.session_state["modify_mode"] = "image"
+                    st.rerun()
+            if st.button("Cancel", key="cancel_modify_mode"):
                 st.session_state["show_modify_input"] = False
+                st.session_state["modify_mode"] = None
                 st.rerun()
+
+        elif modify_mode == "design":
+            st.info("Describe what needs to change in the design. The consultant will update the spec and regenerate.")
+            mod_text = st.text_area(
+                "What needs to change in the design?",
+                placeholder="e.g. I want the left bay to have a door instead of open shelving.",
+                key="modification_text_design",
+            )
+            col_send_mod, col_cancel_mod = st.columns(2)
+            with col_send_mod:
+                if st.button("Send to Consultant", type="primary"):
+                    if mod_text.strip():
+                        _start_modification(mod_text.strip(), step)
+            with col_cancel_mod:
+                if st.button("Cancel", key="cancel_design_mod"):
+                    st.session_state["show_modify_input"] = False
+                    st.session_state["modify_mode"] = None
+                    st.rerun()
+
+        elif modify_mode == "image":
+            st.info("Describe what looks wrong in the image. The prompt will be fixed and the image regenerated — no design changes.")
+            mod_text = st.text_area(
+                "What looks wrong in the image?",
+                placeholder="e.g. The washer and dryer don't fill their bays — there is too much empty space around them.",
+                key="modification_text_image",
+            )
+            col_send_mod, col_cancel_mod = st.columns(2)
+            with col_send_mod:
+                if st.button("Fix the Image", type="primary"):
+                    if mod_text.strip():
+                        _fix_image_prompt(mod_text.strip(), step)
+            with col_cancel_mod:
+                if st.button("Cancel", key="cancel_image_mod"):
+                    st.session_state["show_modify_input"] = False
+                    st.session_state["modify_mode"] = None
+                    st.rerun()
 
 
 def _generate_image_step(
@@ -1601,6 +1877,50 @@ def _generate_image_step(
             generated[step] = {"path": "", "data": "", "mime": ""}
             st.session_state.image_step_generated = generated
             st.error(f"Error generating {label}: {e}")
+
+    st.rerun()
+
+
+def _fix_image_prompt(feedback: str, step: str):
+    """
+    Fix only the generation prompt for a step without touching the design.
+    Calls the chairman to rewrite the prompt, then clears and regenerates
+    only the affected step (and all subsequent steps that use it as a reference).
+    """
+    from app.agents.chairman import Chairman
+    from app.services.openrouter import run_async
+
+    prompts = st.session_state.get("chairman_prompts", {})
+    original_prompt = prompts.get(step, "")
+    final_summary = st.session_state.get("consulting_final_summary", "")
+
+    with st.spinner("Fixing the image prompt..."):
+        try:
+            chairman = Chairman()
+            improved = run_async(
+                chairman.improve_prompt(
+                    view_type=step,
+                    original_prompt=original_prompt,
+                    feedback=feedback,
+                    final_summary=final_summary,
+                )
+            )
+            # Update the stored prompt for this step
+            prompts[step] = improved
+            st.session_state.chairman_prompts = prompts
+
+            # Clear this step and all subsequent (they use this image as reference)
+            generated = st.session_state.get("image_step_generated", {})
+            step_idx = _IMAGE_STEP_ORDER.index(step)
+            for s in _IMAGE_STEP_ORDER[step_idx:]:
+                generated.pop(s, None)
+            st.session_state.image_step_generated = generated
+            st.session_state.image_step_current = step
+            st.session_state["show_modify_input"] = False
+            st.session_state["modify_mode"] = None
+
+        except Exception as e:
+            st.error(f"Could not improve prompt: {e}")
 
     st.rerun()
 

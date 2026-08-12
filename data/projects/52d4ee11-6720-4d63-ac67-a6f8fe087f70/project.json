@@ -1,0 +1,76 @@
+{
+  "id": "52d4ee11-6720-4d63-ac67-a6f8fe087f70",
+  "name": "Shada cabinet",
+  "status": "generating",
+  "created_at": "2026-04-07T21:10:08.899532",
+  "updated_at": "2026-04-07T21:43:31.318046",
+  "input_data": {
+    "text_description": "I want to create a design for a drier and washing machine closet. in black or walnut, still dont know the final one. the space is 90 width by 270 height. the width of the drier and washing machine is 60, I do not know the height of them, so use the standard. and obviously we will leave 1 cm from each side for slight ventalation (cabinet will be open from behind, so no worries, and that small because I dont want the machines jumping out of place). the design looksa bit like this:\non the right we have waching machine, above it will be a 22cm drawer, above the drawer will be the drier (it will be high but there is a ladder  for it so no worries from that part). on the left of that whole unit will be shelves. split into three equal spaces. above those two units will be a two door unit that instide will be splitted into two empty spaces.\n\nthat is it. the handles will be default staight line handles. in black if the cabinet is in walnut, in gold if the cabinet is in black.",
+    "image_paths": [],
+    "input_type": "text"
+  },
+  "dsd_id": null,
+  "images": [
+    {
+      "id": "ca6aa628",
+      "view_type": "floor_plan",
+      "view_label": "Floor Plan",
+      "view_spec_id": "",
+      "file_path": "F:\\Arciticture agents\\Interior-Designer\\data\\projects\\52d4ee11-6720-4d63-ac67-a6f8fe087f70\\images\\floor_plan_20260407_212314.jpg",
+      "dsd_version": 1,
+      "quality_score": null,
+      "quality_feedback": null,
+      "review_result": null,
+      "generation_prompt": "Generate a floor plan of a single built-in straight run tall unit divided into two sections: a narrow deep shelving stack on the left and an open appliance bay on the right, forming a single rectangular footprint. Black and white. Lines only. Top-down 2D view. No perspective. Label these dimensions: 90 cm total width, 65 cm total depth, 62 cm right bay width, 22.6 cm left bay width.",
+      "generated_at": "2026-04-07T21:23:14.094321",
+      "approved": true,
+      "review_attempts": 0
+    },
+    {
+      "id": "97cb2ec2",
+      "view_type": "front_elevation",
+      "view_label": "Front Elevation",
+      "view_spec_id": "",
+      "file_path": "F:\\Arciticture agents\\Interior-Designer\\data\\projects\\52d4ee11-6720-4d63-ac67-a6f8fe087f70\\images\\front_elevation_20260407_212906.jpg",
+      "dsd_version": 1,
+      "quality_score": null,
+      "quality_feedback": null,
+      "review_result": null,
+      "generation_prompt": "Generate a front elevation drawing of a built-in laundry cabinet spanning 90 cm wide and 270 cm high. From the floor up: a continuous 10 cm base plinth. The main body is split asymmetrically. The left bay is narrow, featuring six equal open vertical storage cubbies separated by five shelf lines. The right bay is wider, displaying from bottom to top: an open space for a washing machine, a structural board, a solid drawer front with a centered horizontal straight bar handle, another structural boa",
+      "generated_at": "2026-04-07T21:29:06.073566",
+      "approved": true,
+      "review_attempts": 0
+    },
+    {
+      "id": "e2486ddb",
+      "view_type": "realistic_render",
+      "view_label": "Realistic Render",
+      "view_spec_id": "",
+      "file_path": "F:\\Arciticture agents\\Interior-Designer\\data\\projects\\52d4ee11-6720-4d63-ac67-a6f8fe087f70\\images\\realistic_render_20260407_213429.png",
+      "dsd_version": 1,
+      "quality_score": null,
+      "quality_feedback": null,
+      "review_result": null,
+      "generation_prompt": "Generate a photorealistic 3D image of a tall built-in laundry cabinet entirely finished in walnut wood. The unit features a continuous base plinth and is capped nicely to the ceiling with a shadow gap trim. The design is asymmetrically divided: the narrow left bay consists of six equal open shelving cubbies, while the wider right bay houses a front-loading washing machine at the bottom, a solid walnut drawer with a centered horizontal black straight bar handle in the middle, and a front-loading ",
+      "generated_at": "2026-04-07T21:34:29.724884",
+      "approved": false,
+      "review_attempts": 0
+    },
+    {
+      "id": "c7a0f9c5",
+      "view_type": "realistic_render",
+      "view_label": "Realistic Render",
+      "view_spec_id": "",
+      "file_path": "F:\\Arciticture agents\\Interior-Designer\\data\\projects\\52d4ee11-6720-4d63-ac67-a6f8fe087f70\\images\\realistic_render_20260407_214331.jpg",
+      "dsd_version": 1,
+      "quality_score": null,
+      "quality_feedback": null,
+      "review_result": null,
+      "generation_prompt": "Generate a photorealistic 3D image of a tall built-in laundry cabinet entirely finished in walnut wood. The unit features a continuous base plinth and is capped nicely to the ceiling with a shadow gap trim. The design is asymmetrically divided: the narrow left bay consists of six equal open shelving cubbies, while the wider right bay houses a front-loading washing machine at the bottom, a solid walnut drawer with a centered horizontal black straight bar handle in the middle, and a front-loading ",
+      "generated_at": "2026-04-07T21:43:31.314947",
+      "approved": false,
+      "review_attempts": 0
+    }
+  ],
+  "dsd_versions": []
+}
