@@ -1,0 +1,174 @@
+{
+  "id": "e931a39e-4ece-416f-8ff8-d2a5fdc7aa4e",
+  "phase": "locked",
+  "locked": true,
+  "brief": "LAUNDRY TOWER CABINET SPECIFICATION\n\n1. ENVELOPE & FOOTPRINT\n- Overall Dimensions: 70 cm (Width) x 70 cm (Depth) x 240 cm (Height)\n- Usable Internal Depth: 67 cm\n- Plinth: 7 cm height, recessed 2 cm\n\n2. MATERIALS & CONSTRUCTION\n- Primary Carcass: 1.9 cm moisture-resistant melamine/lacquered board\n- Reinforced Structural Shelf (Dryer Support): 2.8 cm load-bearing panel\n- Back Panel: Open back at washing machine and dryer niches for plumbing, venting, and power; 0.8 cm groove-set backboard behind drawer and top cupboard bays\n\n3. HARDWARE & FIT-OUT\n- Upper Cupboard: 2 side-hung doors with 110-degree soft-close concealed hinges, push-to-open mechanism\n- Drawer: Full-extension concealed undermount slides, soft-close, push-to-open\n\n4. VERTICAL STACK & CLEARANCES (Bottom to Top)\n- 0.0 to 7.0 cm: Recessed plinth base (7 cm H)\n- 7.0 to 8.9 cm: Base shelf (1.9 cm thickness)\n- 8.9 to 94.9 cm: Washing machine niche (66.2 cm clear W x 67 cm clear D x 86 cm clear H)\n- 94.9 to 96.8 cm: Intermediate divider shelf (1.9 cm thickness)\n- 96.8 to 112.8 cm: Utility/small items drawer (16 cm front H x 66.2 cm W)\n- 112.8 to 115.6 cm: Reinforced structural dryer shelf (2.8 cm thickness)\n- 115.6 to 201.6 cm: Tumble dryer niche (66.2 cm clear W x 67 cm clear D x 86 cm clear H)\n- 201.6 to 203.5 cm: Cupboard bottom shelf (1.9 cm thickness)\n- 203.5 to 238.1 cm: Upper storage cupboard (66.2 cm clear W x 67 cm clear D x 34.6 cm clear H) enclosed by 2 swing doors (approx. 34.6 cm W x 38 cm H each)\n- 238.1 to 240.0 cm: Top structural panel (1.9 cm thickness)",
+  "spec": {
+    "project_id": "e931a39e-4ece-416f-8ff8-d2a5fdc7aa4e",
+    "version": 2,
+    "units": "cm",
+    "name": "Laundry Tower Cabinet",
+    "layout": {
+      "type": "straight",
+      "walls": [
+        {
+          "id": "wall-a",
+          "label": "Wall A \u2014 Laundry Column",
+          "length": 70.0,
+          "adjacent_to": [],
+          "faces": [],
+          "sequence": 0
+        }
+      ]
+    },
+    "walls": [
+      {
+        "id": "wall-a",
+        "height": 240.0,
+        "depth": 70.0,
+        "cornice": {
+          "type": "none",
+          "height": 0.0
+        },
+        "plinth": {
+          "type": "recessed",
+          "height": 7.0
+        },
+        "side_columns": {
+          "left_cm": 0.0,
+          "right_cm": 0.0,
+          "detail": "plain"
+        },
+        "bays": [
+          {
+            "id": "bay-1",
+            "label": "Laundry Tower",
+            "width": 70.0,
+            "modules": [
+              {
+                "type": "appliance",
+                "height": 88.0,
+                "count": 1,
+                "handle": "none"
+              },
+              {
+                "type": "drawer",
+                "height": 18.0,
+                "count": 1,
+                "handle": "push-to-open"
+              },
+              {
+                "type": "appliance",
+                "height": 89.0,
+                "count": 1,
+                "handle": "none"
+              },
+              {
+                "type": "door",
+                "height": 38.0,
+                "count": 2,
+                "handle": "push-to-open"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "materials": {
+      "carcass": "1.9 cm moisture-resistant melamine board with 2.8 cm reinforced structural dryer shelf",
+      "doors": "1.9 cm moisture-resistant melamine/lacquered board",
+      "finish": "Moisture-resistant melamine / lacquered"
+    },
+    "hardware": {
+      "style": "Push-to-open, 110-degree soft-close concealed hinges, soft-close concealed undermount drawer slides",
+      "placement": "Push-to-open mechanism (handleless)"
+    },
+    "brief": "LAUNDRY TOWER CABINET SPECIFICATION\n\n1. ENVELOPE & FOOTPRINT\n- Overall Dimensions: 70 cm (Width) x 70 cm (Depth) x 240 cm (Height)\n- Usable Internal Depth: 67 cm\n- Plinth: 7 cm height, recessed 2 cm\n\n2. MATERIALS & CONSTRUCTION\n- Primary Carcass: 1.9 cm moisture-resistant melamine/lacquered board\n- Reinforced Structural Shelf (Dryer Support): 2.8 cm load-bearing panel\n- Back Panel: Open back at washing machine and dryer niches for plumbing, venting, and power; 0.8 cm groove-set backboard behind drawer and top cupboard bays\n\n3. HARDWARE & FIT-OUT\n- Upper Cupboard: 2 side-hung, side-by-side doors with 110-degree soft-close concealed hinges, push-to-open mechanism\n- Drawer: Full-extension concealed undermount slides, soft-close, push-to-open\n\n4. VERTICAL STACK & CLEARANCES (Bottom to Top)\n- 0.0 to 7.0 cm: Recessed plinth base (7 cm H)\n- 7.0 to 8.9 cm: Base shelf (1.9 cm thickness)\n- 8.9 to 94.9 cm: Washing machine niche (66.2 cm clear W x 67 cm clear D x 86 cm clear H)\n- 94.9 to 96.8 cm: Intermediate divider shelf (1.9 cm thickness)\n- 96.8 to 112.8 cm: Utility/small items drawer (16 cm front H x 66.2 cm W)\n- 112.8 to 115.6 cm: Reinforced structural dryer shelf (2.8 cm thickness)\n- 115.6 to 201.6 cm: Tumble dryer niche (66.2 cm clear W x 67 cm clear D x 86 cm clear H)\n- 201.6 to 203.5 cm: Cupboard bottom shelf (1.9 cm thickness)\n- 203.5 to 238.1 cm: Upper storage cupboard (66.2 cm clear W x 67 cm clear D x 34.6 cm clear H) enclosed by 2 side-by-side swing doors (approx. 34.6 cm W x 38 cm H each)\n- 238.1 to 240.0 cm: Top structural panel (1.9 cm thickness)",
+    "render_notes": "Single-bay vertical laundry column. Bottom compartment accommodates washing machine, followed by a middle utility drawer, tumble dryer compartment above on reinforced shelf, and top storage cabinet with two side-by-side push-to-open doors."
+  },
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a senior interior designer collecting a complete furniture spec.\nYou do not write image prompts. You do not praise. You do the math.\n\nUNITS: centimetres (cm) only. Never mm. Convert if the client uses mm\n(600 mm = 60 cm) and keep speaking in cm.\n\nMODE (from context, do not ask which mode):\n- Sketch/photo: only claim what you are sure of. Image wins geometry.\n  Client words win materials/colors. Stated numbers win dimensions.\n- From scratch: understand the piece, then propose a specific design.\n\n============================================================\nNOTICE \u2014 do this every chat turn, before you talk to the client.\n============================================================\nYou do not work from a memorized kitchen script. You notice THIS design.\n\nWrite and answer follow-up questions in \"notice\" (self-ask). Minimum:\n1. What is this piece, really? (typology, function, how it sits in the room)\n2. For this typology, what would a maker need that people forget?\n   Generate that list from the piece, not from a generic checklist.\n   Think in layers: envelope (W / D / H, floor-to-ceiling), top, bottom,\n   sides/returns, each bay and its stack, appliances and clearances,\n   hardware, materials, junctions to wall / ceiling / floor / neighbour.\n3. What has the client already given (words + image)? What is locked.\n4. What is still missing or ambiguous after that.\n5. Which gaps matter this turn (at most 3), and which get a stated default.\n\nAnswer those questions in \"notice\". Then write \"response\" FROM those answers.\nIf notice says a fact is locked, do not re-ask it.\nIf notice names a real gap, either ask it (with options) or state a\nprofessional default in cm in one sentence. Do not silently skip it.\n\nUser-facing questions exist to close notice-gaps. They also force you\nto think. They are not decoration.\n\nASK WITH OPTIONS when the gap is a choice (A / B / C). Max 3 questions\nper turn. Closed topics stay closed.\n\nIsland/peninsula is NOT a wall unless it has its own designed face.\nNever invent a system error.\n\n============================================================\nCONFIRM\n============================================================\nDo not confirm while notice still has unanswered maker-gaps.\nWhen ready: review packet in \"response\" (status still \"chat\"):\nA \u2014 THE DESIGN (wall by wall, bay by bay, including top, bottom, sides)\nB \u2014 LAYOUT (straight / L / U / galley; adjacency vs facing)\nC \u2014 TOP VIEW (footprint, cm)\nD \u2014 FRONT VIEW per wall (left to right, cm)\nEnd with: if anything is wrong, say what to fix; if correct, reply yes.\n\nAfter the client approves: status \"confirmed\", full facts in \"brief\"\n(cm throughout, including defaults you used). Short thanks in \"response\".\nNo new questions. \"notice\" may be omitted when confirmed.\n\nOUTPUT \u2014 JSON only, no markdown fences.\nChat turns:\n{\n  \"notice\": [\n    {\"q\": \"What is this piece?\", \"a\": \"...\"},\n    {\"q\": \"What does a maker need for this type?\", \"a\": \"...\"},\n    {\"q\": \"What is already locked?\", \"a\": \"...\"},\n    {\"q\": \"What is still open?\", \"a\": \"...\"},\n    {\"q\": \"What to ask or default this turn?\", \"a\": \"...\"}\n  ],\n  \"response\": \"client-facing text only. Do not paste the notice list.\",\n  \"status\": \"chat\"\n}\nWhen confirmed:\n{\"response\": \"...\", \"status\": \"confirmed\", \"brief\": \"full locked facts\"}\n"
+    },
+    {
+      "role": "user",
+      "content": "a cabinet for drier and washer. at the top two door opening, then the drier, then a drawrer then the washer at the bottom.\n"
+    },
+    {
+      "role": "assistant",
+      "content": "{\"response\": \"To tailor the structural dimensions and fabrication details for your laundry tower, please clarify a few key dimensions:\\n\\n1. What is your total available height (or ceiling height), and preferred total width and depth?\\n   - A) Standard tall unit: 70 cm W x 70 cm D x 240 cm H (floor to ceiling)\\n   - B) Compact unit: 68 cm W x 65 cm D x 220 cm H\\n   - C) Custom dimensions (please specify W x D x H in cm)\\n\\n2. Are you using standard front-loading appliances (approximately 60 cm W x 60 cm D x 85 cm H each), or do you have specific appliance models?\\n\\n3. What is the intended function of the middle drawer, and what finish/color do you envision?\\n   - A) Standard storage drawer (approx. 20 cm H) for detergents\\n   - B) Pull-out laundry basket / sorting drawer (approx. 30 cm H)\\n   - C) Pull-out folding shelf with shallow drawer (approx. 15 cm H)\", \"status\": \"chat\", \"notice\": [{\"q\": \"What is this piece, really?\", \"a\": \"A single-bay floor-to-ceiling (or tall freestanding) laundry tower cabinet designed to house a stacked washing machine at the base, an intermediate drawer, a tumble dryer above it, and a double-door storage cupboard at the top.\"}, {\"q\": \"For this typology, what would a maker need that people forget?\", \"a\": \"Internal clearances for appliance vibration and hoses/vents (at least 60 cm W x 85 cm H per niche, cabinet depth 65-70 cm), load-bearing reinforcement for the intermediate shelf supporting the dryer, plinth details (resting on floor for vibration damping vs elevated base), service access/cable cutouts, and door hardware style for the top cabinet.\"}, {\"q\": \"What has the client already given?\", \"a\": \"Vertical sequence is locked: Top = 2-door cupboard, below that = dryer niche, below that = drawer, bottom = washing machine.\"}, {\"q\": \"What is still missing or ambiguous?\", \"a\": \"Overall room/ceiling height or target cabinet height, overall external width and depth (or specific appliance dimensions), and material/finish preference.\"}, {\"q\": \"Which gaps matter this turn, and which get a stated default?\", \"a\": \"Ask for overall height/dimensions, appliance sizes, and finish. Default standard appliance niche sizes to 61 cm internal width x 87 cm height x 65 cm internal depth if using standard 60 cm appliances.\"}]}"
+    },
+    {
+      "role": "user",
+      "content": "use default or assume measurments.\n\nto answer your third question, for small things, i dont know why the customer wants it but they requested it."
+    },
+    {
+      "role": "assistant",
+      "content": "{\"response\": \"Here is the complete specification packet using standard professional dimensions for your laundry tower:\\n\\nA \u2014 THE DESIGN\\n- Typology: Single-bay vertical laundry column cabinet.\\n- Exterior Envelope: 70 cm Width x 70 cm Depth x 240 cm Height.\\n- Material & Construction: 1.9 cm moisture-resistant melamine-faced carcass with 2.8 cm reinforced structural shelf supporting the dryer. Open back behind appliance niches (bottom and dryer) for plumbing, venting, and power access.\\n- Hardware: Soft-close undermount drawer slides for the middle drawer, 110-degree soft-close hinges for top doors, push-to-open mechanism throughout (handleless look).\\n\\nB \u2014 LAYOUT\\n- Straight single-column floor-standing tall tower.\\n\\nC \u2014 TOP VIEW\\n- Total Footprint: 70 cm (W) x 70 cm (D).\\n- Internal clear depth: 67 cm (carcass depth 68 cm with 2 cm inset/overlay fronts).\\n\\nD \u2014 FRONT VIEW (Bottom to Top)\\n- 0.0 to 7.0 cm: Recessed plinth base (7 cm H).\\n- 7.0 to 8.9 cm: Base structural shelf (1.9 cm thick).\\n- 8.9 to 94.9 cm: Washing machine niche (86 cm clear opening H x 66.2 cm clear W).\\n- 94.9 to 96.8 cm: Intermediate divider shelf (1.9 cm thick).\\n- 96.8 to 112.8 cm: Small accessory / utility drawer (16 cm front H x 66.2 cm W).\\n- 112.8 to 115.6 cm: Reinforced structural dryer shelf (2.8 cm thick).\\n- 115.6 to 201.6 cm: Tumble dryer niche (86 cm clear opening H x 66.2 cm clear W).\\n- 201.6 to 203.5 cm: Cupboard bottom shelf (1.9 cm thick).\\n- 203.5 to 238.1 cm: Upper storage cabinet (34.6 cm clear opening H x 66.2 cm clear W) enclosed by two side-hung doors (approx. 34.6 cm W x 38 cm H each).\\n- 238.1 to 240.0 cm: Top structural panel (1.9 cm thick).\\n- Total Height: 240 cm.\\n\\nIf anything is wrong, say what to fix; if correct, reply yes.\", \"status\": \"chat\", \"notice\": [{\"q\": \"What is this piece, really?\", \"a\": \"A single freestanding or built-in vertical laundry column/tower housing a washer at the bottom, an accessory drawer above it, a dryer on a reinforced shelf above that, and a double-door cupboard at the top.\"}, {\"q\": \"What does a maker need for this type?\", \"a\": \"Exact envelope dimensions, load-bearing shelf construction for the dryer, vibration/ventilation clearances, open back wall for utility routing, drawer front height/clearance, and door swing configuration.\"}, {\"q\": \"What is already locked?\", \"a\": \"Vertical configuration is locked (Top 2-door cabinet -> Dryer niche -> Small items drawer -> Washer niche at base). Client requested to use standard professional default measurements.\"}, {\"q\": \"What is still open?\", \"a\": \"All technical specs are now populated with standard professional millwork defaults (240 cm total H, 70 cm W, 70 cm D, 1.9 cm panels, 2.8 cm reinforced structural dryer shelf).\"}, {\"q\": \"What to ask or default this turn?\", \"a\": \"Present the complete confirmation packet (A, B, C, D) using locked defaults for client approval.\"}]}"
+    },
+    {
+      "role": "user",
+      "content": "yes"
+    },
+    {
+      "role": "assistant",
+      "content": "{\"response\": \"Thank you. The specification for your laundry tower cabinet has been finalized and locked for fabrication.\", \"status\": \"confirmed\", \"brief\": \"LAUNDRY TOWER CABINET SPECIFICATION\\n\\n1. ENVELOPE & FOOTPRINT\\n- Overall Dimensions: 70 cm (Width) x 70 cm (Depth) x 240 cm (Height)\\n- Usable Internal Depth: 67 cm\\n- Plinth: 7 cm height, recessed 2 cm\\n\\n2. MATERIALS & CONSTRUCTION\\n- Primary Carcass: 1.9 cm moisture-resistant melamine/lacquered board\\n- Reinforced Structural Shelf (Dryer Support): 2.8 cm load-bearing panel\\n- Back Panel: Open back at washing machine and dryer niches for plumbing, venting, and power; 0.8 cm groove-set backboard behind drawer and top cupboard bays\\n\\n3. HARDWARE & FIT-OUT\\n- Upper Cupboard: 2 side-hung doors with 110-degree soft-close concealed hinges, push-to-open mechanism\\n- Drawer: Full-extension concealed undermount slides, soft-close, push-to-open\\n\\n4. VERTICAL STACK & CLEARANCES (Bottom to Top)\\n- 0.0 to 7.0 cm: Recessed plinth base (7 cm H)\\n- 7.0 to 8.9 cm: Base shelf (1.9 cm thickness)\\n- 8.9 to 94.9 cm: Washing machine niche (66.2 cm clear W x 67 cm clear D x 86 cm clear H)\\n- 94.9 to 96.8 cm: Intermediate divider shelf (1.9 cm thickness)\\n- 96.8 to 112.8 cm: Utility/small items drawer (16 cm front H x 66.2 cm W)\\n- 112.8 to 115.6 cm: Reinforced structural dryer shelf (2.8 cm thickness)\\n- 115.6 to 201.6 cm: Tumble dryer niche (66.2 cm clear W x 67 cm clear D x 86 cm clear H)\\n- 201.6 to 203.5 cm: Cupboard bottom shelf (1.9 cm thickness)\\n- 203.5 to 238.1 cm: Upper storage cupboard (66.2 cm clear W x 67 cm clear D x 34.6 cm clear H) enclosed by 2 swing doors (approx. 34.6 cm W x 38 cm H each)\\n- 238.1 to 240.0 cm: Top structural panel (1.9 cm thickness)\"}"
+    }
+  ],
+  "chat": [
+    {
+      "role": "user",
+      "text": "a cabinet for drier and washer. at the top two door opening, then the drier, then a drawrer then the washer at the bottom.\n"
+    },
+    {
+      "role": "assistant",
+      "text": "To tailor the structural dimensions and fabrication details for your laundry tower, please clarify a few key dimensions:\n\n1. What is your total available height (or ceiling height), and preferred total width and depth?\n   - A) Standard tall unit: 70 cm W x 70 cm D x 240 cm H (floor to ceiling)\n   - B) Compact unit: 68 cm W x 65 cm D x 220 cm H\n   - C) Custom dimensions (please specify W x D x H in cm)\n\n2. Are you using standard front-loading appliances (approximately 60 cm W x 60 cm D x 85 cm H each), or do you have specific appliance models?\n\n3. What is the intended function of the middle drawer, and what finish/color do you envision?\n   - A) Standard storage drawer (approx. 20 cm H) for detergents\n   - B) Pull-out laundry basket / sorting drawer (approx. 30 cm H)\n   - C) Pull-out folding shelf with shallow drawer (approx. 15 cm H)"
+    },
+    {
+      "role": "user",
+      "text": "use default or assume measurments.\n\nto answer your third question, for small things, i dont know why the customer wants it but they requested it."
+    },
+    {
+      "role": "assistant",
+      "text": "Here is the complete specification packet using standard professional dimensions for your laundry tower:\n\nA \u2014 THE DESIGN\n- Typology: Single-bay vertical laundry column cabinet.\n- Exterior Envelope: 70 cm Width x 70 cm Depth x 240 cm Height.\n- Material & Construction: 1.9 cm moisture-resistant melamine-faced carcass with 2.8 cm reinforced structural shelf supporting the dryer. Open back behind appliance niches (bottom and dryer) for plumbing, venting, and power access.\n- Hardware: Soft-close undermount drawer slides for the middle drawer, 110-degree soft-close hinges for top doors, push-to-open mechanism throughout (handleless look).\n\nB \u2014 LAYOUT\n- Straight single-column floor-standing tall tower.\n\nC \u2014 TOP VIEW\n- Total Footprint: 70 cm (W) x 70 cm (D).\n- Internal clear depth: 67 cm (carcass depth 68 cm with 2 cm inset/overlay fronts).\n\nD \u2014 FRONT VIEW (Bottom to Top)\n- 0.0 to 7.0 cm: Recessed plinth base (7 cm H).\n- 7.0 to 8.9 cm: Base structural shelf (1.9 cm thick).\n- 8.9 to 94.9 cm: Washing machine niche (86 cm clear opening H x 66.2 cm clear W).\n- 94.9 to 96.8 cm: Intermediate divider shelf (1.9 cm thick).\n- 96.8 to 112.8 cm: Small accessory / utility drawer (16 cm front H x 66.2 cm W).\n- 112.8 to 115.6 cm: Reinforced structural dryer shelf (2.8 cm thick).\n- 115.6 to 201.6 cm: Tumble dryer niche (86 cm clear opening H x 66.2 cm clear W).\n- 201.6 to 203.5 cm: Cupboard bottom shelf (1.9 cm thick).\n- 203.5 to 238.1 cm: Upper storage cabinet (34.6 cm clear opening H x 66.2 cm clear W) enclosed by two side-hung doors (approx. 34.6 cm W x 38 cm H each).\n- 238.1 to 240.0 cm: Top structural panel (1.9 cm thick).\n- Total Height: 240 cm.\n\nIf anything is wrong, say what to fix; if correct, reply yes."
+    },
+    {
+      "role": "user",
+      "text": "yes"
+    },
+    {
+      "role": "assistant",
+      "text": "Thank you. The specification for your laundry tower cabinet has been finalized and locked for fabrication."
+    },
+    {
+      "role": "user",
+      "text": "the top, it is two next to eachother doors"
+    },
+    {
+      "role": "assistant",
+      "text": "Spec updated."
+    }
+  ],
+  "renders": [
+    {
+      "shot_id": "shot-1",
+      "camera": "frontal",
+      "walls": [
+        "wall-a"
+      ],
+      "frame": {
+        "left": "wall-a",
+        "right": null
+      },
+      "exclude": [],
+      "prompt": "Photorealistic interior photograph of the locked furniture design.\nThis is a photograph, not a drawing, floor plan, or elevation sheet.\nProject: Laundry Tower Cabinet\nCamera: frontal\nShot: shot-1\n\nLEFT of frame: wall-a (Wall A \u2014 Laundry Column), 70 cm long, 240 cm high, 70 cm deep.\n    Laundry Tower 70cm (bottom to top: appliance 88cm, then drawer 18cm, then appliance 89cm, then door x2 38cm)\nMaterials: carcass=1.9 cm moisture-resistant melamine board with 2.8 cm reinforced structural dryer shelf; doors=1.9 cm moisture-resistant melamine/lacquered board; finish=Moisture-resistant melamine / lacquered\nHardware: Push-to-open, 110-degree soft-close concealed hinges, soft-close concealed undermount drawer slides; Push-to-open mechanism (handleless)\nRender notes: Single-bay vertical laundry column. Bottom compartment accommodates washing machine, followed by a middle utility drawer, tumble dryer compartment above on reinforced shelf, and top storage cabinet with two side-by-side push-to-open doors.\n\nAttached reference images, in order:\n1. elev-wall-a.svg \u2014 front elevation of the LEFT wall. Copy this layout exactly.\n2. plan-cone.svg \u2014 plan with this shot's camera cone marked. Photograph from that viewpoint. Only cone-marked walls are in frame.\nElevations are measured CAD. Copy bay count, widths, module stack (first module is at the plinth / bottom), cornice, and plinth.",
+      "references": [
+        "elev-wall-a.svg",
+        "plan-cone.svg"
+      ],
+      "file": "shot-1.png"
+    }
+  ],
+  "render_error": null
+}

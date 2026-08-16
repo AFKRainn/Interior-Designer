@@ -1,1 +1,1 @@
-# Architecture Agent — Main Application Package
+# Interior Designer — FastAPI + Furniture Spec pipeline

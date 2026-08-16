@@ -1,1 +1,1 @@
-# Architecture Agent — Prompt Templates Package
+# Brief and spec prompts.

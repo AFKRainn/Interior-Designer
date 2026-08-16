@@ -27,6 +27,31 @@ from app.json_parse import parse_json_from_text
 logger = logging.getLogger(__name__)
 
 
+class OpenRouterError(Exception):
+    """OpenRouter returned a non-retryable error. status_code is the HTTP status."""
+
+    def __init__(self, status_code: int, body: str):
+        self.status_code = status_code
+        self.body = body
+        super().__init__(_openrouter_message(status_code, body))
+
+
+def _openrouter_message(status_code: int, body: str) -> str:
+    try:
+        parsed = json.loads(body)
+        err = parsed.get("error") if isinstance(parsed, dict) else None
+        if isinstance(err, dict) and err.get("message"):
+            return err["message"]
+        if isinstance(parsed, dict) and parsed.get("message"):
+            return parsed["message"]
+    except (json.JSONDecodeError, TypeError, AttributeError):
+        pass
+    text = (body or "").strip()
+    if text:
+        return text[:500]
+    return f"OpenRouter API error {status_code}"
+
+
 # ---------------------------------------------------------------------------
 # Cost Tracker (singleton)
 # ---------------------------------------------------------------------------
@@ -197,8 +222,8 @@ class OpenRouterClient:
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
-            "HTTP-Referer": "http://localhost:8501",
-            "X-Title": "Architecture Agent",
+            "HTTP-Referer": "http://localhost:5173",
+            "X-Title": "Interior Designer",
         }
 
         # Shared singletons
@@ -214,7 +239,7 @@ class OpenRouterClient:
         model: str,
         messages: list[dict],
         temperature: float = 0.7,
-        max_tokens: int = 4096,
+        max_tokens: int = 8192,
         response_format: dict | None = None,
         reasoning_effort: str = "none",
     ) -> dict:
@@ -225,7 +250,7 @@ class OpenRouterClient:
             model: OpenRouter model ID (e.g. "anthropic/claude-sonnet-4")
             messages: List of message dicts with 'role' and 'content'
             temperature: Sampling temperature (0-2)
-            max_tokens: Ignored — no output token limit is sent to the API.
+            max_tokens: Output cap. Sent so OpenRouter does not reserve 65k tokens.
             response_format: Optional (e.g. {"type": "json_object"})
             reasoning_effort: Reasoning effort level: "none" | "low" | "medium" | "high".
                               When not "none", temperature is forced to 1.0
@@ -242,7 +267,7 @@ class OpenRouterClient:
             "model": model,
             "messages": messages,
             "temperature": temperature,
-            # max_tokens intentionally omitted — models output freely
+            "max_tokens": max_tokens,
         }
         if response_format:
             payload["response_format"] = response_format
@@ -813,14 +838,11 @@ class OpenRouterClient:
                         continue
 
                     # Client error — don't retry
-                    error_body = response.text[:500]
+                    error_body = response.text[:2000]
                     logger.error(
                         f"API error {response.status_code}: {error_body}"
                     )
-                    raise Exception(
-                        f"OpenRouter API error {response.status_code}: "
-                        f"{error_body}"
-                    )
+                    raise OpenRouterError(response.status_code, error_body)
 
             except httpx.TimeoutException as e:
                 last_error = e
@@ -840,9 +862,9 @@ class OpenRouterClient:
                 )
                 await asyncio.sleep(backoff)
 
+            except OpenRouterError:
+                raise
             except Exception as e:
-                if "API error" in str(e):
-                    raise  # Re-raise client errors
                 last_error = e
                 logger.error(f"Unexpected error: {e}")
                 await asyncio.sleep(self.retry_delay)

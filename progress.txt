@@ -2,16 +2,108 @@
                   ARCHITECTURE AGENT — PROGRESS TRACKER
 ================================================================================
 Created: 2026-03-25
-Last Updated: 2026-03-30
+Last Updated: 2026-08-15
 
 ================================================================================
-CURRENT STATUS: PHASE 18 — MAJOR ARCHITECTURAL OVERHAUL COMPLETE
+CURRENT STATUS: PHASE F COMPLETE — NEW PIPELINE IS THE PRODUCT
 ================================================================================
 
-Complete pipeline redesign. Old 3-model council replaced with a
-Consultant → Reviewer → Chairman → Step-by-step generation architecture.
+2026-08-15: User retired the council / image-model-drawings system.
+New plan is in plan.txt. Phase F removed the old Streamlit pipeline.
+The product is Brief → Furniture Spec → SVG editor → lock → photoreal.
 
-Pipeline flow (new):
+New pipeline (agreed):
+  Brief (one LLM, exhaustive, sketch in)
+  → Furniture Spec JSON (source of truth)
+  → Web SVG: 1 plan + N elevations (one per wall)
+  → User tweaks / chat-patches until lock
+  → View planner (code): camera jobs from wall adjacency
+  → Photoreal image model, one sealed packet per shot
+
+v1 defaults locked in plan.txt:
+  LLM: google/gemini-3.7-flash (one model, not a council)
+  Image: photoreal only
+  Editor: tweak + chat, not full CAD
+  Sketch: yes
+
+PHASE A (2026-08-15) — COMPLETE
+  - app/models/furniture_spec.py: Furniture Spec + graph/bay validation
+  - app/planner/views.py: N elevations, camera jobs from adjacency
+  Planner rules verified in tests:
+    straight → 1 frontal
+    L → 1 inside corner (A left, B right)
+    U → 2 overlapping corners (A+B, B+C), isolated refs
+    galley → 2 frontals (never one shot)
+    four-wall → opposite corners (A+B, C+D), not adjacent corners
+
+PHASE B (2026-08-15) — COMPLETE
+  - app/render/geometry.py: place walls in 2D (90° CCW at adjacent corners,
+    galley fronts face across 120 cm aisle)
+  - app/render/svg_plan.py: CAD plan (footprints, bay ticks, length labels)
+  - app/render/svg_elevation.py: one sheet per wall (cornice, plinth,
+    bays, modules, handles, dimensions)
+  - tests/golden: L-kitchen plan + Wall A + Wall B
+  - tests: 27 passed
+
+PHASE C (2026-08-15) — COMPLETE
+  - config.BRIEF_MODEL = qwen/qwen3.8-max (vision + reasoning)
+  - app/agents/brief.py: intake chat, sketch as multimodal, locked brief
+  - app/agents/spec_author.py: brief → FurnitureSpec, one repair pass,
+    chat patch (keeps project_id, bumps version)
+  - Tests mock OpenRouter — no live API calls
+  - tests: 41 passed
+
+PHASE D (2026-08-15) — COMPLETE
+  - FastAPI app/api/main.py: session, brief, spec build/patch, bay-width,
+    divider, lock. Demo L-kitchen needs no LLM.
+  - Bay tweaks in app/editor/tweak.py (wall length conserved, min 10 cm)
+  - Vite/React editor in web/ — plan + N elevations, click bay, type width,
+    drag divider, chat patch, lock
+  - run.py starts uvicorn on 127.0.0.1:8000
+  - UI: cd web && npm run dev → http://localhost:5173
+  - tests: 50 passed
+
+PHASE E (2026-08-15) — COMPLETE
+  - app/render/photoreal.py: sealed packets from camera jobs. Prompt is
+    code (left/right walls, bays, exclude, materials). Not an LLM.
+  - app/render/raster.py: Pillow PNG of this shot's elevations + plan with
+    camera cone. plan_svg() goldens unchanged.
+  - Isolation: each generate_image call gets only that shot's refs.
+    L → 1 corner packet (elev-a, elev-b, plan-cone).
+    Galley → 2 frontals, one wall each.
+    U shot-1 has no elev-wall-c.
+  - POST /api/session/{id}/render after lock (fills missing shots).
+    POST /api/session/{id}/render/{shot_id} regenerates from the same
+    rebuilt packet. Images under data/sessions/{id}/{shot_id}.png
+  - React gallery: generate all, regenerate one.
+  - Tests mock generate_image. No live image API.
+  - tests: 58 passed
+
+PHASE F (2026-08-15) — COMPLETE
+  - Removed Streamlit UI (app/ui), council/chairman/consultant/generator/
+    reviewer/refiner/interpreter, DSD/project/elements models, DSD
+    project_store, old generation/council/consultant prompts.
+  - config.py: BRIEF_MODEL + IMAGE_GEN_MODEL only. streamlit dropped from
+    requirements.txt.
+  - Spec versions: each Furniture Spec version is written to
+    data/sessions/{id}/versions/v{n}.json and listed on the session.
+  - CostTracker summary on /api/health and every session payload. Header
+    shows spend; editor shows spec version.
+  - run.py is uvicorn only.
+  - tests: 58 passed
+
+The only UI is FastAPI + Vite/React. Historical Phase 0–18 log below is
+a record of the retired pipeline, not how to run the app.
+
+Next work: user testing. No further development phase in plan.txt.
+
+--------------------------------------------------------------------------------
+HISTORICAL — PHASES 0–18 (RETIRED PIPELINE)
+The log below is the old Consultant → Reviewer → Chairman →
+image-gen drawings system. It is a record, not the current plan.
+--------------------------------------------------------------------------------
+
+Pipeline flow (retired):
   Input (text + images)
   -> Consultant (Gemini) — chat loop, bay-by-bay analysis, two modes
   -> User confirms with "yes/confirm"

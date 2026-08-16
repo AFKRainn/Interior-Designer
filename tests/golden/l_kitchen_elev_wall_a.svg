@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380.00 316.00" width="380.00" height="316.00" data-title="ELEVATION wall-a">
+  <rect x="0" y="0" width="380.00" height="316.00" fill="#ffffff" stroke="none" />
+  <text x="56.00" y="20.00" fill="#000000" font-family="Arial, Helvetica, sans-serif" font-size="11.00" text-anchor="start">Wall A — Sink run</text>
+  <rect x="56.00" y="32.00" width="300.00" height="220.00" fill="#ffffff" stroke="#000000" stroke-width="1.2" data-wall-id="wall-a" class="carcass" />
+  <rect x="56.00" y="32.00" width="300.00" height="8.00" fill="#ffffff" stroke="#000000" stroke-width="0.6" class="cornice" />
+  <rect x="56.00" y="240.00" width="300.00" height="12.00" fill="#ffffff" stroke="#000000" stroke-width="0.6" class="plinth" />
+  <rect x="56.00" y="40.00" width="80.00" height="200.00" fill="#ffffff" stroke="#000000" stroke-width="0.4" data-bay-id="bay-1" class="bay" />
+  <rect x="56.00" y="220.00" width="80.00" height="20.00" fill="#ffffff" stroke="#000000" stroke-width="0.6" class="module module-drawer" />
+  <rect x="90.00" y="229.20" width="12.00" height="1.60" fill="#ffffff" stroke="#000000" stroke-width="0.4" class="handle" />
+  <rect x="56.00" y="40.00" width="80.00" height="180.00" fill="#ffffff" stroke="#000000" stroke-width="0.6" class="module module-door" />
+  <rect x="128.00" y="124.00" width="1.60" height="12.00" fill="#ffffff" stroke="#000000" stroke-width="0.4" class="handle" />
+  <line x1="136.00" y1="40.00" x2="136.00" y2="240.00" stroke="#000000" stroke-width="0.6" />
+  <rect x="136.00" y="40.00" width="60.00" height="200.00" fill="#ffffff" stroke="#000000" stroke-width="0.4" data-bay-id="bay-2" class="bay" />
+  <rect x="136.00" y="40.00" width="60.00" height="200.00" fill="#ffffff" stroke="#000000" stroke-width="0.6" class="module module-appliance" />
+  <rect x="188.00" y="134.00" width="1.60" height="12.00" fill="#ffffff" stroke="#000000" stroke-width="0.4" class="handle" />
+  <line x1="196.00" y1="40.00" x2="196.00" y2="240.00" stroke="#000000" stroke-width="0.6" />
+  <rect x="196.00" y="40.00" width="80.00" height="200.00" fill="#ffffff" stroke="#000000" stroke-width="0.4" data-bay-id="bay-3" class="bay" />
+  <rect x="196.00" y="220.00" width="80.00" height="20.00" fill="#ffffff" stroke="#000000" stroke-width="0.6" class="module module-drawer" />
+  <rect x="230.00" y="229.20" width="12.00" height="1.60" fill="#ffffff" stroke="#000000" stroke-width="0.4" class="handle" />
+  <rect x="196.00" y="200.00" width="80.00" height="20.00" fill="#ffffff" stroke="#000000" stroke-width="0.6" class="module module-drawer" />
+  <rect x="230.00" y="209.20" width="12.00" height="1.60" fill="#ffffff" stroke="#000000" stroke-width="0.4" class="handle" />
+  <rect x="196.00" y="180.00" width="80.00" height="20.00" fill="#ffffff" stroke="#000000" stroke-width="0.6" class="module module-drawer" />
+  <rect x="230.00" y="189.20" width="12.00" height="1.60" fill="#ffffff" stroke="#000000" stroke-width="0.4" class="handle" />
+  <rect x="196.00" y="160.00" width="80.00" height="20.00" fill="#ffffff" stroke="#000000" stroke-width="0.6" class="module module-drawer" />
+  <rect x="230.00" y="169.20" width="12.00" height="1.60" fill="#ffffff" stroke="#000000" stroke-width="0.4" class="handle" />
+  <rect x="196.00" y="40.00" width="80.00" height="120.00" fill="#ffffff" stroke="#000000" stroke-width="0.6" class="module module-door" />
+  <rect x="268.00" y="94.00" width="1.60" height="12.00" fill="#ffffff" stroke="#000000" stroke-width="0.4" class="handle" />
+  <line x1="276.00" y1="40.00" x2="276.00" y2="240.00" stroke="#000000" stroke-width="0.6" />
+  <rect x="276.00" y="40.00" width="80.00" height="200.00" fill="#ffffff" stroke="#000000" stroke-width="0.4" data-bay-id="bay-4" class="bay" />
+  <rect x="276.00" y="190.00" width="80.00" height="50.00" fill="#ffffff" stroke="#000000" stroke-width="0.6" class="module module-open_shelf" />
+  <line x1="276.00" y1="190.00" x2="356.00" y2="190.00" stroke="#000000" stroke-width="0.4" />
+  <rect x="276.00" y="140.00" width="80.00" height="50.00" fill="#ffffff" stroke="#000000" stroke-width="0.6" class="module module-open_shelf" />
+  <line x1="276.00" y1="140.00" x2="356.00" y2="140.00" stroke="#000000" stroke-width="0.4" />
+  <rect x="276.00" y="90.00" width="80.00" height="50.00" fill="#ffffff" stroke="#000000" stroke-width="0.6" class="module module-open_shelf" />
+  <line x1="276.00" y1="90.00" x2="356.00" y2="90.00" stroke="#000000" stroke-width="0.4" />
+  <rect x="276.00" y="40.00" width="80.00" height="50.00" fill="#ffffff" stroke="#000000" stroke-width="0.6" class="module module-open_shelf" />
+  <line x1="276.00" y1="40.00" x2="356.00" y2="40.00" stroke="#000000" stroke-width="0.4" />
+  <line x1="356.00" y1="40.00" x2="356.00" y2="240.00" stroke="#000000" stroke-width="0.6" />
+  <rect x="56.00" y="40.00" width="6.00" height="200.00" fill="#ffffff" stroke="#000000" stroke-width="0.4" class="side-column" />
+  <rect x="350.00" y="40.00" width="6.00" height="200.00" fill="#ffffff" stroke="#000000" stroke-width="0.4" class="side-column" />
+  <line x1="56.00" y1="266.00" x2="356.00" y2="266.00" stroke="#000000" stroke-width="0.4" />
+  <text x="206.00" y="276.00" fill="#000000" font-family="Arial, Helvetica, sans-serif" font-size="7.00" text-anchor="middle">300 cm</text>
+  <line x1="56.00" y1="252.00" x2="56.00" y2="284.00" stroke="#000000" stroke-width="0.4" />
+  <text x="96.00" y="294.00" fill="#000000" font-family="Arial, Helvetica, sans-serif" font-size="6.00" text-anchor="middle">80</text>
+  <line x1="136.00" y1="252.00" x2="136.00" y2="284.00" stroke="#000000" stroke-width="0.4" />
+  <text x="166.00" y="294.00" fill="#000000" font-family="Arial, Helvetica, sans-serif" font-size="6.00" text-anchor="middle">60</text>
+  <line x1="196.00" y1="252.00" x2="196.00" y2="284.00" stroke="#000000" stroke-width="0.4" />
+  <text x="236.00" y="294.00" fill="#000000" font-family="Arial, Helvetica, sans-serif" font-size="6.00" text-anchor="middle">80</text>
+  <line x1="276.00" y1="252.00" x2="276.00" y2="284.00" stroke="#000000" stroke-width="0.4" />
+  <text x="316.00" y="294.00" fill="#000000" font-family="Arial, Helvetica, sans-serif" font-size="6.00" text-anchor="middle">80</text>
+  <line x1="356.00" y1="252.00" x2="356.00" y2="284.00" stroke="#000000" stroke-width="0.4" />
+  <line x1="56.00" y1="284.00" x2="356.00" y2="284.00" stroke="#000000" stroke-width="0.4" />
+  <line x1="44.00" y1="32.00" x2="44.00" y2="252.00" stroke="#000000" stroke-width="0.4" />
+  <text x="40.00" y="142.00" fill="#000000" font-family="Arial, Helvetica, sans-serif" font-size="7.00" text-anchor="end">220 cm</text>
+</svg>

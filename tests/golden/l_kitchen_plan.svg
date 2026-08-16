@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 418.00 314.00" width="418.00" height="314.00" data-title="PLAN">
+  <rect x="0" y="0" width="418.00" height="314.00" fill="#ffffff" stroke="none" />
+  <text x="48.00" y="20.00" fill="#000000" font-family="Arial, Helvetica, sans-serif" font-size="12.00" text-anchor="start">L kitchen</text>
+  <polygon points="48.00,244.00 348.00,244.00 348.00,184.00 48.00,184.00" fill="#ffffff" stroke="#000000" stroke-width="1.2" fill-rule="nonzero" data-wall-id="wall-a" class="wall-footprint" />
+  <line x1="128.00" y1="184.00" x2="128.00" y2="192.00" stroke="#000000" stroke-width="0.4" />
+  <line x1="188.00" y1="184.00" x2="188.00" y2="192.00" stroke="#000000" stroke-width="0.4" />
+  <line x1="268.00" y1="184.00" x2="268.00" y2="192.00" stroke="#000000" stroke-width="0.4" />
+  <text x="198.00" y="217.00" fill="#000000" font-family="Arial, Helvetica, sans-serif" font-size="7.00" text-anchor="middle">wall-a</text>
+  <line x1="48.00" y1="244.00" x2="48.00" y2="266.00" stroke="#000000" stroke-width="0.4" />
+  <line x1="348.00" y1="244.00" x2="348.00" y2="266.00" stroke="#000000" stroke-width="0.4" />
+  <line x1="48.00" y1="266.00" x2="348.00" y2="266.00" stroke="#000000" stroke-width="0.4" />
+  <text x="198.00" y="264.00" fill="#000000" font-family="Arial, Helvetica, sans-serif" font-size="7.00" text-anchor="middle">300 cm</text>
+  <polygon points="348.00,244.00 348.00,64.00 288.00,64.00 288.00,244.00" fill="#ffffff" stroke="#000000" stroke-width="1.2" fill-rule="nonzero" data-wall-id="wall-b" class="wall-footprint" />
+  <line x1="288.00" y1="154.00" x2="296.00" y2="154.00" stroke="#000000" stroke-width="0.4" />
+  <text x="318.00" y="157.00" fill="#000000" font-family="Arial, Helvetica, sans-serif" font-size="7.00" text-anchor="middle">wall-b</text>
+  <line x1="348.00" y1="244.00" x2="370.00" y2="244.00" stroke="#000000" stroke-width="0.4" />
+  <line x1="348.00" y1="64.00" x2="370.00" y2="64.00" stroke="#000000" stroke-width="0.4" />
+  <line x1="370.00" y1="244.00" x2="370.00" y2="64.00" stroke="#000000" stroke-width="0.4" />
+  <text x="370.00" y="152.00" fill="#000000" font-family="Arial, Helvetica, sans-serif" font-size="7.00" text-anchor="middle">180 cm</text>
+</svg>

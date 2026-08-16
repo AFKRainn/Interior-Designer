@@ -1,0 +1,204 @@
+{
+  "id": "f2a563ba-8d3d-48a6-85ac-d7ca1cbc9720",
+  "phase": "edit",
+  "locked": false,
+  "brief": "L kitchen sink 300 fridge 180",
+  "spec": {
+    "project_id": "f2a563ba-8d3d-48a6-85ac-d7ca1cbc9720",
+    "version": 1,
+    "units": "cm",
+    "name": "L kitchen",
+    "layout": {
+      "type": "L",
+      "walls": [
+        {
+          "id": "wall-a",
+          "label": "Wall A \u2014 Sink run",
+          "length": 300.0,
+          "adjacent_to": [
+            "wall-b"
+          ],
+          "faces": [],
+          "sequence": 0
+        },
+        {
+          "id": "wall-b",
+          "label": "Wall B \u2014 Fridge run",
+          "length": 180.0,
+          "adjacent_to": [
+            "wall-a"
+          ],
+          "faces": [],
+          "sequence": 1
+        }
+      ]
+    },
+    "walls": [
+      {
+        "id": "wall-a",
+        "height": 220.0,
+        "depth": 60.0,
+        "cornice": {
+          "type": "straight",
+          "height": 8.0
+        },
+        "plinth": {
+          "type": "recessed",
+          "height": 12.0
+        },
+        "side_columns": {
+          "left_cm": 6.0,
+          "right_cm": 6.0,
+          "detail": "plain"
+        },
+        "bays": [
+          {
+            "id": "bay-1",
+            "label": "Sink",
+            "width": 80.0,
+            "modules": [
+              {
+                "type": "drawer",
+                "height": 20.0,
+                "count": 1,
+                "handle": "bar"
+              },
+              {
+                "type": "door",
+                "height": 180.0,
+                "count": 1,
+                "handle": "bar"
+              }
+            ]
+          },
+          {
+            "id": "bay-2",
+            "label": "Dishwasher",
+            "width": 60.0,
+            "modules": [
+              {
+                "type": "appliance",
+                "height": 200.0,
+                "count": 1,
+                "handle": "bar"
+              }
+            ]
+          },
+          {
+            "id": "bay-3",
+            "label": "Drawers",
+            "width": 80.0,
+            "modules": [
+              {
+                "type": "drawer",
+                "height": 20.0,
+                "count": 4,
+                "handle": "bar"
+              },
+              {
+                "type": "door",
+                "height": 120.0,
+                "count": 1,
+                "handle": "bar"
+              }
+            ]
+          },
+          {
+            "id": "bay-4",
+            "label": "Open shelves",
+            "width": 80.0,
+            "modules": [
+              {
+                "type": "open_shelf",
+                "height": 50.0,
+                "count": 4,
+                "handle": ""
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "wall-b",
+        "height": 220.0,
+        "depth": 60.0,
+        "cornice": {
+          "type": "straight",
+          "height": 8.0
+        },
+        "plinth": {
+          "type": "recessed",
+          "height": 12.0
+        },
+        "side_columns": {
+          "left_cm": 6.0,
+          "right_cm": 6.0,
+          "detail": "plain"
+        },
+        "bays": [
+          {
+            "id": "bay-5",
+            "label": "Fridge",
+            "width": 90.0,
+            "modules": [
+              {
+                "type": "appliance",
+                "height": 200.0,
+                "count": 1,
+                "handle": "bar"
+              }
+            ]
+          },
+          {
+            "id": "bay-6",
+            "label": "Pantry",
+            "width": 90.0,
+            "modules": [
+              {
+                "type": "door",
+                "height": 200.0,
+                "count": 1,
+                "handle": "bar"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "materials": {
+      "carcass": "plywood",
+      "doors": "painted MDF",
+      "finish": "matte white"
+    },
+    "hardware": {
+      "style": "bar",
+      "placement": "right of doors, centered on drawers"
+    },
+    "brief": "L kitchen sink 300 fridge 180",
+    "render_notes": ""
+  },
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a senior interior designer. You collect a complete furniture / kitchen spec. You do not write image prompts. You do not praise. You do the math.\n\nMODE (choose from context, do not ask):\n- Sketch/photo: describe only what you are sure of. Ask about the rest.\n  Image wins for geometry/layout. Client words win for materials/colors.\n  Stated numbers win for dimensions.\n- From scratch: ask about space and function, then propose a specific design.\n\nEXHAUSTIVE \u2014 do not skip, across turns not all at once:\nlayout (straight / L / U / galley; which bays on which wall; corner vs facing);\nmeasurements if any; height and depth; cornice/trim; plinth/base; side columns;\nevery bay's width and contents (doors, drawers, open shelves, glass, appliances);\nhardware; internal shelves; materials and finish.\nIsland/peninsula is NOT a wall unless it has its own designed face.\n\nRULES\n- Max 3 questions per turn. For visual details give 2\u20133 short options.\n- Lead with what is locked, then what is still open.\n- A closed topic stays closed.\n- Apply professional defaults without asking (alignment, standard heights).\n  State the default in one sentence.\n- Never invent a system error.\n\nBEFORE CONFIRM: write a review packet (status still \"chat\"):\nA \u2014 THE DESIGN (wall by wall, bay by bay, cornice, plinth, hardware, materials)\nB \u2014 LAYOUT (straight / L / U / galley; adjacency vs facing)\nC \u2014 TOP VIEW (footprint)\nD \u2014 FRONT VIEW per wall (left to right)\nEnd with: if anything is wrong, say what to fix; if correct, reply yes.\n\nAfter the client approves: status \"confirmed\", put the full facts in \"brief\".\nShort thanks in \"response\". No new questions.\n\nOUTPUT \u2014 JSON only, no markdown fences:\n{\"response\": \"...\", \"status\": \"chat\"}\nWhen confirmed:\n{\"response\": \"...\", \"status\": \"confirmed\", \"brief\": \"full locked facts\"}\n"
+    },
+    {
+      "role": "user",
+      "content": "L kitchen"
+    },
+    {
+      "role": "assistant",
+      "content": "{\"response\": \"Locked in.\", \"status\": \"confirmed\", \"brief\": \"L kitchen sink 300 fridge 180\"}"
+    }
+  ],
+  "chat": [
+    {
+      "role": "user",
+      "text": "L kitchen"
+    },
+    {
+      "role": "assistant",
+      "text": "Locked in."
+    }
+  ]
+}

@@ -1,513 +1,422 @@
 ================================================================================
-                    ARCHITECTURE AGENT — PROJECT PLAN
+                    INTERIOR DESIGNER — PROJECT PLAN
 ================================================================================
 Created: 2026-03-25
-Last Updated: 2026-03-27
+Last Updated: 2026-08-15
+
+This file is the architecture. The council / DSD / image-model-drawings
+pipeline (Phases 0–18) is retired. Code still exists until it is replaced.
 
 ================================================================================
 1. PROJECT OVERVIEW
 ================================================================================
 
-An AI-powered multi-agent architecture design system that takes a user's sketch 
-(hand-drawn, PNG/JPG) or text description and produces professional architectural 
-outputs: floor plans, elevations, and 3D perspective renders.
+Furniture-first local design tool.
 
-The system uses a "Council" of three multimodal LLMs (Claude, GPT, Gemini) that 
-deliberate and reach consensus before any generation happens. This ensures 
-accuracy and faithfulness to the user's intent.
+The user describes a piece or a kitchen/wardrobe run (optional sketch).
+The system produces:
 
-Key differentiator: A structured Design Specification Document (DSD) sits at the 
-center. The Council agrees on the DSD, images are generated FROM the DSD, and 
-changes UPDATE the DSD — enabling targeted modifications (e.g., change color 
-without changing layout).
+  1. An editable floor plan (top view)
+  2. One front elevation per wall (N walls → N elevations)
+  3. Photoreal image(s) covering those walls, after the drawings are locked
 
-Target use: Local app, single user (the developer).
-Primary focus: Furniture design, but supports rooms and buildings too.
+Drawings are data rendered in a web app. Pictures are generated only after
+lock, from sealed camera jobs. An image model never invents the plan or
+the elevation.
 
-================================================================================
-2. TECH STACK
-================================================================================
-
-- Language:          Python 3.10+
-- UI:                Streamlit (local web interface)
-- API Gateway:       OpenRouter (all LLM calls go through here)
-- HTTP Client:       httpx (async support)
-- Data Models:       Pydantic v2
-- Image Processing:  Pillow (PIL)
-- Storage:           JSON files (lightweight, no database)
-- Environment:       OPENROUTER_API_KEY env variable
+Target: local app, single user.
+Primary: furniture and kitchen/wardrobe runs. Rooms/buildings later.
 
 ================================================================================
-3. MODELS (via OpenRouter)
+2. THE RULE
 ================================================================================
 
-Council Members (Multimodal — can analyze images + text):
-  1. Claude:   anthropic/claude-sonnet-4.6
-  2. GPT:      openai/gpt-5.4
-  3. Gemini:   google/gemini-3.1-pro-preview
+Plans are data. Elevations are data. Renders are pictures.
+Those jobs never share a tool.
 
-Image Generation:
-  - Nano Banana: google/gemini-3-pro-image-preview
-    (Google's Gemini 3 Pro Image Preview — supports high-quality 
-     architectural image generation, editing, 2K/4K output)
+  - LLM talks, extracts facts, writes/patches a Furniture Spec (JSON).
+  - Web app draws the spec as SVG (plan + one elevation sheet per wall).
+  - User edits the spec (drag / type sizes / chat). Canvas updates instantly.
+  - Code plans photoreal cameras from the wall graph.
+  - Image model receives one sealed shot packet at a time. It does not
+    choose how many images, or which walls.
 
-Chairman Role: Rotates among the three council members, or uses the 
-member with the highest confidence score in that session.
-
-================================================================================
-4. SYSTEM ARCHITECTURE — THE 6-LAYER PIPELINE
-================================================================================
-
-Every user interaction flows through these layers. Not every layer runs 
-every time — the system is smart about skipping unnecessary layers 
-(e.g., a color change skips full council deliberation).
-
-------------------------------------------------------------------------------
-LAYER 0: INPUT PROCESSING & DESIGN CONSULTATION
-------------------------------------------------------------------------------
-Purpose: Accept user input and refine it through conversation.
-
-- Single unified input: Text description + optional multiple images
-- Creates an "Input Package" containing:
-  - Raw images (if provided) — stored and base64-encoded for API calls
-  - Text description (if provided)
-  - Element selections (from built-in element library)
-  - Timestamp, session ID
-
-- DESIGN CONSULTANT (Pre-Council Chat Layer):
-  - Single LLM (Claude) acts as a conversational design consultant
-  - Assesses input completeness: high/medium/low
-  - If high → produces design brief immediately, skips to council
-  - If low/medium → asks focused clarifying questions (2-4 exchanges max)
-  - Does NOT analyze images — only asks user to explain what they are
-  - Outputs a refined "design brief" for the council
-  - Rule: NEVER ask questions just to ask. Skip if input is clear.
-
-- ELEMENT LIBRARY:
-  - Built-in selectable reference elements (side panels, handles, 
-    grain patterns, standard MDF sizes, etc.)
-  - Default is always "plain" — no need to ask
-  - User can optionally select elements while prompting
-  - Selected elements are included in the design brief and council prompts
-
-- Passes refined Design Brief + images + elements to Layer 1
-
-------------------------------------------------------------------------------
-LAYER 1: THE COUNCIL (Interpretation & Deliberation)
-------------------------------------------------------------------------------
-Purpose: Three LLMs independently analyze the input, discuss, and converge 
-on a unified understanding. This is the quality gate.
-
-Process:
-  Round 1 — Independent Analysis:
-    - Each council member receives the Input Package
-    - Each produces a structured interpretation:
-      * What is being designed (furniture/room/building)
-      * Dimensions (estimated from sketch or described)
-      * Style & aesthetic
-      * Materials & colors
-      * Structural elements
-      * Spatial layout
-    - All three work in PARALLEL (async API calls)
-
-  Round 2 — Cross-Review:
-    - Each member sees the other two members' interpretations
-    - Each provides:
-      * Agreement points
-      * Disagreement points with reasoning
-      * Suggested corrections
-    - All three work in PARALLEL
-
-  Round 3 — Convergence:
-    - Each member proposes a FINAL unified interpretation
-    - Considers all feedback from Round 2
-    - All three work in PARALLEL
-
-  Consensus Check:
-    - System compares the three final interpretations
-    - If 2/3 or 3/3 align on key elements → CONSENSUS REACHED
-    - If no consensus → another round (max 3 total rounds)
-    - If still no consensus after 3 rounds → Chairman makes final call
-
-  Chairman Synthesis:
-    - One LLM synthesizes all agreed elements into the DSD
-    - The DSD becomes the single source of truth
-
-Output: Design Specification Document (DSD) — see Section 5
-
-------------------------------------------------------------------------------
-LAYER 2: USER CHECKPOINT
-------------------------------------------------------------------------------
-Purpose: Show the user what the Council understood before spending 
-resources on image generation.
-
-- Presents the DSD in a clean, readable format
-- User can:
-  * Confirm → proceed to Layer 3
-  * Request modifications → update DSD, quick council review
-  * Reject → back to Layer 0 with new input
-
-This layer saves cost by catching misunderstandings early.
-
-------------------------------------------------------------------------------
-LAYER 3: IMAGE GENERATION (Two-Stage)
-------------------------------------------------------------------------------
-Purpose: Generate architectural images from the DSD in two stages.
-
-STAGE 1 — Technical Drawings:
-  1. Floor Plan (top-down orthographic view)
-  2. Front Elevation (front face view)
-  → User reviews and approves drawings before proceeding
-
-STAGE 2 — Realistic Render (after approval):
-  3. Photorealistic Lifestyle Render
-     - Design placed in a real-world environment
-     - Contextual items (books, plants, props on shelves, etc.)
-     - Natural lighting, depth of field, magazine-quality composition
-
-Additional views (generated on request):
-  - Side Elevation, Rear Elevation
-  - 3D Perspective views
-  
-  Note: Not all views are generated for all designs. The Council 
-  decides which views are relevant based on the design type.
-  E.g., a table might not need a rear elevation.
-
-Process:
-  - For each view, a specialized prompt is crafted containing:
-    * Full DSD context
-    * View-specific instructions (camera angle, projection type)
-    * Style guidance (architectural drawing style, render style)
-    * Technical requirements (clean lines, proper scale, labels)
-  - Uses Nano Banana (google/gemini-3-pro-image-preview)
-  - Images generated sequentially (to manage API rate limits)
-  - Each image stored with metadata linking it to the DSD version
-
-------------------------------------------------------------------------------
-LAYER 4: QUALITY REVIEW (Council Review)
-------------------------------------------------------------------------------
-Purpose: The Council reviews generated images for accuracy.
-
-Process:
-  - Each council member reviews each generated image against the DSD
-  - Scoring (1-10) on:
-    * Dimensional accuracy
-    * Material/color accuracy
-    * Style adherence
-    * View correctness (is it the right angle/projection?)
-    * Overall quality
-  - If average score < 7 → regenerate with specific feedback
-  - If score >= 7 → APPROVED
-  - Max 3 regeneration attempts per image
-  - If still failing after 3 attempts → flag for user attention
-
-Output: Set of approved images with quality scores
-
-------------------------------------------------------------------------------
-LAYER 5: PRESENTATION
-------------------------------------------------------------------------------
-Purpose: Present all approved images to the user.
-
-- Gallery view in Streamlit with all generated views
-- Each image labeled with view type and quality score
-- User can:
-  * Approve all → project saved
-  * Request changes → goes to Layer 6
-  * Regenerate specific view → back to Layer 3 for that view only
-  * Start over → back to Layer 0
-
-------------------------------------------------------------------------------
-LAYER 6: REFINEMENT (Change Management)
-------------------------------------------------------------------------------
-Purpose: Handle targeted changes without regenerating everything.
-
-This is the critical "change color without changing layout" feature.
-
-Process:
-  Step 1 — Change Classification:
-    - User describes change in natural language
-    - A classifier agent determines:
-      * Change type: COSMETIC (color, texture, finish)
-                     STRUCTURAL (layout, dimensions, proportions)
-                     ADDITIVE (new element added)
-                     SUBTRACTIVE (element removed)
-      * DSD sections affected
-      * Which images need regeneration (not all!)
-
-  Step 2 — DSD Update:
-    - Creates a new DSD version (version number incremented)
-    - Only modified sections are changed
-    - Change recorded in change_history
-    - Old DSD version preserved for rollback
-
-  Step 3 — Council Quick Review:
-    - For COSMETIC changes: 1 council member confirms (fast)
-    - For STRUCTURAL/ADDITIVE/SUBTRACTIVE: Full council review
-    - Ensures change is valid and complete
-
-  Step 4 — Targeted Regeneration:
-    - Only regenerate images affected by the change
-    - Prompts include: "Maintain everything from the original except [change]"
-    - Original images provided as reference when possible
-
-  Step 5 — Change Verification:
-    - Council compares original vs new images
-    - Confirms only the requested change was made
-    - If unintended changes detected → regenerate with stricter prompt
-    - Max 3 attempts
-
-  Step 6 — Updated Presentation:
-    - Show before/after comparison
-    - Update gallery with new images
+No council. No chairman writing floor-plan prompts. No image-model
+technical drawings.
 
 ================================================================================
-5. DESIGN SPECIFICATION DOCUMENT (DSD) — STRUCTURE
+3. TECH STACK
 ================================================================================
 
-The DSD is a structured JSON document that serves as the single source 
-of truth for any design. All generation and review references this.
+- Backend:           Python 3.10+, FastAPI
+- Frontend:          Vite + React, SVG for plan and elevations
+- LLM + image API:   OpenRouter (existing client, keep httpx)
+- Data models:       Pydantic v2
+- Storage:           JSON files (existing project_store pattern)
+- Environment:       OPENROUTER_API_KEY
+
+Streamlit is retired for this product. It cannot host the editor.
+
+Reuse from the old codebase: OpenRouter client, image encode/save,
+project JSON storage, cost tracking, domain-knowledge checklists.
+Do not reuse: council, chairman, DSD-as-image-prompt, generation
+wrappers for floor plan / elevation.
+
+================================================================================
+4. MODELS (via OpenRouter)
+================================================================================
+
+v1 uses one LLM for every language job (brief, spec JSON, chat edits):
+
+  LLM:     google/gemini-3.7-flash
+           (multimodal. User switched from qwen/qwen3.8-max on 2026-08-15.)
+           Fallbacks if quality is weak: qwen/qwen3.8-max, x-ai/grok-4.6,
+           or anthropic/claude-opus-4.6 — swap the id, do not add a council.
+
+  Image:   photoreal only. Current: google/gemini-3.1-flash-image-preview
+           (replace later if a better renderer exists; never used for
+           plan or elevation).
+
+Three named models in parallel is the old council. Do not do that.
+
+================================================================================
+5. SOURCE OF TRUTH — FURNITURE SPEC
+================================================================================
+
+One JSON document. Plan view and every elevation are renderings of it.
+If a number is wrong on screen, the spec is wrong — not the picture.
+
+Walls are first-class. Bays belong to a wall. Modules belong to a bay.
 
 {
+
   "project_id": "uuid",
   "version": 1,
-  "created_at": "timestamp",
-  "updated_at": "timestamp",
-  "type": "furniture | room | building",
-  "name": "Human-readable name",
-  "description": "Detailed prose description of the design",
-  
-  "dimensions": {
-    "width": "value + unit",
-    "height": "value + unit",
-    "depth": "value + unit",
-    "notes": "any dimensional notes"
+  "units": "cm",
+  "name": "human-readable name",
+
+  "layout": {
+    "type": "straight | L | U | galley | custom",
+    "walls": [
+      {
+        "id": "wall-a",
+        "label": "Wall A — Sink run",
+        "length": 320,
+        "adjacent_to": ["wall-b"],
+        "faces": [],
+        "sequence": 0
+      }
+    ]
   },
-  
-  "style": {
-    "aesthetic": "modern minimalist / rustic / industrial / etc.",
-    "era": "contemporary / vintage / etc.",
-    "influences": ["scandinavian", "japanese", ...]
-  },
-  
-  "materials": [
+
+  "walls": [
     {
-      "name": "material name",
-      "usage": "where it's used",
-      "finish": "matte / glossy / natural / etc."
+      "id": "wall-a",
+      "height": 220,
+      "depth": 60,
+      "cornice": { "type": "straight", "height": 8 },
+      "plinth":  { "type": "recessed", "height": 12 },
+      "side_columns": { "left_cm": 8, "right_cm": 8, "detail": "plain" },
+      "bays": [
+        {
+          "id": "bay-1",
+          "label": "Bay 1 — far left as you face this wall",
+          "width": 80,
+          "modules": [
+            { "type": "drawer", "height": 20, "count": 3, "handle": "bar" },
+            { "type": "door",   "height": 180, "handle": "bar" }
+          ]
+        }
+      ]
     }
   ],
-  
-  "colors": {
-    "primary": "#hex or description",
-    "secondary": "#hex or description",
-    "accent": "#hex or description or null",
-    "notes": "color relationship notes"
-  },
-  
-  "structural_elements": [
-    {
-      "id": "element_uuid",
-      "name": "element name",
-      "description": "detailed description",
-      "dimensions": {},
-      "material": "reference to materials",
-      "position": "spatial position description",
-      "count": 1
-    }
-  ],
-  
-  "spatial_layout": "Detailed description of how all elements relate spatially",
-  
-  "context": {
-    "placement": "where the design will be placed",
-    "surroundings": "what's around it",
-    "scale_reference": "human / room / building scale"
-  },
-  
-  "views_to_generate": [
-    "floor_plan",
-    "front_elevation", 
-    "side_elevation",
-    "rear_elevation",
-    "perspective_3d_front",
-    "perspective_3d_angle"
-  ],
-  
-  "generation_notes": "Any special instructions for image generation",
-  
-  "change_history": [
-    {
-      "version": 1,
-      "timestamp": "when",
-      "change_type": "cosmetic | structural | additive | subtractive",
-      "description": "what changed",
-      "sections_affected": ["colors", "materials"],
-      "images_regenerated": ["front_elevation", "perspective_3d_front"]
-    }
-  ]
+
+  "materials": { "carcass": "", "doors": "", "finish": "" },
+  "hardware":  { "style": "", "placement": "" },
+  "brief":     "locked facts from the consultant, verbatim where possible",
+  "render_notes": "user's photoreal request (lighting, mood) — not geometry"
 }
 
+Island / peninsula is NOT a wall unless it has its own designed face.
+It may appear in a photoreal shot as an object in the room, recorded
+under render_notes / a separate objects list — not as a fake fourth wall.
+
+Rules:
+  - Bay widths on a wall must sum to wall.length (within 1 cm, or the
+    spec is invalid and must not render).
+  - adjacent_to is symmetric. faces is for parallel opposite runs.
+  - A wall in faces[] of another wall must never share a camera.
+
 ================================================================================
-6. PROJECT FILE STRUCTURE
+6. PIPELINE — THREE STAGES
 ================================================================================
 
-F:\Architecture agents\
-├── plan.txt                        # This file — project plan
-├── progress.txt                    # Progress tracking file
-├── requirements.txt                # Python dependencies
-├── .env                            # OPENROUTER_API_KEY (gitignored)
-├── run.py                          # Entry point — launches Streamlit
-├── config.py                       # Configuration & model settings
+------------------------------------------------------------------------------
+STAGE 1 — BRIEF (one LLM, chat)
+------------------------------------------------------------------------------
+
+Same job as the old consultant. No reviewer behind it.
+
+- Mode from context: sketch/photo analysis, or design-from-scratch.
+- Exhaustive intake via notice (self-ask), not a skip-list.
+  Each turn the model must answer: what this piece is; what a maker
+  of this type needs; what the client already locked; what is still
+  open. Client questions come from those gaps (max 3, with options).
+  Cornice/plinth/hardware are examples of forgotten maker details,
+  not the whole list. The list is generated from the typology.
+- Maximum 3 questions per turn. Options for visual details.
+- Sketch upload is in. A photo is often a zoomed crop; out of frame
+  is unknown, not absent. Several detail shots are fragments of one
+  object. Vision may only lock what is actually visible. More photos
+  can be attached on later turns.
+- Output when confirmed: locked brief text + a first Furniture Spec
+  JSON (the model writes the spec; code validates it).
+
+The brief is facts. It is not an image prompt.
+
+------------------------------------------------------------------------------
+STAGE 2 — PLAN + ELEVATIONS (web editor)
+------------------------------------------------------------------------------
+
+The spec is drawn, not imagined.
+
+Plan view (one SVG):
+  Top-down footprints of every wall run, thicknesses, bay ticks,
+  corner meeting, dimension labels when numbers exist.
+
+Front elevations (N SVGs):
+  One sheet per wall.id. Nested rectangles: carcass, bays, modules,
+  cornice band, plinth band, handles as marks, dimension labels.
+  Looks like CAD (black line, white fill). Not photoreal.
+
+v1 editor (tweak, not full CAD):
+  - AI builds the first spec from the brief.
+  - User selects a bay/wall, types a size, drags a divider.
+  - Or chats: "Bay 2 is 90 cm, open shelves." LLM returns a JSON patch.
+  - Both views update from the same spec. No image generation here.
+
+Lock:
+  User confirms the drawings. Spec version is frozen for render.
+  SVG exports are saved (plan + each elevation).
+
+------------------------------------------------------------------------------
+STAGE 3 — RENDER (image model, after lock)
+------------------------------------------------------------------------------
+
+Code builds camera jobs from the wall graph (Section 7).
+Each job is one OpenRouter image call with a sealed packet:
+
+  - Camera type (frontal | inside_corner)
+  - LEFT of frame / RIGHT of frame wall IDs and bay lists
+  - Only those walls' elevation SVGs as reference images
+  - Floor plan SVG with that camera cone marked
+  - Locked brief materials/finish + user's render_notes
+  - Explicit exclude list of other wall IDs
+
+The image model never sees every elevation at once.
+Two jobs must not have the same wall set.
+
+User reviews the photos. A bad shot is regenerated from the same
+packet, not "try a new prompt and hope."
+
+================================================================================
+7. VIEW PLANNER (CODE, NOT A MODEL)
+================================================================================
+
+Inputs: layout.walls (ids, adjacent_to, faces, sequence).
+Outputs: elevation jobs + camera jobs.
+
+ELEVATION JOBS
+  For each wall.id: one front-elevation SVG.
+  Count is len(walls). Never asked of a model.
+
+CAMERA JOBS  (photoreal)
+
+  Constraint: a shot shows at most two walls.
+  Constraint: walls that face each other cannot share a shot.
+  Constraint: every wall.id appears in at least one shot.
+  Constraint: no two shots have the same set of wall ids.
+
+  Adjacent chain (straight / L / U / sequential custom):
+    Pair along the chain. Number of shots = ceil(n/2).
+    Odd leftover: last shot is frontal on the remaining wall,
+    OR overlap the shared corner (U-shape: A+B then B+C).
+    Overlap is preferred for U: two inside-corner photos.
+    Duplicate of the same pair is a bug. Overlap of the shared
+    back wall is correct.
+
+  Facing / galley (two walls in faces[], not adjacent):
+    Two frontal shots. Never one shot. ceil(n/2) is wrong here.
+
+  Four-wall cycle:
+    Two opposite inside corners, e.g. (A,B) and (C,D).
+    Not two adjacent corners that leave a wall uncovered.
+
+Each camera job is a record:
+
+  {
+    "shot_id": "shot-1",
+    "camera": "inside_corner" | "frontal",
+    "walls": ["wall-a", "wall-b"],
+    "frame": { "left": "wall-a", "right": "wall-b" },
+    "exclude": ["wall-c"],
+    "references": ["elev-wall-a.svg", "elev-wall-b.svg", "plan-cone.svg"]
+  }
+
+Worked examples:
+
+  Straight, 1 wall:  1 elevation, 1 frontal photo.
+  L, 2 adjacent:     2 elevations, 1 corner photo (A left, B right).
+  U, 3 chain:        3 elevations, 2 photos (A+B, B+C).
+  Galley, 2 facing:  2 elevations, 2 frontal photos.
+  Four walls:        4 elevations, 2 opposite-corner photos.
+
+The planner is unit-tested with these cases. If a test needs a
+prompt to pass, the planner is wrong.
+
+================================================================================
+8. WHAT IS DELETED
+================================================================================
+
+Deleted as product behavior (code removed as phases land):
+
+  - Council / reviewer / chairman
+  - DSD as a prose document stuffed into an image prompt
+  - Image generation of floor plans
+  - Image generation of front elevations
+  - Quality-review scoring council
+  - Streamlit UI
+
+Kept and adapted:
+
+  - Exhaustive intake chat (consultant job)
+  - Completeness checklist (cornice, hardware, plinth, bays, layout)
+  - OpenRouter client, retries, cost tracking
+  - Project save/load on disk
+  - Sketch/photo upload
+
+================================================================================
+9. PROJECT FILE STRUCTURE (TARGET)
+================================================================================
+
+Interior-Designer/
+├── plan.txt
+├── progress.txt
+├── requirements.txt
+├── config.py
+├── run.py                      # uvicorn 127.0.0.1:8000
 │
 ├── app/
-│   ├── __init__.py
-│   │
-│   ├── ui/
-│   │   ├── __init__.py
-│   │   ├── app.py                  # Main Streamlit application
-│   │   ├── components.py           # Reusable UI components
-│   │   └── styles.py               # Custom CSS / theming
-│   │
+│   ├── api/                    # FastAPI: brief, spec, render
 │   ├── agents/
-│   │   ├── __init__.py
-│   │   ├── council.py              # Council orchestration (Layer 1)
-│   │   ├── interpreter.py          # Input interpretation per council member
-│   │   ├── generator.py            # Image generation agent (Layer 3)
-│   │   ├── reviewer.py             # Quality review agent (Layer 4)
-│   │   ├── refiner.py              # Change management agent (Layer 6)
-│   │   └── chairman.py             # Chairman synthesis logic
-│   │
+│   │   ├── brief.py
+│   │   └── spec_author.py
+│   ├── editor/                 # sessions, tweaks, drawings payload
 │   ├── models/
-│   │   ├── __init__.py
-│   │   ├── dsd.py                  # DSD Pydantic model
-│   │   ├── project.py              # Project data model
-│   │   └── council_state.py        # Council deliberation state tracking
-│   │
-│   ├── services/
-│   │   ├── __init__.py
-│   │   ├── openrouter.py           # OpenRouter API client (async)
-│   │   ├── image_service.py        # Image encode/decode/resize
-│   │   └── project_store.py        # Save/load projects (JSON files)
-│   │
+│   │   └── furniture_spec.py
+│   ├── planner/
+│   │   └── views.py
+│   ├── render/
+│   │   ├── svg_plan.py
+│   │   ├── svg_elevation.py
+│   │   ├── raster.py
+│   │   └── photoreal.py
+│   ├── services/               # openrouter, image_service
 │   └── prompts/
-│       ├── __init__.py
-│       ├── council_prompts.py      # Council deliberation prompt templates
-│       ├── generation_prompts.py   # Image generation prompt templates
-│       ├── review_prompts.py       # Quality review prompt templates
-│       └── refinement_prompts.py   # Change management prompt templates
+│       ├── brief_prompts.py
+│       └── spec_prompts.py
 │
-├── data/
-│   └── projects/                   # Stored project data (JSON + images)
+├── web/                        # Vite + React editor
+│   └── src/
+│       ├── views/
+│       └── editor/
 │
-└── outputs/                        # Final approved outputs
+└── data/sessions/              # session JSON, spec versions, shot PNGs
+
+Streamlit and council code are removed. One UI: FastAPI + web/.
 
 ================================================================================
-7. DEVELOPMENT PHASES
+10. DEVELOPMENT PHASES
 ================================================================================
 
-PHASE 1: FOUNDATION
-  - Project structure setup (folders, __init__.py files)
-  - Configuration system (config.py)
-  - OpenRouter API client (async, supports text + vision + image gen)
-  - Pydantic models (DSD, Project, CouncilState)
-  - Basic Streamlit shell (layout, navigation)
+Each phase is one piece of work. Do not start the next until the
+current one is agreed and done.
 
-PHASE 2: COUNCIL SYSTEM
-  - Council orchestration logic
-  - Independent analysis (Round 1) — parallel async calls
-  - Cross-review (Round 2) — parallel async calls
-  - Convergence (Round 3) — parallel async calls
-  - Consensus checking algorithm
-  - Chairman synthesis
-  - DSD generation from council output
+PHASE A — SPEC + PLANNER (no UI, no paid image calls)
+  Furniture Spec Pydantic model + validation (bay widths sum, etc.)
+  View planner: elevations and camera jobs from layout graph
+  Unit tests: straight, L, U, galley, four-wall
+  Status: COMPLETE (2026-08-15)
 
-PHASE 3: IMAGE GENERATION
-  - Nano Banana integration via OpenRouter
-  - Prompt engineering for each view type:
-    * Floor plans (top-down, clean lines, measurements)
-    * Elevations (orthographic, labeled)
-    * 3D perspectives (realistic rendering)
-  - Image storage with metadata
-  - Retry logic for failed generations
+PHASE B — SVG DRAWERS
+  Plan SVG from spec
+  Elevation SVG from one wall
+  Golden-file or snapshot tests for a known L-kitchen spec
+  Status: COMPLETE (2026-08-15)
 
-PHASE 4: QUALITY REVIEW
-  - Council review system
-  - Multi-criteria scoring
-  - Feedback generation for failed images
-  - Regeneration loop with feedback incorporation
+PHASE C — BRIEF + SPEC AUTHOR
+  One-LLM chat (Qwen 3.8 Max), sketch in
+  Confirmed brief → valid Furniture Spec
+  Chat patch: natural language → spec diff
+  Status: COMPLETE (2026-08-15)
 
-PHASE 5: STREAMLIT UI
-  - Input page (upload/text/both)
-  - Council deliberation view (live progress)
-  - DSD review/confirmation page
-  - Image gallery with zoom/compare
-  - Change request interface (chat-like)
-  - Project history/management
+PHASE D — WEB EDITOR
+  FastAPI + Vite/React
+  Show plan + N elevations
+  Tweak (select, type size, drag divider) + chat patch
+  Lock action
+  Status: COMPLETE (2026-08-15)
 
-PHASE 6: REFINEMENT SYSTEM
-  - Change classification agent
-  - DSD versioning and diffing
-  - Targeted regeneration logic
-  - Change verification (before/after comparison)
-  - Rollback capability
+PHASE E — PHOTOREAL
+  Build sealed packets from planner
+  One image call per shot, isolated references
+  Gallery, per-shot regenerate from the same packet
+  Status: COMPLETE (2026-08-15)
 
-PHASE 7: POLISH & OPTIMIZATION
-  - Error handling and recovery
-  - Rate limit management
-  - Caching (avoid re-generating identical requests)
-  - UI polish and UX improvements
-  - Cost tracking (show API usage)
+PHASE F — CUTOVER
+  Remove Streamlit, council, chairman, image-gen drawings
+  Persist spec versions, cost tracking in the new UI
+  Status: COMPLETE (2026-08-15)
 
 ================================================================================
-8. KEY DESIGN DECISIONS
+11. KEY DESIGN DECISIONS
 ================================================================================
 
-1. DSD as Source of Truth:
-   All generation references the DSD. This enables targeted changes 
-   and version control. The DSD is the "contract" between understanding 
-   and generation.
+1. Furniture-first. Rooms/buildings are not v1.
 
-2. Council Before Generation:
-   Never generate images without council consensus. This prevents 
-   wasted API calls on misunderstood designs.
+2. One spec, two kinds of drawing: 1 plan + N elevations.
 
-3. User Checkpoints:
-   Always show the user what was understood before generating. 
-   Catching mistakes early saves significant cost.
+3. N walls → N elevation sheets. Count comes from wall IDs.
 
-4. Parallel API Calls:
-   Council rounds use parallel async calls (3 simultaneous requests).
-   This keeps the system fast despite using 3 models.
+4. Photoreal cameras come from adjacency code, not from the
+   image model. Max 2 walls per photo. Facing walls never paired.
+   Isolated references so two shots cannot be the same walls.
 
-5. Targeted Regeneration:
-   When changes are made, only regenerate affected images.
-   A color change should NOT regenerate the floor plan (no colors there).
+5. Working drawings are SVG. Photoreal is the only raster generate.
 
-6. Version History:
-   Every DSD change creates a new version. Users can rollback to 
-   any previous version. This prevents "I liked it better before."
+6. One LLM in v1. Image model is a different job, not a second
+   "council member."
 
-7. Quality Over Speed:
-   Given budget flexibility, prioritize quality. Use best models,
-   allow multiple review rounds, generate at highest resolution.
+7. v1 editor is tweak + chat, not a full CAD wall-drawing tool.
 
-8. All Through OpenRouter:
-   Single API key, single billing, unified interface. Simplifies 
-   the codebase significantly.
+8. Sketch upload stays.
+
+9. Island is not a wall unless it has a designed elevation face.
+
+10. All LLM/image calls still go through OpenRouter.
+
+11. Quality over speed, but no multi-model debate tax.
 
 ================================================================================
-9. FUTURE ENHANCEMENTS (NOT IN CURRENT SCOPE)
+12. FUTURE (NOT V1)
 ================================================================================
 
-- Material lists with quantities and estimated costs
-- Carpentry detail drawings (joints, framing, assembly)
-- CAD file import support
-- Export to standard architectural formats
-- AR/VR preview integration
-- Multi-project comparison
-- Style transfer from reference images
-- Collaborative mode (multiple users)
-- Cost estimation for builds
+- Full CAD (user draws walls from scratch)
+- Side/rear elevations as extra sheets
+- Material lists and cut lists
+- CAD/DXF export
+- Rooms/buildings as a second spec type
+- Optional "pretty technical plate" traced from locked SVG
 
 ================================================================================
 END OF PLAN

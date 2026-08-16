@@ -1,0 +1,83 @@
+{
+  "project_id": "e931a39e-4ece-416f-8ff8-d2a5fdc7aa4e",
+  "version": 1,
+  "units": "cm",
+  "name": "Laundry Tower Cabinet",
+  "layout": {
+    "type": "straight",
+    "walls": [
+      {
+        "id": "wall-a",
+        "label": "Wall A — Laundry Column",
+        "length": 70.0,
+        "adjacent_to": [],
+        "faces": [],
+        "sequence": 0
+      }
+    ]
+  },
+  "walls": [
+    {
+      "id": "wall-a",
+      "height": 240.0,
+      "depth": 70.0,
+      "cornice": {
+        "type": "none",
+        "height": 0.0
+      },
+      "plinth": {
+        "type": "recessed",
+        "height": 7.0
+      },
+      "side_columns": {
+        "left_cm": 0.0,
+        "right_cm": 0.0,
+        "detail": "plain"
+      },
+      "bays": [
+        {
+          "id": "bay-1",
+          "label": "Laundry Tower",
+          "width": 70.0,
+          "modules": [
+            {
+              "type": "appliance",
+              "height": 88.0,
+              "count": 1,
+              "handle": "none"
+            },
+            {
+              "type": "drawer",
+              "height": 18.0,
+              "count": 1,
+              "handle": "push-to-open"
+            },
+            {
+              "type": "appliance",
+              "height": 89.0,
+              "count": 1,
+              "handle": "none"
+            },
+            {
+              "type": "door",
+              "height": 38.0,
+              "count": 2,
+              "handle": "push-to-open"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "materials": {
+    "carcass": "1.9 cm moisture-resistant melamine board with 2.8 cm reinforced structural dryer shelf",
+    "doors": "1.9 cm moisture-resistant melamine/lacquered board",
+    "finish": "Moisture-resistant melamine / lacquered"
+  },
+  "hardware": {
+    "style": "Push-to-open, 110-degree soft-close concealed hinges, soft-close concealed undermount drawer slides",
+    "placement": "Push-to-open mechanism (handleless)"
+  },
+  "brief": "LAUNDRY TOWER CABINET SPECIFICATION\n\n1. ENVELOPE & FOOTPRINT\n- Overall Dimensions: 70 cm (Width) x 70 cm (Depth) x 240 cm (Height)\n- Usable Internal Depth: 67 cm\n- Plinth: 7 cm height, recessed 2 cm\n\n2. MATERIALS & CONSTRUCTION\n- Primary Carcass: 1.9 cm moisture-resistant melamine/lacquered board\n- Reinforced Structural Shelf (Dryer Support): 2.8 cm load-bearing panel\n- Back Panel: Open back at washing machine and dryer niches for plumbing, venting, and power; 0.8 cm groove-set backboard behind drawer and top cupboard bays\n\n3. HARDWARE & FIT-OUT\n- Upper Cupboard: 2 side-hung doors with 110-degree soft-close concealed hinges, push-to-open mechanism\n- Drawer: Full-extension concealed undermount slides, soft-close, push-to-open\n\n4. VERTICAL STACK & CLEARANCES (Bottom to Top)\n- 0.0 to 7.0 cm: Recessed plinth base (7 cm H)\n- 7.0 to 8.9 cm: Base shelf (1.9 cm thickness)\n- 8.9 to 94.9 cm: Washing machine niche (66.2 cm clear W x 67 cm clear D x 86 cm clear H)\n- 94.9 to 96.8 cm: Intermediate divider shelf (1.9 cm thickness)\n- 96.8 to 112.8 cm: Utility/small items drawer (16 cm front H x 66.2 cm W)\n- 112.8 to 115.6 cm: Reinforced structural dryer shelf (2.8 cm thickness)\n- 115.6 to 201.6 cm: Tumble dryer niche (66.2 cm clear W x 67 cm clear D x 86 cm clear H)\n- 201.6 to 203.5 cm: Cupboard bottom shelf (1.9 cm thickness)\n- 203.5 to 238.1 cm: Upper storage cupboard (66.2 cm clear W x 67 cm clear D x 34.6 cm clear H) enclosed by 2 swing doors (approx. 34.6 cm W x 38 cm H each)\n- 238.1 to 240.0 cm: Top structural panel (1.9 cm thickness)",
+  "render_notes": "Single-bay vertical laundry column. Bottom compartment accommodates washing machine, followed by a middle utility drawer, tumble dryer compartment above on reinforced shelf, and top storage cabinet with two push-to-open doors."
+}

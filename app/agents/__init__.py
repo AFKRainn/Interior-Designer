@@ -1,1 +1,1 @@
-# Architecture Agent — Agents Package
+# Brief + spec author. No council.

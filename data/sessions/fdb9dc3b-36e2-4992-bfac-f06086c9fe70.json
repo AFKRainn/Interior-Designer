@@ -1,0 +1,187 @@
+{
+  "id": "fdb9dc3b-36e2-4992-bfac-f06086c9fe70",
+  "phase": "edit",
+  "locked": false,
+  "brief": "L-shaped kitchen. Wall A sink run 300 cm. Wall B fridge run 180 cm.",
+  "spec": {
+    "project_id": "fdb9dc3b-36e2-4992-bfac-f06086c9fe70",
+    "version": 1,
+    "units": "cm",
+    "name": "L kitchen",
+    "layout": {
+      "type": "L",
+      "walls": [
+        {
+          "id": "wall-a",
+          "label": "Wall A \u2014 Sink run",
+          "length": 300.0,
+          "adjacent_to": [
+            "wall-b"
+          ],
+          "faces": [],
+          "sequence": 0
+        },
+        {
+          "id": "wall-b",
+          "label": "Wall B \u2014 Fridge run",
+          "length": 180.0,
+          "adjacent_to": [
+            "wall-a"
+          ],
+          "faces": [],
+          "sequence": 1
+        }
+      ]
+    },
+    "walls": [
+      {
+        "id": "wall-a",
+        "height": 220.0,
+        "depth": 60.0,
+        "cornice": {
+          "type": "straight",
+          "height": 8.0
+        },
+        "plinth": {
+          "type": "recessed",
+          "height": 12.0
+        },
+        "side_columns": {
+          "left_cm": 6.0,
+          "right_cm": 6.0,
+          "detail": "plain"
+        },
+        "bays": [
+          {
+            "id": "bay-1",
+            "label": "Sink",
+            "width": 80.0,
+            "modules": [
+              {
+                "type": "drawer",
+                "height": 20.0,
+                "count": 1,
+                "handle": "bar"
+              },
+              {
+                "type": "door",
+                "height": 180.0,
+                "count": 1,
+                "handle": "bar"
+              }
+            ]
+          },
+          {
+            "id": "bay-2",
+            "label": "Dishwasher",
+            "width": 60.0,
+            "modules": [
+              {
+                "type": "appliance",
+                "height": 200.0,
+                "count": 1,
+                "handle": "bar"
+              }
+            ]
+          },
+          {
+            "id": "bay-3",
+            "label": "Drawers",
+            "width": 80.0,
+            "modules": [
+              {
+                "type": "drawer",
+                "height": 20.0,
+                "count": 4,
+                "handle": "bar"
+              },
+              {
+                "type": "door",
+                "height": 120.0,
+                "count": 1,
+                "handle": "bar"
+              }
+            ]
+          },
+          {
+            "id": "bay-4",
+            "label": "Open shelves",
+            "width": 80.0,
+            "modules": [
+              {
+                "type": "open_shelf",
+                "height": 50.0,
+                "count": 4,
+                "handle": ""
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "wall-b",
+        "height": 220.0,
+        "depth": 60.0,
+        "cornice": {
+          "type": "straight",
+          "height": 8.0
+        },
+        "plinth": {
+          "type": "recessed",
+          "height": 12.0
+        },
+        "side_columns": {
+          "left_cm": 6.0,
+          "right_cm": 6.0,
+          "detail": "plain"
+        },
+        "bays": [
+          {
+            "id": "bay-5",
+            "label": "Fridge",
+            "width": 90.0,
+            "modules": [
+              {
+                "type": "appliance",
+                "height": 200.0,
+                "count": 1,
+                "handle": "bar"
+              }
+            ]
+          },
+          {
+            "id": "bay-6",
+            "label": "Pantry",
+            "width": 90.0,
+            "modules": [
+              {
+                "type": "door",
+                "height": 200.0,
+                "count": 1,
+                "handle": "bar"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "materials": {
+      "carcass": "plywood",
+      "doors": "painted MDF",
+      "finish": "matte white"
+    },
+    "hardware": {
+      "style": "bar",
+      "placement": "right of doors, centered on drawers"
+    },
+    "brief": "L-shaped kitchen. Wall A sink run 300 cm. Wall B fridge run 180 cm.",
+    "render_notes": ""
+  },
+  "messages": [],
+  "chat": [
+    {
+      "role": "assistant",
+      "text": "Demo L-kitchen loaded. Tweak bays or chat a change."
+    }
+  ]
+}
