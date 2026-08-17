@@ -1,0 +1,808 @@
+{
+  "project_id": "b3679b51-bd3f-4b93-b93b-fc75b4bb8d0b",
+  "version": 14,
+  "units": "cm",
+  "name": "Freestanding Breakfront Storage Wall Unit",
+  "layout": {
+    "type": "straight",
+    "walls": [
+      {
+        "id": "wall-1",
+        "label": "Freestanding breakfront storage wall unit",
+        "length": 320.0,
+        "adjacent_to": [],
+        "faces": [],
+        "sequence": 0,
+        "corner": {
+          "start": null,
+          "end": null
+        }
+      }
+    ]
+  },
+  "walls": [
+    {
+      "id": "wall-1",
+      "height": 220.0,
+      "depth": 60.0,
+      "reveal_mm": 3.0,
+      "cornice": {
+        "type": "overhanging moulded classical",
+        "height": 6.0
+      },
+      "plinth": {
+        "type": "continuous",
+        "height": 8.0
+      },
+      "side_columns": {
+        "left_cm": 0.0,
+        "right_cm": 0.0,
+        "detail": "No separate side columns; finished exposed end panels at both outer ends"
+      },
+      "bays": [
+        {
+          "id": "bay-left-tower",
+          "label": "",
+          "size_cm": 60.0,
+          "flex": null,
+          "split": "rows",
+          "children": [
+            {
+              "id": "left-top-door",
+              "label": "",
+              "size_cm": null,
+              "flex": 1.0,
+              "split": null,
+              "children": [],
+              "front": {
+                "type": "door",
+                "hinge": "left",
+                "handle": "bar",
+                "count": 1
+              }
+            },
+            {
+              "id": "left-display-niche",
+              "label": "",
+              "size_cm": 49.8,
+              "flex": null,
+              "split": null,
+              "children": [],
+              "front": {
+                "type": "open",
+                "hinge": "none",
+                "handle": "none",
+                "count": 1
+              }
+            },
+            {
+              "id": "left-bottom-door",
+              "label": "",
+              "size_cm": null,
+              "flex": 1.0,
+              "split": null,
+              "children": [],
+              "front": {
+                "type": "door",
+                "hinge": "left",
+                "handle": "bar",
+                "count": 1
+              }
+            }
+          ],
+          "front": null
+        },
+        {
+          "id": "bay-centre",
+          "label": "",
+          "size_cm": 200.0,
+          "flex": null,
+          "split": "rows",
+          "children": [
+            {
+              "id": "upper-assembly",
+              "label": "",
+              "size_cm": 128.0,
+              "flex": null,
+              "split": "rows",
+              "children": [
+                {
+                  "id": "overhead-cupboard",
+                  "label": "",
+                  "size_cm": null,
+                  "flex": 1.0,
+                  "split": "cols",
+                  "children": [
+                    {
+                      "id": "overhead-door-left",
+                      "label": "",
+                      "size_cm": null,
+                      "flex": 1.0,
+                      "split": "cols",
+                      "children": [
+                        {
+                          "id": "col-1",
+                          "label": "",
+                          "size_cm": null,
+                          "flex": 1.0,
+                          "split": null,
+                          "children": [],
+                          "front": {
+                            "type": "door",
+                            "hinge": "left",
+                            "handle": "bar",
+                            "count": 1
+                          }
+                        },
+                        {
+                          "id": "col-2",
+                          "label": "",
+                          "size_cm": null,
+                          "flex": 1.0,
+                          "split": null,
+                          "children": [],
+                          "front": {
+                            "type": "door",
+                            "hinge": "right",
+                            "handle": "bar",
+                            "count": 1
+                          }
+                        }
+                      ],
+                      "front": null
+                    },
+                    {
+                      "id": "overhead-door-right",
+                      "label": "",
+                      "size_cm": null,
+                      "flex": 1.0,
+                      "split": "cols",
+                      "children": [
+                        {
+                          "id": "col-1",
+                          "label": "",
+                          "size_cm": null,
+                          "flex": 1.0,
+                          "split": null,
+                          "children": [],
+                          "front": {
+                            "type": "door",
+                            "hinge": "left",
+                            "handle": "bar",
+                            "count": 1
+                          }
+                        },
+                        {
+                          "id": "col-2",
+                          "label": "",
+                          "size_cm": null,
+                          "flex": 1.0,
+                          "split": null,
+                          "children": [],
+                          "front": {
+                            "type": "door",
+                            "hinge": "right",
+                            "handle": "bar",
+                            "count": 1
+                          }
+                        }
+                      ],
+                      "front": null
+                    }
+                  ],
+                  "front": null
+                },
+                {
+                  "id": "upper-main-zone",
+                  "label": "",
+                  "size_cm": null,
+                  "flex": 1.0,
+                  "split": "cols",
+                  "children": [
+                    {
+                      "id": "left-cubby-grid",
+                      "label": "",
+                      "size_cm": null,
+                      "flex": 1.0,
+                      "split": "rows",
+                      "children": [
+                        {
+                          "id": "left-grid-row-1",
+                          "label": "",
+                          "size_cm": null,
+                          "flex": 1.0,
+                          "split": "cols",
+                          "children": [
+                            {
+                              "id": "left-grid-r1-c1",
+                              "label": "",
+                              "size_cm": null,
+                              "flex": 1.0,
+                              "split": null,
+                              "children": [],
+                              "front": {
+                                "type": "open",
+                                "hinge": "none",
+                                "handle": "none",
+                                "count": 1
+                              }
+                            },
+                            {
+                              "id": "left-grid-r1-c2",
+                              "label": "",
+                              "size_cm": null,
+                              "flex": 1.0,
+                              "split": null,
+                              "children": [],
+                              "front": {
+                                "type": "open",
+                                "hinge": "none",
+                                "handle": "none",
+                                "count": 1
+                              }
+                            },
+                            {
+                              "id": "left-grid-r1-c3",
+                              "label": "",
+                              "size_cm": null,
+                              "flex": 1.0,
+                              "split": null,
+                              "children": [],
+                              "front": {
+                                "type": "open",
+                                "hinge": "none",
+                                "handle": "none",
+                                "count": 1
+                              }
+                            }
+                          ],
+                          "front": null
+                        },
+                        {
+                          "id": "left-grid-row-2",
+                          "label": "",
+                          "size_cm": null,
+                          "flex": 1.0,
+                          "split": "cols",
+                          "children": [
+                            {
+                              "id": "left-grid-r2-c1",
+                              "label": "",
+                              "size_cm": null,
+                              "flex": 1.0,
+                              "split": null,
+                              "children": [],
+                              "front": {
+                                "type": "open",
+                                "hinge": "none",
+                                "handle": "none",
+                                "count": 1
+                              }
+                            },
+                            {
+                              "id": "left-grid-r2-c2",
+                              "label": "",
+                              "size_cm": null,
+                              "flex": 1.0,
+                              "split": null,
+                              "children": [],
+                              "front": {
+                                "type": "open",
+                                "hinge": "none",
+                                "handle": "none",
+                                "count": 1
+                              }
+                            },
+                            {
+                              "id": "left-grid-r2-c3",
+                              "label": "",
+                              "size_cm": null,
+                              "flex": 1.0,
+                              "split": null,
+                              "children": [],
+                              "front": {
+                                "type": "open",
+                                "hinge": "none",
+                                "handle": "none",
+                                "count": 1
+                              }
+                            }
+                          ],
+                          "front": null
+                        },
+                        {
+                          "id": "left-grid-row-3",
+                          "label": "",
+                          "size_cm": null,
+                          "flex": 1.0,
+                          "split": "cols",
+                          "children": [
+                            {
+                              "id": "left-grid-r3-c1",
+                              "label": "",
+                              "size_cm": null,
+                              "flex": 1.0,
+                              "split": null,
+                              "children": [],
+                              "front": {
+                                "type": "open",
+                                "hinge": "none",
+                                "handle": "none",
+                                "count": 1
+                              }
+                            },
+                            {
+                              "id": "left-grid-r3-c2",
+                              "label": "",
+                              "size_cm": null,
+                              "flex": 1.0,
+                              "split": null,
+                              "children": [],
+                              "front": {
+                                "type": "open",
+                                "hinge": "none",
+                                "handle": "none",
+                                "count": 1
+                              }
+                            },
+                            {
+                              "id": "left-grid-r3-c3",
+                              "label": "",
+                              "size_cm": null,
+                              "flex": 1.0,
+                              "split": null,
+                              "children": [],
+                              "front": {
+                                "type": "open",
+                                "hinge": "none",
+                                "handle": "none",
+                                "count": 1
+                              }
+                            }
+                          ],
+                          "front": null
+                        }
+                      ],
+                      "front": null
+                    },
+                    {
+                      "id": "right-cubby-grid",
+                      "label": "",
+                      "size_cm": null,
+                      "flex": 1.0,
+                      "split": "rows",
+                      "children": [
+                        {
+                          "id": "right-grid-row-1",
+                          "label": "",
+                          "size_cm": null,
+                          "flex": 1.0,
+                          "split": "cols",
+                          "children": [
+                            {
+                              "id": "right-grid-r1-c1",
+                              "label": "",
+                              "size_cm": null,
+                              "flex": 1.0,
+                              "split": null,
+                              "children": [],
+                              "front": {
+                                "type": "open",
+                                "hinge": "none",
+                                "handle": "none",
+                                "count": 1
+                              }
+                            },
+                            {
+                              "id": "right-grid-r1-c2",
+                              "label": "",
+                              "size_cm": null,
+                              "flex": 1.0,
+                              "split": null,
+                              "children": [],
+                              "front": {
+                                "type": "open",
+                                "hinge": "none",
+                                "handle": "none",
+                                "count": 1
+                              }
+                            },
+                            {
+                              "id": "right-grid-r1-c3",
+                              "label": "",
+                              "size_cm": null,
+                              "flex": 1.0,
+                              "split": null,
+                              "children": [],
+                              "front": {
+                                "type": "open",
+                                "hinge": "none",
+                                "handle": "none",
+                                "count": 1
+                              }
+                            }
+                          ],
+                          "front": null
+                        },
+                        {
+                          "id": "right-grid-row-2",
+                          "label": "",
+                          "size_cm": null,
+                          "flex": 1.0,
+                          "split": "cols",
+                          "children": [
+                            {
+                              "id": "right-grid-r2-c1",
+                              "label": "",
+                              "size_cm": null,
+                              "flex": 1.0,
+                              "split": null,
+                              "children": [],
+                              "front": {
+                                "type": "open",
+                                "hinge": "none",
+                                "handle": "none",
+                                "count": 1
+                              }
+                            },
+                            {
+                              "id": "right-grid-r2-c2",
+                              "label": "",
+                              "size_cm": null,
+                              "flex": 1.0,
+                              "split": null,
+                              "children": [],
+                              "front": {
+                                "type": "open",
+                                "hinge": "none",
+                                "handle": "none",
+                                "count": 1
+                              }
+                            },
+                            {
+                              "id": "right-grid-r2-c3",
+                              "label": "",
+                              "size_cm": null,
+                              "flex": 1.0,
+                              "split": null,
+                              "children": [],
+                              "front": {
+                                "type": "open",
+                                "hinge": "none",
+                                "handle": "none",
+                                "count": 1
+                              }
+                            }
+                          ],
+                          "front": null
+                        },
+                        {
+                          "id": "right-grid-row-3",
+                          "label": "",
+                          "size_cm": null,
+                          "flex": 1.0,
+                          "split": "cols",
+                          "children": [
+                            {
+                              "id": "right-grid-r3-c1",
+                              "label": "",
+                              "size_cm": null,
+                              "flex": 1.0,
+                              "split": null,
+                              "children": [],
+                              "front": {
+                                "type": "open",
+                                "hinge": "none",
+                                "handle": "none",
+                                "count": 1
+                              }
+                            },
+                            {
+                              "id": "right-grid-r3-c2",
+                              "label": "",
+                              "size_cm": null,
+                              "flex": 1.0,
+                              "split": null,
+                              "children": [],
+                              "front": {
+                                "type": "open",
+                                "hinge": "none",
+                                "handle": "none",
+                                "count": 1
+                              }
+                            },
+                            {
+                              "id": "right-grid-r3-c3",
+                              "label": "",
+                              "size_cm": null,
+                              "flex": 1.0,
+                              "split": null,
+                              "children": [],
+                              "front": {
+                                "type": "open",
+                                "hinge": "none",
+                                "handle": "none",
+                                "count": 1
+                              }
+                            }
+                          ],
+                          "front": null
+                        }
+                      ],
+                      "front": null
+                    }
+                  ],
+                  "front": null
+                }
+              ],
+              "front": null
+            },
+            {
+              "id": "base-carcass",
+              "label": "",
+              "size_cm": 78.0,
+              "flex": null,
+              "split": "cols",
+              "children": [
+                {
+                  "id": "base-door-left",
+                  "label": "",
+                  "size_cm": 45.0,
+                  "flex": null,
+                  "split": null,
+                  "children": [],
+                  "front": {
+                    "type": "door",
+                    "hinge": "left",
+                    "handle": "bar",
+                    "count": 1
+                  }
+                },
+                {
+                  "id": "drawer-bank",
+                  "label": "",
+                  "size_cm": 110.0,
+                  "flex": null,
+                  "split": "cols",
+                  "children": [
+                    {
+                      "id": "drawer-stack-left",
+                      "label": "",
+                      "size_cm": null,
+                      "flex": 1.0,
+                      "split": "rows",
+                      "children": [
+                        {
+                          "id": "drawer-1",
+                          "label": "",
+                          "size_cm": null,
+                          "flex": 1.0,
+                          "split": null,
+                          "children": [],
+                          "front": {
+                            "type": "drawer",
+                            "hinge": "none",
+                            "handle": "bar",
+                            "count": 1
+                          }
+                        },
+                        {
+                          "id": "drawer-2",
+                          "label": "",
+                          "size_cm": null,
+                          "flex": 1.0,
+                          "split": null,
+                          "children": [],
+                          "front": {
+                            "type": "drawer",
+                            "hinge": "none",
+                            "handle": "bar",
+                            "count": 1
+                          }
+                        },
+                        {
+                          "id": "drawer-3",
+                          "label": "",
+                          "size_cm": null,
+                          "flex": 1.0,
+                          "split": null,
+                          "children": [],
+                          "front": {
+                            "type": "drawer",
+                            "hinge": "none",
+                            "handle": "bar",
+                            "count": 1
+                          }
+                        }
+                      ],
+                      "front": null
+                    },
+                    {
+                      "id": "drawer-stack-right",
+                      "label": "",
+                      "size_cm": null,
+                      "flex": 1.0,
+                      "split": "rows",
+                      "children": [
+                        {
+                          "id": "drawer-1",
+                          "label": "",
+                          "size_cm": null,
+                          "flex": 1.0,
+                          "split": null,
+                          "children": [],
+                          "front": {
+                            "type": "drawer",
+                            "hinge": "none",
+                            "handle": "bar",
+                            "count": 1
+                          }
+                        },
+                        {
+                          "id": "drawer-2",
+                          "label": "",
+                          "size_cm": null,
+                          "flex": 1.0,
+                          "split": null,
+                          "children": [],
+                          "front": {
+                            "type": "drawer",
+                            "hinge": "none",
+                            "handle": "bar",
+                            "count": 1
+                          }
+                        },
+                        {
+                          "id": "drawer-3",
+                          "label": "",
+                          "size_cm": null,
+                          "flex": 1.0,
+                          "split": null,
+                          "children": [],
+                          "front": {
+                            "type": "drawer",
+                            "hinge": "none",
+                            "handle": "bar",
+                            "count": 1
+                          }
+                        }
+                      ],
+                      "front": null
+                    }
+                  ],
+                  "front": null
+                },
+                {
+                  "id": "base-door-right",
+                  "label": "",
+                  "size_cm": 45.0,
+                  "flex": null,
+                  "split": null,
+                  "children": [],
+                  "front": {
+                    "type": "door",
+                    "hinge": "right",
+                    "handle": "bar",
+                    "count": 1
+                  }
+                }
+              ],
+              "front": null
+            }
+          ],
+          "front": null
+        },
+        {
+          "id": "bay-right-tower",
+          "label": "",
+          "size_cm": 60.0,
+          "flex": null,
+          "split": "rows",
+          "children": [
+            {
+              "id": "right-top-door",
+              "label": "",
+              "size_cm": null,
+              "flex": 1.0,
+              "split": null,
+              "children": [],
+              "front": {
+                "type": "door",
+                "hinge": "right",
+                "handle": "bar",
+                "count": 1
+              }
+            },
+            {
+              "id": "right-display-niche",
+              "label": "",
+              "size_cm": 49.8,
+              "flex": null,
+              "split": null,
+              "children": [],
+              "front": {
+                "type": "open",
+                "hinge": "none",
+                "handle": "none",
+                "count": 1
+              }
+            },
+            {
+              "id": "right-bottom-door",
+              "label": "",
+              "size_cm": null,
+              "flex": 1.0,
+              "split": null,
+              "children": [],
+              "front": {
+                "type": "door",
+                "hinge": "right",
+                "handle": "bar",
+                "count": 1
+              }
+            }
+          ],
+          "front": null
+        }
+      ]
+    }
+  ],
+  "materials": {
+    "carcass": "18 mm moisture-resistant furniture-grade MDF",
+    "doors": "Painted solid timber and MR-MDF panels",
+    "finish": "Warm off-white / soft greige satin spray lacquer"
+  },
+  "hardware": {
+    "style": "Modern linear metal bar handles",
+    "placement": "Horizontally on drawers; vertically on doors"
+  },
+  "brief": "Typology: storage\n\nback_panel: Full matching painted 8 mm MR-MDF enclosed back panel  [system default]\nenvelope.depth: 60 cm for flanking side towers, 45 cm for central base unit, 35 cm for upper open cubbies and overhead cupboards  [system default]\nenvelope.height: 220 cm overall floor-to-top (8 cm plinth + 78 cm base carcass + 128 cm upper assembly + 6 cm cornice = 220 cm)  [system default]\nenvelope.width: 320 cm overall (60 cm left tower, 200 cm central section [45 cm door + 110 cm drawer bank + 45 cm door], 60 cm right tower)  [system default]\nfronts: Left & right towers: top door, open display niche, bottom door. Centre base: single door, 2x3 drawer bank, single door. Centre upper: twin 3x3 open cubby grids, central 2-door cabinet, overhead top doors\nhardware: Modern linear metal bar handles mounted horizontally on drawers and vertically on doors\nlayout: Freestanding breakfront wall unit with projecting flanking towers\nmaterials.carcass: 18 mm moisture-resistant furniture-grade MDF  [system default]\nmaterials.doors: Painted solid timber and MR-MDF panels\nmaterials.finish: Warm off-white / soft greige satin spray lacquer\nplinth: 8 cm continuous plinth with decorative corner plinth blocks  [system default]\nshelves: Fixed vertical/horizontal dividers for the open cubby grids; 1 adjustable shelf per enclosed door compartment  [system default]\nsides: Finished exposed end panels  [system default]\ntop: 6 cm overhanging moulded classical cornice",
+  "assumptions": [
+    {
+      "field": "tower row heights",
+      "value_cm": null,
+      "rationale": "No individual tower-opening heights were stated."
+    },
+    {
+      "field": "upper assembly layout and vertical split",
+      "value_cm": null,
+      "rationale": "Only the total 128 cm upper-assembly height is stated."
+    },
+    {
+      "field": "upper main-zone widths",
+      "value_cm": null,
+      "rationale": "No widths were stated for these three upper components."
+    },
+    {
+      "field": "overhead top doors",
+      "value_cm": null,
+      "rationale": "The brief specifies plural overhead top doors but does not state a door count."
+    },
+    {
+      "field": "paired cabinet-door widths",
+      "value_cm": null,
+      "rationale": "The 2-door cabinet count is stated, but individual leaf widths are not."
+    },
+    {
+      "field": "open cubby grids",
+      "value_cm": null,
+      "rationale": "The stated 3x3 count defines each grid but not individual cell dimensions."
+    },
+    {
+      "field": "2x3 drawer bank",
+      "value_cm": null,
+      "rationale": "The stated 2x3 arrangement gives the drawer count but no individual drawer dimensions."
+    },
+    {
+      "field": "door handing",
+      "value_cm": null,
+      "rationale": "Hinge directions were not supplied."
+    },
+    {
+      "field": "central 2-door upper cabinet depth",
+      "value_cm": 35.0,
+      "rationale": "The central upper cabinet is treated as part of the stated upper cupboard depth zone."
+    }
+  ],
+  "render_notes": "Render as a single freestanding breakfront: the 60 cm flanking towers project forward of the 45 cm central base and the 35 cm central upper zone. Continue the 8 cm plinth across all bays with decorative corner blocks, and crown the 220 cm overall unit with the 6 cm overhanging moulded classical cornice. Use finished exposed end panels, a full matching painted 8 mm MR-MDF enclosed back panel, fixed dividers in every cubby grid, and one adjustable shelf in each enclosed door compartment."
+}

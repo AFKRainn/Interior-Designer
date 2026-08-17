@@ -2,29 +2,31 @@
                     INTERIOR DESIGNER — PROJECT PLAN
 ================================================================================
 Created: 2026-03-25
-Last Updated: 2026-08-15
+Last Updated: 2026-08-16  (build 2 — openings, paper space, edit ops)
 
-This file is the architecture. The council / DSD / image-model-drawings
-pipeline (Phases 0–18) is retired. Code still exists until it is replaced.
+This file is the architecture.
+
+Build 0 (council / DSD / image-model drawings) is dead.
+Build 1 (flat bays, server SVG, full-spec rewrite edits) is superseded.
+Section 3 records why, so it is not re-litigated.
 
 ================================================================================
 1. PROJECT OVERVIEW
 ================================================================================
 
-Furniture-first local design tool.
+Furniture-first design tool. Local now, SaaS later.
 
 The user describes a piece or a kitchen/wardrobe run (optional sketch).
 The system produces:
 
   1. An editable floor plan (top view)
-  2. One front elevation per wall (N walls → N elevations)
+  2. One editable front elevation per wall
   3. Photoreal image(s) covering those walls, after the drawings are locked
 
 Drawings are data rendered in a web app. Pictures are generated only after
-lock, from sealed camera jobs. An image model never invents the plan or
-the elevation.
+lock, from sealed camera jobs. An image model never invents the plan or the
+elevation.
 
-Target: local app, single user.
 Primary: furniture and kitchen/wardrobe runs. Rooms/buildings later.
 
 ================================================================================
@@ -34,62 +36,171 @@ Primary: furniture and kitchen/wardrobe runs. Rooms/buildings later.
 Plans are data. Elevations are data. Renders are pictures.
 Those jobs never share a tool.
 
-  - LLM talks, extracts facts, writes/patches a Furniture Spec (JSON).
-  - Web app draws the spec as SVG (plan + one elevation sheet per wall).
-  - User edits the spec (drag / type sizes / chat). Canvas updates instantly.
+  - Code owns all geometry. No model computes a coordinate, ever.
+  - LLM talks, extracts facts, and CHOOSES OPERATIONS. It does not author
+    layout arithmetic and it does not author markup.
+  - The web app draws the spec. Every drawn thing is a real element with
+    the id the chat uses.
+  - The user edits the spec (drag / type / chat). Both paths run the same
+    validated operations.
   - Code plans photoreal cameras from the wall graph.
-  - Image model receives one sealed shot packet at a time. It does not
-    choose how many images, or which walls.
+  - The image model receives one sealed shot packet at a time.
 
-No council. No chairman writing floor-plan prompts. No image-model
-technical drawings.
-
-================================================================================
-3. TECH STACK
-================================================================================
-
-- Backend:           Python 3.10+, FastAPI
-- Frontend:          Vite + React, SVG for plan and elevations
-- LLM + image API:   OpenRouter (existing client, keep httpx)
-- Data models:       Pydantic v2
-- Storage:           JSON files (existing project_store pattern)
-- Environment:       OPENROUTER_API_KEY
-
-Streamlit is retired for this product. It cannot host the editor.
-
-Reuse from the old codebase: OpenRouter client, image encode/save,
-project JSON storage, cost tracking, domain-knowledge checklists.
-Do not reuse: council, chairman, DSD-as-image-prompt, generation
-wrappers for floor plan / elevation.
+Corollary: if a state would be invalid, it must be unrepresentable.
+Prefer a schema that cannot overflow over a validator that catches overflow.
 
 ================================================================================
-4. MODELS (via OpenRouter)
+3. WHY BUILD 1 FAILED  (evidence, not opinion)
 ================================================================================
 
-v1 uses one LLM for every language job (brief, spec JSON, chat edits):
+Recorded so these are never rebuilt the same way.
 
-  LLM:     google/gemini-3.7-flash
-           (multimodal. User switched from qwen/qwen3.8-max on 2026-08-15.)
-           Fallbacks if quality is weak: qwen/qwen3.8-max, x-ai/grok-4.6,
-           or anthropic/claude-opus-4.6 — swap the id, do not add a council.
+3.1  "Two doors next to each other" was impossible, not misunderstood.
+     BaySpec was width + a flat modules list. svg_elevation drew every
+     module at full bay width, and `count` repeated it VERTICALLY. Side-by-
+     side fronts had no representation. The model complied as best it could.
+     No prompt fix exists for a missing degree of freedom.
+     -> Section 5: recursive openings.
 
-  Image:   photoreal only. Current: google/gemini-3.1-flash-image-preview
-           (replace later if a better renderer exists; never used for
-           plan or elevation).
+3.2  Drawings framed badly at every size.
+     svg_markup declared "1 user unit = 1 cm", then used PAD = 48 (48 cm of
+     padding), stroke 1.2 (a 12 mm line) and font size 7 (7 cm lettering).
+     On a 320 cm wall that reads as ~3% text height. On a 60 cm cabinet the
+     padding is wider than the object and the text is 14% of it.
+     Model space and paper space were the same coordinate system.
+     -> Section 6: two spaces, a scale ladder, fixed paper annotation.
 
-Three named models in parallel is the old council. Do not do that.
+3.3  Nothing checked vertical fit.
+     validate_spec summed bay widths against wall length, but never checked
+     module heights against (height - cornice - plinth). _draw_bay stacked
+     upward from the floor, so an overflowing stack drew ABOVE the carcass —
+     outside the frame. Second, independent cause of 3.2's symptom.
+     -> Section 5: flex sizing makes overflow unrepresentable.
+
+3.4  Plan corners overlapped.
+     geometry.place_walls started the next wall at prev.back_end and rotated
+     90°. Two 60 cm-deep runs met in a 60x60 cm square occupied twice, and
+     both walls counted that corner in their bay sums.
+     -> Section 7: explicit corner resolution, usable length.
+
+3.5  Hit targets were a second implementation of the layout.
+     editor/drawings.py re-derived ELEV_PAD_*, inner_top, inner_h and the bay
+     cursor. Any renderer edit silently desynced clicking from drawing.
+     -> Section 8: one layout solver, dumb backends.
+
+3.6  Every chat edit rewrote the whole document.
+     SPEC_PATCH_PROMPT said "Return the FULL updated spec JSON". That allows
+     collateral drift, produces no diff, and gives the user nothing to
+     approve before it lands. This is the mechanism behind 3.1 going
+     unnoticed, not just its consequence.
+     -> Section 10: named edit ops, restate, ghost preview, confirm.
+
+3.7  "Ask if unclear" was an instruction with no mechanism.
+     See Section 15 references: models recognise ambiguity but keep it latent
+     unless the output CONTRACT forces it out.
+     -> Section 10: required ambiguities[] and a clarify/propose branch.
 
 ================================================================================
-5. SOURCE OF TRUTH — FURNITURE SPEC
+4. TECH STACK
 ================================================================================
 
-One JSON document. Plan view and every elevation are renderings of it.
+- Backend:      Python 3.10+, FastAPI  (validation, ops, persistence, LLM,
+                image calls) + pytest
+- Frontend:     Vite + React + TypeScript, vitest  (solver, renderers, editor)
+- Elevations:   HTML + CSS, nested boxes, CSS mm units
+- Plan:         SVG                     (rotated wall runs; CSS cannot)
+- Export:       shared layout solver -> SVG/PNG for reference images + print
+- LLM + images: OpenRouter (keep httpx client, retries, cost tracking)
+- Schemas:      Pydantic v2 server-side; JSON Schema sent to the model
+- Storage:      JSON files under data/sessions/
+
+Streamlit stays retired.
+
+Reuse: OpenRouter client, image encode/save, session storage, cost tracking,
+view planner (Section 11), the intake persona's good instincts.
+
+================================================================================
+5. SOURCE OF TRUTH — SPEC v2
+================================================================================
+
+One JSON document. Plan and every elevation are renderings of it.
 If a number is wrong on screen, the spec is wrong — not the picture.
 
-Walls are first-class. Bays belong to a wall. Modules belong to a bay.
+Walls are first-class. Bays belong to a wall. A bay is an OPENING TREE.
+
+5.1  THE OPENING TREE  (the fix for 3.1 and 3.3)
+
+Industry practice, not invention: cabinet CAD models a carcass as openings
+divided by partitions, recalculating neighbours to fit (CabinetCRUNCHER's
+"Opening System"; ArchiWood's vertical divisions / front splits / reveals).
+
+An opening is a node:
+
+  {
+    "id": "row-1",                       // unique among SIBLINGS only
+    "label": "",
+    "split": "rows" | "cols" | null,     // null = leaf, carries a front
+    "children": [ <opening>, ... ],      // only when split is set
+    "size_cm": 20,                       // fixed extent along parent's axis
+    "flex": 1,                           // OR a share of what remains
+    "front": {                           // leaves only
+      "type": "door|drawer|open|glass|appliance|panel|false_front",
+      "hinge": "left|right|top|bottom|none",
+      "handle": "bar|knob|j_pull|none",
+      "count": 1                         // INPUT SHORTHAND — see below
+    }
+  }
+
+SIZING RULE (this is what kills the overflow bug):
+  Along a split axis, fixed `size_cm` children are laid out first; every
+  `flex` child divides the remainder in proportion. A tree therefore ALWAYS
+  fits its parent exactly. Overflow is not a validation failure — it is
+  not expressible.
+  Invalid only if sum(size_cm) > parent extent. That is one check, at one
+  place, with a clear message.
+
+ONE RULE AT EVERY LEVEL:
+  A wall's `bays` list IS a "cols" split whose extent is the wall's usable
+  length (Section 7.2). Bays are ordinary openings — they may be fixed
+  (size_cm) or flex. "Three equal bays" therefore needs no arithmetic from
+  the model. There is exactly one sizing rule in the system.
+
+SIZE IS AXIS-NEUTRAL:
+  Every opening uses `size_cm`, never `width` or `height`. A child of a
+  rows split is sized vertically; the same field name means "extent along
+  my parent's split axis" everywhere. The UI may still say "width" to the
+  user when the axis is cols.
+
+ADDRESSING:
+  Ids are unique among siblings. The global address is the PATH —
+  "wall-a/bay-2/row-1/col-0" — resolved segment by segment, like a
+  filesystem. Paths are the vocabulary shared by the drawing, the chat and
+  the ops (Section 9.1).
+
+COUNT IS INPUT SHORTHAND, NORMALISED AWAY:
+  A model may write {"type":"drawer","count":3}. Validation expands that
+  into a rows split of three flex drawer leaves. A stored spec never has
+  count > 1. Two representations of one thing would force a special case
+  into the solver and every op; normalising keeps the input natural and the
+  stored form canonical. It also makes each drawer addressable, so "make
+  the top drawer taller" resolves to a real node.
+
+REVEALS:
+  wall.reveal_mm (default 3) is the gap between adjacent fronts. Fronts are
+  inset by half a reveal on each shared edge. This is what makes an elevation
+  read as cabinetry instead of a wireframe.
+
+"Two doors next to each other on the top part" is now one operation:
+
+  { "id":"bay-2", "width":90, "split":"rows", "children":[
+      { "size_cm":60, "split":"cols", "children":[
+          { "flex":1, "front":{"type":"door","hinge":"left"}  },
+          { "flex":1, "front":{"type":"door","hinge":"right"} } ] },
+      { "flex":1, "front":{"type":"drawer","count":3} } ] }
+
+5.2  DOCUMENT
 
 {
-
   "project_id": "uuid",
   "version": 1,
   "units": "cm",
@@ -98,325 +209,529 @@ Walls are first-class. Bays belong to a wall. Modules belong to a bay.
   "layout": {
     "type": "straight | L | U | galley | custom",
     "walls": [
-      {
-        "id": "wall-a",
-        "label": "Wall A — Sink run",
-        "length": 320,
-        "adjacent_to": ["wall-b"],
-        "faces": [],
-        "sequence": 0
-      }
+      { "id":"wall-a", "label":"Wall A — sink run", "length":320,
+        "adjacent_to":["wall-b"], "faces":[], "sequence":0,
+        "corner": { "start":null, "end":"yield" } }
     ]
   },
 
   "walls": [
-    {
-      "id": "wall-a",
-      "height": 220,
-      "depth": 60,
-      "cornice": { "type": "straight", "height": 8 },
-      "plinth":  { "type": "recessed", "height": 12 },
-      "side_columns": { "left_cm": 8, "right_cm": 8, "detail": "plain" },
-      "bays": [
-        {
-          "id": "bay-1",
-          "label": "Bay 1 — far left as you face this wall",
-          "width": 80,
-          "modules": [
-            { "type": "drawer", "height": 20, "count": 3, "handle": "bar" },
-            { "type": "door",   "height": 180, "handle": "bar" }
-          ]
-        }
-      ]
-    }
+    { "id":"wall-a",
+      "height":220, "depth":60, "reveal_mm":3,
+      "cornice": { "type":"straight", "height":8 },
+      "plinth":  { "type":"recessed", "height":12 },
+      "side_columns": { "left_cm":8, "right_cm":8, "detail":"plain" },
+      "bays": [ { "id":"bay-1", "label":"Sink", "size_cm":80,
+                  "split":"rows", "children":[ ... ] } ] }
   ],
 
-  "materials": { "carcass": "", "doors": "", "finish": "" },
-  "hardware":  { "style": "", "placement": "" },
-  "brief":     "locked facts from the consultant, verbatim where possible",
-  "render_notes": "user's photoreal request (lighting, mood) — not geometry"
+  "materials": { "carcass":"", "doors":"", "finish":"" },
+  "hardware":  { "style":"", "placement":"" },
+  "brief":     "locked facts from intake, verbatim where possible",
+  "assumptions": [ "plinth 12 cm — professional default, not client-stated" ],
+  "render_notes": "photoreal request (lighting, mood) — never geometry"
 }
 
-Island / peninsula is NOT a wall unless it has its own designed face.
-It may appear in a photoreal shot as an object in the room, recorded
-under render_notes / a separate objects list — not as a fake fourth wall.
+5.3  INVARIANTS  (server-enforced, every write)
 
-Rules:
-  - Bay widths on a wall must sum to wall.length (within 1 cm, or the
-    spec is invalid and must not render).
-  - adjacent_to is symmetric. faces is for parallel opposite runs.
-  - A wall in faces[] of another wall must never share a camera.
+  I1  layout.walls ids == walls ids.
+  I2  adjacent_to and faces are symmetric; no pair is both.
+  I3  FIT. In any sibling group (bays of a wall, children of a split):
+        sum(fixed size_cm) <= parent extent, and
+        if no sibling is flex, sum(fixed) == parent extent +/- 1.0 cm.
+      The parent extent for a wall's bays is its usable length (7.2).
+      This is the ONLY sizing rule. It applies identically at every depth.
+  I4  Ids are unique among siblings. Every path resolves to one node.
+  I5  A leaf has a front; a split node has >= 2 children and no front.
+  I6  A stored front never has count > 1 (normalised — see 5.1).
+  I7  Walls listed in each other's faces[] never share a camera.
+  I8  Every assumption the system made is in assumptions[], in cm.
 
-================================================================================
-6. PIPELINE — THREE STAGES
-================================================================================
+  FIT_TOLERANCE_CM = 1.0 at every level. All fixed sizes are human- or
+  model-authored and carry the same kind of slop; computed sizes use flex
+  and are exact by construction, so they need no tolerance.
 
-------------------------------------------------------------------------------
-STAGE 1 — BRIEF (one LLM, chat)
-------------------------------------------------------------------------------
-
-Same job as the old consultant. No reviewer behind it.
-
-- Mode from context: sketch/photo analysis, or design-from-scratch.
-- Exhaustive intake via notice (self-ask), not a skip-list.
-  Each turn the model must answer: what this piece is; what a maker
-  of this type needs; what the client already locked; what is still
-  open. Client questions come from those gaps (max 3, with options).
-  Cornice/plinth/hardware are examples of forgotten maker details,
-  not the whole list. The list is generated from the typology.
-- Maximum 3 questions per turn. Options for visual details.
-- Sketch upload is in. A photo is often a zoomed crop; out of frame
-  is unknown, not absent. Several detail shots are fragments of one
-  object. Vision may only lock what is actually visible. More photos
-  can be attached on later turns.
-- Output when confirmed: locked brief text + a first Furniture Spec
-  JSON (the model writes the spec; code validates it).
-
-The brief is facts. It is not an image prompt.
-
-------------------------------------------------------------------------------
-STAGE 2 — PLAN + ELEVATIONS (web editor)
-------------------------------------------------------------------------------
-
-The spec is drawn, not imagined.
-
-Plan view (one SVG):
-  Top-down footprints of every wall run, thicknesses, bay ticks,
-  corner meeting, dimension labels when numbers exist.
-
-Front elevations (N SVGs):
-  One sheet per wall.id. Nested rectangles: carcass, bays, modules,
-  cornice band, plinth band, handles as marks, dimension labels.
-  Looks like CAD (black line, white fill). Not photoreal.
-
-v1 editor (tweak, not full CAD):
-  - AI builds the first spec from the brief.
-  - User selects a bay/wall, types a size, drags a divider.
-  - Or chats: "Bay 2 is 90 cm, open shelves." LLM returns a JSON patch.
-  - Both views update from the same spec. No image generation here.
-
-Lock:
-  User confirms the drawings. Spec version is frozen for render.
-  SVG exports are saved (plan + each elevation).
-
-------------------------------------------------------------------------------
-STAGE 3 — RENDER (image model, after lock)
-------------------------------------------------------------------------------
-
-Code builds camera jobs from the wall graph (Section 7).
-Each job is one OpenRouter image call with a sealed packet:
-
-  - Camera type (frontal | inside_corner)
-  - LEFT of frame / RIGHT of frame wall IDs and bay lists
-  - Only those walls' elevation SVGs as reference images
-  - Floor plan SVG with that camera cone marked
-  - Locked brief materials/finish + user's render_notes
-  - Explicit exclude list of other wall IDs
-
-The image model never sees every elevation at once.
-Two jobs must not have the same wall set.
-
-User reviews the photos. A bad shot is regenerated from the same
-packet, not "try a new prompt and hope."
+Island / peninsula is not a wall unless it has its own designed face.
 
 ================================================================================
-7. VIEW PLANNER (CODE, NOT A MODEL)
+6. TWO SPACES — THE SCALE SYSTEM  (the fix for 3.2)
 ================================================================================
 
-Inputs: layout.walls (ids, adjacent_to, faces, sequence).
-Outputs: elevation jobs + camera jobs.
+The single most important rule in the renderer.
 
-ELEVATION JOBS
-  For each wall.id: one front-elevation SVG.
-  Count is len(walls). Never asked of a model.
+  MODEL SPACE  = the real object, in cm. Never drawn directly.
+  PAPER SPACE  = the sheet, in mm. Everything drawn is in mm.
+  scale        = model -> paper, chosen from a fixed ladder.
 
-CAMERA JOBS  (photoreal)
+6.1  SHEET
+  Sheet is A3 landscape proportion, 420 x 297 mm, margin 10 mm,
+  title block 40 mm tall along the bottom.
+  On screen: 1 mm = var(--px-per-mm), default 96/25.4. On print: real mm.
 
-  Constraint: a shot shows at most two walls.
-  Constraint: walls that face each other cannot share a shot.
-  Constraint: every wall.id appears in at least one shot.
-  Constraint: no two shots have the same set of wall ids.
+6.2  SCALE LADDER  (ISO 5455 preferred reduction scales)
+  1:1, 1:2, 1:5, 1:10, 1:20, 1:50, 1:100
+  Pick the LARGEST scale at which content + margins + dimension bands fit
+  the drawing area. Never scale-to-fit continuously — snap to the ladder,
+  then centre. A 40 cm nightstand and a 6 m run then produce sheets that
+  look like the same drawing set.
+  Print the chosen scale in the title block: "SCALE 1:20".
 
-  Adjacent chain (straight / L / U / sequential custom):
-    Pair along the chain. Number of shots = ceil(n/2).
-    Odd leftover: last shot is frontal on the remaining wall,
-    OR overlap the shared corner (U-shape: A+B then B+C).
-    Overlap is preferred for U: two inside-corner photos.
-    Duplicate of the same pair is a bug. Overlap of the shared
-    back wall is correct.
+6.3  ANNOTATION IS CONSTANT, IN MM  (ISO 3098 heights)
+  dimension text      2.5 mm
+  labels / bay names  3.5 mm
+  sheet title         5.0 mm
+  Text NEVER scales with the object. That is the whole point.
 
-  Facing / galley (two walls in faces[], not adjacent):
-    Two frontal shots. Never one shot. ceil(n/2) is wrong here.
+6.4  LINE WIDTHS  (ISO 128-20 ladder; thick:thin >= 2:1)
+  0.70 mm  carcass outline, wall footprint outline
+  0.35 mm  partitions, cornice/plinth bands, bay dividers
+  0.25 mm  front outlines, shelf lines
+  0.18 mm  dimension lines, witness lines, hatching, centrelines
+  In SVG use vector-effect="non-scaling-stroke" so zoom never thickens a
+  line. In CSS these are literal `border-width` values in mm.
 
-  Four-wall cycle:
-    Two opposite inside corners, e.g. (A,B) and (C,D).
-    Not two adjacent corners that leave a wall uncovered.
+6.5  DIMENSIONS
+  Two bands under each elevation: overall width, then per-bay widths.
+  One band at the left: overall height. Cornice and plinth get their own
+  witness dimensions when non-zero. Numbers come from the spec, never from
+  measuring the drawing.
 
-Each camera job is a record:
+================================================================================
+7. GEOMETRY — THE LAYOUT SOLVER
+================================================================================
 
-  {
-    "shot_id": "shot-1",
-    "camera": "inside_corner" | "frontal",
-    "walls": ["wall-a", "wall-b"],
-    "frame": { "left": "wall-a", "right": "wall-b" },
-    "exclude": ["wall-c"],
-    "references": ["elev-wall-a.svg", "elev-wall-b.svg", "plan-cone.svg"]
+One module. Pure functions. No I/O, no framework, no model.
+It is the only place coordinates are produced.
+
+  solve_elevation(spec, wall_id, sheet) -> Sheet
+  solve_plan(spec, sheet)               -> Sheet
+
+  Sheet = {
+    scale: 20,
+    sheet_mm: {w, h},
+    boxes:  [ { id, kind, x_mm, y_mm, w_mm, h_mm, stroke_mm, front, label } ],
+    lines:  [ { id, kind, x1,y1,x2,y2, stroke_mm } ],
+    texts:  [ { id, x_mm, y_mm, mm, anchor, value } ],
+    hits:   [ { id, path, x_mm, y_mm, w_mm, h_mm } ]   // addressable nodes
   }
 
-Worked examples:
+`hits` is emitted BY the solver, from the same numbers as `boxes`. There is
+no second layout pass anywhere in the system (kills 3.5).
 
-  Straight, 1 wall:  1 elevation, 1 frontal photo.
-  L, 2 adjacent:     2 elevations, 1 corner photo (A left, B right).
-  U, 3 chain:        3 elevations, 2 photos (A+B, B+C).
-  Galley, 2 facing:  2 elevations, 2 frontal photos.
-  Four walls:        4 elevations, 2 opposite-corner photos.
+`path` is the stable address of a node — "wall-a/bay-2/row-1/col-0" — and is
+the vocabulary shared by the drawing, the chat, and the edit ops.
 
-The planner is unit-tested with these cases. If a test needs a
-prompt to pass, the planner is wrong.
+7.1  ELEVATION SOLVE
+  carcass rect -> subtract cornice band, plinth band, side columns
+  -> lay out bays left to right by width
+  -> recurse the opening tree: fixed children first, flex divides remainder
+  -> inset each front by reveal/2 on shared edges
+  -> emit dimension bands
+  Recursion is depth-first, deterministic, and total.
+
+7.2  PLAN SOLVE — CORNERS  (the fix for 3.4)
+  Walls are placed along the sequence chain, turning 90 deg at each corner.
+  At every corner exactly one wall YIELDS: its run is shortened by the
+  neighbour's depth, and the neighbour occupies the corner square.
+
+    usable_length(wall) = length
+                          - depth(neighbour) for each end where corner=="yield"
+
+  I3 validates bay widths against usable_length, not raw length. The corner
+  square is drawn once, tagged as the yielding wall's corner unit, and
+  labelled (blind corner / corner unit / return).
+  Default: the LATER wall in sequence yields. The user can flip it.
+
+7.3  TESTS
+  Golden files for: straight, L, U, galley, four-wall.
+  Property tests, all randomly generated specs:
+    - every child box lies inside its parent box (no overflow, ever)
+    - sibling boxes never overlap beyond the reveal
+    - sum of child extents == parent extent, within 0.01 mm
+    - every `hits` entry matches a `boxes` entry exactly
+    - chosen scale is on the ladder and content is inside the margins
+  If a test needs a prompt to pass, the solver is wrong.
 
 ================================================================================
-8. WHAT IS DELETED
+8. RENDERERS — ONE SOLVER, DUMB BACKENDS
 ================================================================================
 
-Deleted as product behavior (code removed as phases land):
+Renderers contain no arithmetic. They translate a Sheet into markup.
 
-  - Council / reviewer / chairman
-  - DSD as a prose document stuffed into an image prompt
-  - Image generation of floor plans
-  - Image generation of front elevations
-  - Quality-review scoring council
-  - Streamlit UI
+  A. ElevationDOM (React, HTML+CSS)   — the editing surface
+     Nested divs, sizes in mm, borders from the 6.4 ladder. Every node is a
+     real element carrying data-path, so hit-testing, hover, selection,
+     focus, keyboard nav and ghost previews are free browser behaviour.
 
-Kept and adapted:
+  B. PlanSVG (React, SVG)             — the plan
+     Rotated wall footprints, corner squares, bay ticks, dimension lines.
+     vector-effect="non-scaling-stroke".
 
-  - Exhaustive intake chat (consultant job)
-  - Completeness checklist (cornice, hardware, plinth, bays, layout)
-  - OpenRouter client, retries, cost tracking
-  - Project save/load on disk
-  - Sketch/photo upload
+  C. SheetSVG (shared, TS)            — export
+     The SAME Sheet -> flat <rect>/<line>/<text>. Used for photoreal
+     reference images and for PDF/print.
+
+Because A and C consume one Sheet, the reference image handed to the image
+model cannot disagree with what the user approved.
+
+At lock: the browser renders SheetSVG for the plan and every elevation,
+rasterises to PNG, and POSTs both to the server with the frozen spec.
 
 ================================================================================
-9. PROJECT FILE STRUCTURE (TARGET)
+9. THE EDITOR
+================================================================================
+
+Direct manipulation and chat are the same operations on the same spec.
+
+9.1  ON-DRAWING VOCABULARY
+  Every bay and every opening shows its short label (BAY 2, ROW 1, COL 0)
+  at 3.5 mm. The user can therefore SAY what they can SEE, and the model
+  answers in the same tokens. Most "it changed the wrong thing" failures are
+  reference failures; shared vocabulary removes them at the source.
+
+9.2  DIRECT
+  - click a node -> inspector shows its path, size, front, material
+  - type a size -> set_size
+  - drag a divider -> set_size on the two siblings (live, snapped to 1 cm)
+  - split / merge buttons on the selected node
+  - undo/redo over the op log
+
+9.3  CHAT
+  Same ops, chosen by the model. Never a document rewrite. See Section 10.
+
+9.4  OP CATALOGUE  (server-side, validated, the only mutators)
+  set_size(path, cm) | set_flex(path, n)
+  split(path, axis, count | ratios) | merge(path)
+  set_front(path, type, hinge?, handle?, count?)
+  insert_bay(wall, index, width) | delete_bay(path)
+  set_wall(wall, height? depth? length? cornice? plinth? reveal?)
+  set_corner(wall, end, yield|take)
+  set_materials(...) | set_hardware(...)
+  Every op: validate -> apply -> re-run invariants -> bump version ->
+  append to the op log. A rejected op returns why, and changes nothing.
+
+9.5  LOCK
+  Freeze the version, rasterise sheets, move to render.
+
+================================================================================
+10. AGENTS
+================================================================================
+
+Two language jobs. No council. No chairman.
+
+  INTAKE   google/gemini-3.7-flash, reasoning_effort high, vision
+           Conversation, sketch reading, question asking.
+  STRUCTURE openai/gpt-5.6-terra, reasoning {effort: "max"}
+           Brief -> spec. Utterance -> ops. The hard reasoning.
+           Verified available: 1.05M context, text+image+file,
+           supports reasoning_effort AND structured_outputs.
+
+Both calls use response_format json_schema with strict: true, and
+provider.require_parameters: true so requests only route to endpoints that
+honour it. Delete the fenced-JSON scraping path once this is live.
+
+10.1  INTAKE AGENT
+  Keeps build 1's good instincts: cm only, do the math, no praise, a photo
+  is a crop so out-of-frame is unknown rather than absent, max 3 questions
+  per turn, options for visual choices, closed topics stay closed.
+
+  Adds a structured contract — the mechanism that replaces the council:
+
+    {
+      "notice":      [ {q, a}, ... ],       // private self-ask
+      "locked":      [ "wall-a length 320 cm", ... ],
+      "open":        [ {field, why_it_matters, options[]} ],
+      "assumptions": [ {field, value_cm, rationale} ],
+      "confidence":  0.0-1.0,
+      "response":    "client-facing text",
+      "status":      "chat" | "ready"
+    }
+
+  `open` and `assumptions` are REQUIRED and may not both be empty while
+  status is "chat". A model that has nothing open and nothing assumed is
+  claiming certainty and must justify it.
+
+  COMPLETENESS GATE (code, not judgement):
+  A typology profile lists the fields a maker needs (envelope, top, bottom,
+  sides, per-bay stack, appliance clearances, hardware, materials,
+  junctions). status cannot become "ready" while a required field is
+  neither locked nor explicitly assumed. The model cannot talk its way past
+  the gate; it can only close fields or record a default.
+
+10.2  STRUCTURE AGENT — BRIEF -> SPEC
+  Input: locked brief + assumptions. Output: spec v2 against the JSON Schema.
+  On invariant failure, return the failure text and retry once. Twice failed
+  = surface it, do not loop.
+  The model authors STRUCTURE (how many bays, what splits, which fronts).
+  Code authors GEOMETRY. Widths use flex wherever the brief did not state a
+  number, so a valid spec is the default outcome.
+
+10.3  STRUCTURE AGENT — EDIT  (the fix for 3.1's silence and 3.6)
+  Input: the utterance, the current spec, the visible paths of the wall on
+  screen, and the current selection.
+  Output:
+
+    {
+      "understanding": "restate the change in drawing vocabulary",
+      "targets":       [ "wall-a/bay-2/row-0" ],
+      "ops":           [ ... ],
+      "ambiguities":   [ {question, options[]} ],
+      "confidence":    0.0-1.0,
+      "action":        "clarify" | "propose"
+    }
+
+  Routing:
+    action=="clarify", or confidence < 0.75, or ambiguities non-empty
+      -> ask, in chat, WITH OPTIONS. Change nothing.
+    otherwise
+      -> apply to a scratch copy, render it, show a GHOST PREVIEW:
+         removed nodes hatched red, added nodes hatched green, changed
+         dimensions called out. "Apply" / "Cancel" / "Not what I meant".
+    "Not what I meant" feeds the rejected ops back as a negative example
+    for the next attempt on the same utterance.
+
+  Nothing mutates the real spec until the user confirms. The user always
+  sees the change as a DRAWING before it exists.
+
+10.4  WHY THE CONTRACT, NOT THE INSTRUCTION
+  See Section 15. Models detect ambiguity but keep it latent unless the
+  output format forces disclosure; structured uncertainty raises coverage
+  while REDUCING question count. "Be cautious" is not a mechanism. A
+  required field is.
+
+================================================================================
+11. VIEW PLANNER + PHOTOREAL  (kept from build 1, it was correct)
+================================================================================
+
+Code, not a model. Inputs: layout.walls. Outputs: elevation jobs, camera jobs.
+
+ELEVATION JOBS
+  One per wall.id. Count is len(walls). Never asked of a model.
+
+CAMERA JOBS
+  Constraint: at most two walls per shot.
+  Constraint: walls in each other's faces[] never share a shot.
+  Constraint: every wall appears in at least one shot.
+  Constraint: no two shots have the same wall set.
+
+  Adjacent chain: pair along the chain, ceil(n/2) shots. For U, overlap the
+    shared back wall (A+B, then B+C) — two inside-corner photos.
+  Facing / galley: two frontal shots. Never one.
+  Four-wall cycle: two OPPOSITE inside corners, e.g. (A,B) and (C,D).
+
+  Worked cases (unit tested):
+    straight 1 wall  -> 1 elevation, 1 frontal
+    L, 2 adjacent    -> 2 elevations, 1 corner shot
+    U, 3 chain       -> 3 elevations, 2 shots (A+B, B+C)
+    galley, 2 facing -> 2 elevations, 2 frontal shots
+    four walls       -> 4 elevations, 2 opposite-corner shots
+
+SEALED PACKET  (one OpenRouter image call each)
+  camera type (frontal | inside_corner)
+  LEFT / RIGHT wall ids and their bay lists
+  only those walls' elevation PNGs (from Section 8C)
+  the plan PNG with that camera cone marked
+  locked materials/finish + render_notes
+  an explicit exclude list of every other wall id
+
+The image model never sees all elevations at once and never chooses how many
+images exist. A bad shot regenerates from the same packet.
+
+================================================================================
+12. FILE STRUCTURE (TARGET)
 ================================================================================
 
 Interior-Designer/
-├── plan.txt
-├── progress.txt
-├── requirements.txt
-├── config.py
-├── run.py                      # uvicorn 127.0.0.1:8000
+├── plan.txt  progress.txt  config.py  run.py  pytest.ini  requirements.txt
 │
 ├── app/
-│   ├── api/                    # FastAPI: brief, spec, render
+│   ├── api/main.py             # session, brief, ops, edit, lock, render
 │   ├── agents/
-│   │   ├── brief.py
-│   │   └── spec_author.py
-│   ├── editor/                 # sessions, tweaks, drawings payload
+│   │   ├── intake.py           # gemini-3.7-flash + the completeness gate
+│   │   ├── structure.py        # gpt-5.6-terra: spec author + edit ops
+│   │   ├── schemas.py          # strict JSON Schemas + the wide-op DTO
+│   │   └── llm_json.py
 │   ├── models/
-│   │   └── furniture_spec.py
-│   ├── planner/
-│   │   └── views.py
+│   │   ├── spec.py             # spec v2, invariants, distribute, build_spec
+│   │   ├── ops.py              # 13 ops, apply_op / apply_ops, op log
+│   │   ├── paths.py            # NodeRef, resolve, list_paths, describe
+│   │   ├── diff.py             # path diff for the ghost preview
+│   │   └── migrate.py          # build-1 spec -> v2
+│   ├── typology/profiles.py    # completeness profiles per piece type
+│   ├── planner/views.py        # elevation + camera jobs
+│   ├── render/packets.py       # sealed photoreal packets
+│   ├── editor/session.py       # spec history, op log, undo, sheets
+│   ├── prompts/                # intake_prompts, structure_prompts
+│   └── services/               # openrouter, image_service
+│
+├── web/src/
+│   ├── solver/                 # THE geometry. No React, no I/O.
+│   │   ├── sheet.ts  scale.ts  distribute.ts  spec.ts
+│   │   ├── elevation.ts  plan.ts  dividers.ts
+│   │   └── __tests__/
 │   ├── render/
-│   │   ├── svg_plan.py
-│   │   ├── svg_elevation.py
-│   │   ├── raster.py
-│   │   └── photoreal.py
-│   ├── services/               # openrouter, image_service
-│   └── prompts/
-│       ├── brief_prompts.py
-│       └── spec_prompts.py
+│   │   ├── ElevationDOM.tsx    # HTML/CSS in real mm — the editing surface
+│   │   ├── PlanSVG.tsx  Annotations.tsx  SheetFrame.tsx
+│   │   ├── SheetSVG.ts         # export backend
+│   │   ├── rasterize.ts        # sheets -> PNG at lock
+│   │   └── sheet.css
+│   ├── editor/                 # Editor, Inspector, ChatPanel, Gallery, lock
+│   └── api.ts  App.tsx
 │
-├── web/                        # Vite + React editor
-│   └── src/
-│       ├── views/
-│       └── editor/
+├── tests/                      # 200 python tests
+│   ├── golden/distribute.json  # sizing vectors, run by BOTH languages
+│   ├── golden/specs/*.json     # 8 specs written by python, read by TS
+│   └── eval/edit_cases.json    # 21-case edit-agent evaluation set
 │
-└── data/sessions/              # session JSON, spec versions, shot PNGs
+├── scripts/run_edit_eval.py    # the eval against the live model
+└── data/sessions/              # session JSON, versions, sheets, shots
 
-Streamlit and council code are removed. One UI: FastAPI + web/.
-
-================================================================================
-10. DEVELOPMENT PHASES
-================================================================================
-
-Each phase is one piece of work. Do not start the next until the
-current one is agreed and done.
-
-PHASE A — SPEC + PLANNER (no UI, no paid image calls)
-  Furniture Spec Pydantic model + validation (bay widths sum, etc.)
-  View planner: elevations and camera jobs from layout graph
-  Unit tests: straight, L, U, galley, four-wall
-  Status: COMPLETE (2026-08-15)
-
-PHASE B — SVG DRAWERS
-  Plan SVG from spec
-  Elevation SVG from one wall
-  Golden-file or snapshot tests for a known L-kitchen spec
-  Status: COMPLETE (2026-08-15)
-
-PHASE C — BRIEF + SPEC AUTHOR
-  One-LLM chat (Qwen 3.8 Max), sketch in
-  Confirmed brief → valid Furniture Spec
-  Chat patch: natural language → spec diff
-  Status: COMPLETE (2026-08-15)
-
-PHASE D — WEB EDITOR
-  FastAPI + Vite/React
-  Show plan + N elevations
-  Tweak (select, type size, drag divider) + chat patch
-  Lock action
-  Status: COMPLETE (2026-08-15)
-
-PHASE E — PHOTOREAL
-  Build sealed packets from planner
-  One image call per shot, isolated references
-  Gallery, per-shot regenerate from the same packet
-  Status: COMPLETE (2026-08-15)
-
-PHASE F — CUTOVER
-  Remove Streamlit, council, chairman, image-gen drawings
-  Persist spec versions, cost tracking in the new UI
-  Status: COMPLETE (2026-08-15)
+The solver lives in web/ because the editor is its hottest consumer and the
+browser owns rasterisation. The server validates the SPEC and the OPS; it
+does not re-derive layout.
 
 ================================================================================
-11. KEY DESIGN DECISIONS
+13. DEVELOPMENT PHASES
 ================================================================================
 
-1. Furniture-first. Rooms/buildings are not v1.
+One phase at a time. Do not start the next until the current is agreed.
 
-2. One spec, two kinds of drawing: 1 plan + N elevations.
+PHASE 1 — SPEC v2 + OPS                                        COMPLETE
+  Opening tree, flex sizing, invariants I1-I8, corner/usable length.
+  Op catalogue with validate/apply/reject + op log.
+  Migration for existing build-1 specs (flat modules -> rows tree).
+  Tests: invariants, every op, round-trip, migration.
 
-3. N walls → N elevation sheets. Count comes from wall IDs.
+PHASE 2 — LAYOUT SOLVER + SCALE                                COMPLETE
+  scale.ts ladder + sheet fit + title block.
+  elevation.ts recursive solve with reveals.
+  plan.ts with corner resolution.
+  Golden files (straight, L, U, galley, four-wall) + the Section 7.3
+  property tests.
+  Gate: the 40 cm nightstand and the 6 m run produce equally readable sheets.
 
-4. Photoreal cameras come from adjacency code, not from the
-   image model. Max 2 walls per photo. Facing walls never paired.
-   Isolated references so two shots cannot be the same walls.
+PHASE 3 — RENDERERS                                            COMPLETE
+  ElevationDOM (HTML/CSS, mm, ISO line ladder), PlanSVG, SheetSVG.
+  gpt-5.6-terra at effort "max" authors these three components against the
+  Sheet contract and the ISO rules in Section 6 — a one-off codegen task,
+  reviewed and checked in. It writes the renderer; it never draws a design.
+  Visual check across sizes and both themes. Print stylesheet.
 
-5. Working drawings are SVG. Photoreal is the only raster generate.
+PHASE 4 — EDITOR                                               COMPLETE
+  Selection, inspector, typed sizes, divider drag, split/merge, undo.
+  On-drawing labels (9.1). Ghost preview component (used by chat next).
 
-6. One LLM in v1. Image model is a different job, not a second
-   "council member."
+PHASE 5 — AGENTS                                               COMPLETE
+  Structured outputs + strict schemas on both models.
+  Intake with the required contract + typology completeness gate.
+  Structure agent: brief -> spec, and utterance -> ops with the
+  clarify/propose branch wired to the ghost preview.
+  Evaluation set: 20 recorded utterances against a known spec, including
+  "two doors next to each other on the top part". Measure: correct-op rate,
+  clarify-when-ambiguous rate, false-clarify rate.
 
-7. v1 editor is tweak + chat, not a full CAD wall-drawing tool.
+PHASE 6 — PHOTOREAL                                            COMPLETE
+  Rasterise sheets at lock, build sealed packets, gallery, per-shot
+  regenerate. Reused the build-1 planner; packets rewritten for v2.
 
-8. Sketch upload stays.
-
-9. Island is not a wall unless it has a designed elevation face.
-
-10. All LLM/image calls still go through OpenRouter.
-
-11. Quality over speed, but no multi-model debate tax.
+PHASE 7 — CUTOVER                                              COMPLETE
+  Deleted: furniture_spec, server SVG renderers, raster.py, drawings.py
+  hitmap, tweak.py, sample.py, brief.py, spec_author.py, their prompts and
+  their tests. One UI, one spec, one renderer.
 
 ================================================================================
-12. FUTURE (NOT V1)
+14. KEY DESIGN DECISIONS
+================================================================================
+
+1.  Code owns geometry. Models own language and structure choices.
+2.  Invalid states are unrepresentable where possible (flex sizing) rather
+    than merely validated.
+3.  Two spaces: model cm, paper mm, snapped to an ISO scale ladder.
+    Annotation size is constant and never scales with the object.
+4.  One layout solver. Renderers are dumb. Hit targets come from the solver.
+5.  Elevations are HTML/CSS because a cabinet elevation IS a nested box
+    layout, CSS supports real mm units, and every node becomes an
+    addressable element for free. The plan is SVG because CSS cannot rotate
+    wall runs.
+6.  Edits are named, validated operations — never document rewrites.
+7.  No change reaches the spec without the user seeing it drawn first.
+8.  Ambiguity is a required output field, not a hoped-for behaviour.
+9.  Completeness is a code gate over a typology profile, not model diligence.
+10. The drawing and the chat share one vocabulary: node paths, shown on the
+    drawing.
+11. Two models, two jobs: gemini-3.7-flash talks, gpt-5.6-terra structures.
+    Adding a third opinion is the old council. Do not.
+12. Photoreal cameras come from adjacency code. Max 2 walls per shot.
+    Facing walls never paired. References sealed per shot.
+13. terra at max effort writes the renderer once, offline. It does not draw
+    designs at runtime.
+14. Island is not a wall unless it has a designed elevation face.
+15. All model traffic goes through OpenRouter.
+
+================================================================================
+15. BASIS  (why, with sources)
+================================================================================
+
+Drafting standards — Section 6
+  ISO 128-20 / ISO 128-2 line width ladder 0.13-2.0 mm, thick:thin >= 2:1
+    https://cdn.standards.iteh.ai/samples/1408/f62555427b87436eafe1e6abc5271860/ISO-128-20-1996.pdf
+  National CAD Standard plotting guidelines (fine/thin/medium/wide)
+    https://www.nationalcadstandard.org/ncs5/pdfs/ncs5_pg.pdf
+  ISO 3098 lettering heights 1.8 / 2.5 / 3.5 / 5 / 7 / 10 mm
+  ISO 5455 preferred scales and "SCALE 1:n" designation
+    https://www.iso.org/standard/11500.html
+
+Cabinet data modelling — Section 5
+  CabinetCRUNCHER "Opening System": add vertical/horizontal partitions,
+  auto-recalculate surrounding parts to fit the carcass
+    https://cabinetcruncher.com/cabinet-cutlist-software
+  ArchiWood: parametric cabinets, movable vertical divisions, drawer stacks,
+  front splits, numeric reveals
+    https://archiwood.github.io/
+
+Why code owns geometry — Section 2
+  LLM layout/spatial performance degrades 42%->80%+ as geometric complexity
+  rises; FloorplanQA isolates exactly this failure on structured coordinate
+  layouts
+    https://arxiv.org/html/2507.07644v3
+    https://arxiv.org/html/2509.16891
+
+Why ambiguity must be a required field — Sections 10.1, 10.3
+  "Knowing but Not Showing": models recognise ambiguity but the awareness
+  "remains largely latent ... they do not reveal that uncertainty unless
+  they are asked to"
+    https://arxiv.org/html/2605.25284v1
+  SAGE-Agent: structured-uncertainty-guided clarification gives 7-39% higher
+  coverage while asking 1.5-2.7x FEWER questions
+    https://arxiv.org/html/2511.08798
+
+Model + API facts — Sections 4, 10
+  openai/gpt-5.6-terra-20260709: 1.05M ctx, text+image+file, supports
+  reasoning, reasoning_effort, structured_outputs, tools.
+  google/gemini-3.7-flash-20260813: 1.05M ctx, multimodal, structured_outputs.
+  OpenRouter reasoning effort accepts "max" (~95% budget) for GPT-5 series;
+  "max gives GPT-5.6 even more time than xhigh to reason and explore
+  alternatives, run checks, and revise its approach".
+  Structured outputs: use json_schema + strict:true and
+  provider.require_parameters:true so only honouring endpoints are routed.
+    https://openrouter.ai/docs/guides/features/structured-outputs
+    https://openrouter.ai/docs/use-cases/reasoning-tokens
+
+SVG technique — Section 8
+  viewBox + preserveAspectRatio for fit; vector-effect="non-scaling-stroke"
+  so line weight stays true under zoom
+    https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/preserveAspectRatio
+
+================================================================================
+16. FUTURE (NOT NOW)
 ================================================================================
 
 - Full CAD (user draws walls from scratch)
-- Side/rear elevations as extra sheets
-- Material lists and cut lists
-- CAD/DXF export
-- Rooms/buildings as a second spec type
-- Optional "pretty technical plate" traced from locked SVG
+- Side / rear / section sheets
+- Cut lists and material take-off (the opening tree already carries this)
+- DXF / PDF export
+- Rooms and buildings as a second spec type
+- Multi-user SaaS: sessions -> accounts, JSON files -> a database
 
 ================================================================================
 END OF PLAN

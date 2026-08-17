@@ -1,0 +1,177 @@
+/*
+ * Sheet styling. Every size here is a real millimetre.
+ *
+ * Build 1 mixed drawing units and annotation units in one coordinate system,
+ * which is why a small cabinet came out looking broken. Here the geometry is
+ * scaled by the solver and the paper is genuinely A3, so `border-width: 0.35mm`
+ * means 0.35 mm on a printer.
+ */
+
+:root {
+  --sheet-ink: #111111;
+  --sheet-paper: #ffffff;
+  --sheet-fill-footprint: rgba(0, 0, 0, 0.04);
+  --sheet-fill-corner: rgba(0, 0, 0, 0.06);
+  --sheet-select: #1668dc;
+  --sheet-added: #1a7f37;
+  --sheet-removed: #cf222e;
+}
+
+.sheet-outer {
+  width: 100%;
+  overflow: auto;
+}
+
+.sheet-zoom {
+  position: relative;
+  overflow: hidden;
+}
+
+.sheet {
+  position: relative;
+  transform-origin: top left;
+  background: var(--sheet-paper);
+  color: var(--sheet-ink);
+  font-family: Helvetica, Arial, sans-serif;
+}
+
+.elevation {
+  position: absolute;
+  inset: 0;
+}
+
+.sheet-box,
+.sheet-node {
+  position: absolute;
+  border-style: solid;
+  border-color: var(--sheet-ink);
+  box-sizing: border-box;
+  background: transparent;
+}
+
+.kind-frame,
+.kind-title-block,
+.kind-carcass {
+  pointer-events: none;
+}
+
+.kind-cornice,
+.kind-plinth,
+.kind-side-column {
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.kind-handle {
+  pointer-events: none;
+  background: var(--sheet-ink);
+}
+
+.kind-front {
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.front-glass {
+  background: rgba(70, 130, 160, 0.12);
+}
+
+.front-appliance {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* Interactive openings sit above the fronts so clicks land on them. */
+.sheet-node {
+  cursor: pointer;
+  z-index: 2;
+}
+
+.sheet-node:hover {
+  background: rgba(22, 104, 220, 0.08);
+}
+
+.sheet-node:focus-visible {
+  outline: 0.4mm solid var(--sheet-select);
+  outline-offset: 0;
+}
+
+.sheet-node.is-selected {
+  border-color: var(--sheet-select);
+  background: rgba(22, 104, 220, 0.12);
+  z-index: 3;
+}
+
+/* Ghost preview: the pending edit, before it is applied (plan 10.3). */
+.ghost-added {
+  border-color: var(--sheet-added);
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(26, 127, 55, 0.18),
+    rgba(26, 127, 55, 0.18) 1mm,
+    transparent 1mm,
+    transparent 2mm
+  );
+}
+
+.ghost-removed {
+  border-color: var(--sheet-removed);
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(207, 34, 46, 0.18),
+    rgba(207, 34, 46, 0.18) 1mm,
+    transparent 1mm,
+    transparent 2mm
+  );
+}
+
+.ghost-changed {
+  border-color: #9a6700;
+  background: rgba(154, 103, 0, 0.14);
+}
+
+.sheet-annotations,
+.plan-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  color: var(--sheet-ink);
+}
+
+.plan-svg {
+  pointer-events: auto;
+}
+
+.plan-svg .is-clickable {
+  cursor: pointer;
+}
+
+.plan-svg .is-selected {
+  stroke: var(--sheet-select);
+}
+
+/* True-scale output. The zoom is a screen affordance only. */
+@media print {
+  @page {
+    size: A3 landscape;
+    margin: 0;
+  }
+
+  .sheet-outer,
+  .sheet-zoom {
+    overflow: visible;
+    width: auto;
+    height: auto;
+  }
+
+  .sheet {
+    transform: none !important;
+  }
+
+  .sheet-node,
+  .sheet-node.is-selected {
+    background: transparent;
+    border-color: var(--sheet-ink);
+  }
+}

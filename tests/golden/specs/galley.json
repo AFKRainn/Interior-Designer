@@ -1,0 +1,175 @@
+{
+  "project_id": "fixture-galley",
+  "version": 1,
+  "units": "cm",
+  "name": "Galley kitchen",
+  "layout": {
+    "type": "galley",
+    "walls": [
+      {
+        "id": "wall-a",
+        "label": "Sink run",
+        "length": 320.0,
+        "adjacent_to": [],
+        "faces": [
+          "wall-b"
+        ],
+        "sequence": 0,
+        "corner": {
+          "start": null,
+          "end": null
+        }
+      },
+      {
+        "id": "wall-b",
+        "label": "Hob run",
+        "length": 320.0,
+        "adjacent_to": [],
+        "faces": [
+          "wall-a"
+        ],
+        "sequence": 1,
+        "corner": {
+          "start": null,
+          "end": null
+        }
+      }
+    ]
+  },
+  "walls": [
+    {
+      "id": "wall-a",
+      "height": 220.0,
+      "depth": 60.0,
+      "reveal_mm": 3.0,
+      "cornice": {
+        "type": "straight",
+        "height": 0.0
+      },
+      "plinth": {
+        "type": "recessed",
+        "height": 12.0
+      },
+      "side_columns": {
+        "left_cm": 0.0,
+        "right_cm": 0.0,
+        "detail": "plain"
+      },
+      "bays": [
+        {
+          "id": "bay-1",
+          "label": "",
+          "size_cm": 120.0,
+          "flex": null,
+          "split": "rows",
+          "children": [
+            {
+              "id": "drawer-1",
+              "label": "",
+              "size_cm": null,
+              "flex": 1.0,
+              "split": null,
+              "children": [],
+              "front": {
+                "type": "drawer",
+                "hinge": "none",
+                "handle": "none",
+                "count": 1
+              }
+            },
+            {
+              "id": "drawer-2",
+              "label": "",
+              "size_cm": null,
+              "flex": 1.0,
+              "split": null,
+              "children": [],
+              "front": {
+                "type": "drawer",
+                "hinge": "none",
+                "handle": "none",
+                "count": 1
+              }
+            },
+            {
+              "id": "drawer-3",
+              "label": "",
+              "size_cm": null,
+              "flex": 1.0,
+              "split": null,
+              "children": [],
+              "front": {
+                "type": "drawer",
+                "hinge": "none",
+                "handle": "none",
+                "count": 1
+              }
+            }
+          ],
+          "front": null
+        },
+        {
+          "id": "bay-2",
+          "label": "",
+          "size_cm": null,
+          "flex": 1.0,
+          "split": null,
+          "children": [],
+          "front": {
+            "type": "door",
+            "hinge": "none",
+            "handle": "none",
+            "count": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "wall-b",
+      "height": 220.0,
+      "depth": 60.0,
+      "reveal_mm": 3.0,
+      "cornice": {
+        "type": "straight",
+        "height": 0.0
+      },
+      "plinth": {
+        "type": "recessed",
+        "height": 12.0
+      },
+      "side_columns": {
+        "left_cm": 0.0,
+        "right_cm": 0.0,
+        "detail": "plain"
+      },
+      "bays": [
+        {
+          "id": "bay-1",
+          "label": "",
+          "size_cm": null,
+          "flex": 1.0,
+          "split": null,
+          "children": [],
+          "front": {
+            "type": "door",
+            "hinge": "none",
+            "handle": "none",
+            "count": 1
+          }
+        }
+      ]
+    }
+  ],
+  "materials": {
+    "carcass": "",
+    "doors": "",
+    "finish": ""
+  },
+  "hardware": {
+    "style": "",
+    "placement": ""
+  },
+  "brief": "",
+  "assumptions": [],
+  "render_notes": ""
+}

@@ -1,0 +1,186 @@
+{
+  "id": "39492ffd-9201-4756-af51-dcdb28314ac5",
+  "phase": "locked",
+  "locked": true,
+  "typology": "kitchen",
+  "brief": "Demo L-kitchen. Not from a real intake.",
+  "resolved": [],
+  "intake": null,
+  "spec": {
+    "project_id": "4e928713-9c2a-403c-84d9-0b11babfffd8",
+    "version": 1,
+    "units": "cm",
+    "name": "L kitchen",
+    "layout": {
+      "type": "L",
+      "walls": [
+        {
+          "id": "wall-a",
+          "label": "",
+          "length": 320.0,
+          "adjacent_to": [
+            "wall-b"
+          ],
+          "faces": [],
+          "sequence": 0,
+          "corner": {
+            "start": null,
+            "end": "take"
+          }
+        },
+        {
+          "id": "wall-b",
+          "label": "",
+          "length": 240.0,
+          "adjacent_to": [
+            "wall-a"
+          ],
+          "faces": [],
+          "sequence": 1,
+          "corner": {
+            "start": "yield",
+            "end": null
+          }
+        }
+      ]
+    },
+    "walls": [
+      {
+        "id": "wall-a",
+        "height": 220.0,
+        "depth": 60.0,
+        "reveal_mm": 3.0,
+        "cornice": {
+          "type": "straight",
+          "height": 0.0
+        },
+        "plinth": {
+          "type": "recessed",
+          "height": 0.0
+        },
+        "side_columns": {
+          "left_cm": 0.0,
+          "right_cm": 0.0,
+          "detail": "plain"
+        },
+        "bays": [
+          {
+            "id": "bay-1",
+            "label": "",
+            "size_cm": 160.0,
+            "flex": null,
+            "split": null,
+            "children": [],
+            "front": {
+              "type": "door",
+              "hinge": "none",
+              "handle": "none",
+              "count": 1
+            }
+          },
+          {
+            "id": "bay-2",
+            "label": "",
+            "size_cm": null,
+            "flex": 1.0,
+            "split": null,
+            "children": [],
+            "front": {
+              "type": "drawer",
+              "hinge": "none",
+              "handle": "none",
+              "count": 1
+            }
+          }
+        ]
+      },
+      {
+        "id": "wall-b",
+        "height": 220.0,
+        "depth": 60.0,
+        "reveal_mm": 3.0,
+        "cornice": {
+          "type": "straight",
+          "height": 0.0
+        },
+        "plinth": {
+          "type": "recessed",
+          "height": 0.0
+        },
+        "side_columns": {
+          "left_cm": 0.0,
+          "right_cm": 0.0,
+          "detail": "plain"
+        },
+        "bays": [
+          {
+            "id": "bay-1",
+            "label": "",
+            "size_cm": null,
+            "flex": 1.0,
+            "split": null,
+            "children": [],
+            "front": {
+              "type": "open",
+              "hinge": "none",
+              "handle": "none",
+              "count": 1
+            }
+          }
+        ]
+      }
+    ],
+    "materials": {
+      "carcass": "",
+      "doors": "",
+      "finish": ""
+    },
+    "hardware": {
+      "style": "",
+      "placement": ""
+    },
+    "brief": "",
+    "assumptions": [],
+    "render_notes": ""
+  },
+  "history": [],
+  "op_log": [],
+  "messages": [],
+  "chat": [
+    {
+      "role": "system",
+      "text": "Loaded the demo L-kitchen."
+    },
+    {
+      "role": "system",
+      "text": "Drawings locked at v1."
+    }
+  ],
+  "sheets": [
+    "elev-wall-a.png",
+    "elev-wall-b.png",
+    "plan-shot-1.png"
+  ],
+  "renders": [
+    {
+      "shot_id": "shot-1",
+      "camera": "inside_corner",
+      "walls": [
+        "wall-a",
+        "wall-b"
+      ],
+      "frame": {
+        "left": "wall-a",
+        "right": "wall-b"
+      },
+      "exclude": [],
+      "prompt": "Photorealistic interior photograph of a finished, installed design.\nThis is a PHOTOGRAPH. Not a drawing, not a floor plan, not an elevation.\nProject: L kitchen\nCamera: inside_corner. Shot shot-1.\n\nLEFT of frame \u2014 wall-a (wall-a): 320 cm run, 220 cm high, 60 cm deep.\n    bay-1: 160 cm wide, one door front\n    bay-2: 160 cm wide, one drawer front\nRIGHT of frame \u2014 wall-b (wall-b): 180 cm run, 220 cm high, 60 cm deep.\n    bay-1: 180 cm wide, one open front\n\nReference images, in order:\n  1. elev-wall-a.png \u2014 measured front elevation of wall-a, the LEFT of frame. Copy its bay count, widths and front layout exactly.\n  2. elev-wall-b.png \u2014 measured front elevation of wall-b, the RIGHT of frame. Copy its bay count, widths and front layout exactly.\n  3. plan-shot-1.png \u2014 the floor plan. The SHADED runs are the ones in this photograph; shoot from inside the room looking at them.\n\nThe elevations are dimensioned CAD drawings, not suggestions. Match every bay division, front type and proportion shown.",
+      "references": [
+        "elev-wall-a.png",
+        "elev-wall-b.png",
+        "plan-shot-1.png"
+      ]
+    }
+  ],
+  "render_error": null
+}

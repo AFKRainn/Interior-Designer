@@ -1,3 +1,3 @@
-from app.models.furniture_spec import FurnitureSpec, LayoutType
+from app.models.spec import Spec, SpecError, build_spec
 
-__all__ = ["FurnitureSpec", "LayoutType"]
+__all__ = ["Spec", "SpecError", "build_spec"]

@@ -1,0 +1,167 @@
+{
+  "id": "c0a81d8d-b8bc-4979-910c-725b0221c433",
+  "phase": "edit",
+  "locked": false,
+  "typology": "kitchen",
+  "brief": "Demo L-kitchen. Not from a real intake.",
+  "resolved": [],
+  "intake": null,
+  "spec": {
+    "project_id": "0873b50a-299c-44a7-9492-ea304cef0ca1",
+    "version": 1,
+    "units": "cm",
+    "name": "L kitchen",
+    "layout": {
+      "type": "L",
+      "walls": [
+        {
+          "id": "wall-a",
+          "label": "",
+          "length": 320.0,
+          "adjacent_to": [
+            "wall-b"
+          ],
+          "faces": [],
+          "sequence": 0,
+          "corner": {
+            "start": null,
+            "end": "take"
+          }
+        },
+        {
+          "id": "wall-b",
+          "label": "",
+          "length": 240.0,
+          "adjacent_to": [
+            "wall-a"
+          ],
+          "faces": [],
+          "sequence": 1,
+          "corner": {
+            "start": "yield",
+            "end": null
+          }
+        }
+      ]
+    },
+    "walls": [
+      {
+        "id": "wall-a",
+        "height": 220.0,
+        "depth": 60.0,
+        "reveal_mm": 3.0,
+        "cornice": {
+          "type": "straight",
+          "height": 0.0
+        },
+        "plinth": {
+          "type": "recessed",
+          "height": 0.0
+        },
+        "side_columns": {
+          "left_cm": 0.0,
+          "right_cm": 0.0,
+          "detail": "plain"
+        },
+        "bays": [
+          {
+            "id": "bay-1",
+            "label": "",
+            "size_cm": 160.0,
+            "flex": null,
+            "split": null,
+            "children": [],
+            "front": {
+              "type": "door",
+              "hinge": "none",
+              "handle": "none",
+              "count": 1
+            }
+          },
+          {
+            "id": "bay-2",
+            "label": "",
+            "size_cm": null,
+            "flex": 1.0,
+            "split": null,
+            "children": [],
+            "front": {
+              "type": "drawer",
+              "hinge": "none",
+              "handle": "none",
+              "count": 1
+            }
+          }
+        ]
+      },
+      {
+        "id": "wall-b",
+        "height": 220.0,
+        "depth": 60.0,
+        "reveal_mm": 3.0,
+        "cornice": {
+          "type": "straight",
+          "height": 0.0
+        },
+        "plinth": {
+          "type": "recessed",
+          "height": 0.0
+        },
+        "side_columns": {
+          "left_cm": 0.0,
+          "right_cm": 0.0,
+          "detail": "plain"
+        },
+        "bays": [
+          {
+            "id": "bay-1",
+            "label": "",
+            "size_cm": null,
+            "flex": 1.0,
+            "split": null,
+            "children": [],
+            "front": {
+              "type": "open",
+              "hinge": "none",
+              "handle": "none",
+              "count": 1
+            }
+          }
+        ]
+      }
+    ],
+    "materials": {
+      "carcass": "",
+      "doors": "",
+      "finish": ""
+    },
+    "hardware": {
+      "style": "",
+      "placement": ""
+    },
+    "brief": "",
+    "assumptions": [],
+    "render_notes": ""
+  },
+  "history": [],
+  "op_log": [],
+  "messages": [],
+  "chat": [
+    {
+      "role": "system",
+      "text": "Loaded the demo L-kitchen."
+    },
+    {
+      "role": "user",
+      "text": "two doors next to each other on the top part"
+    },
+    {
+      "role": "assistant",
+      "text": "split bay-1 into two doors side by side",
+      "proposal": true
+    }
+  ],
+  "sheets": [],
+  "renders": [],
+  "render_error": null
+}

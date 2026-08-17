@@ -1,0 +1,21 @@
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# node
+node_modules/
+dist/
+
+# secrets
+.env
+
+# generated output
+data/preview/
+outputs/
+
+# NOT ignored, on purpose:
+#   tests/golden/       cross-language contracts, must be committed
+#   data/sessions/      real build-1 sessions the migration is tested against

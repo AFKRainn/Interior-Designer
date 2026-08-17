@@ -1,0 +1,177 @@
+{
+  "project_id": "69a35cb0-b8bb-4ce0-9df0-b939c664aed0",
+  "version": 1,
+  "units": "cm",
+  "name": "Built-In Modular Wall Storage Unit & Credenza",
+  "layout": {
+    "type": "straight",
+    "walls": [
+      {
+        "id": "wall-a",
+        "label": "Wall A — Main Storage Wall",
+        "length": 360.0,
+        "adjacent_to": [],
+        "faces": [],
+        "sequence": 0
+      }
+    ]
+  },
+  "walls": [
+    {
+      "id": "wall-a",
+      "height": 220.0,
+      "depth": 60.0,
+      "cornice": {
+        "type": "straight",
+        "height": 10.0
+      },
+      "plinth": {
+        "type": "recessed",
+        "height": 10.0
+      },
+      "side_columns": {
+        "left_cm": 8.0,
+        "right_cm": 8.0,
+        "detail": "plain"
+      },
+      "bays": [
+        {
+          "id": "bay-1",
+          "label": "Left Flanking Tower",
+          "width": 60.0,
+          "modules": [
+            {
+              "type": "door",
+              "height": 80.0,
+              "count": 1,
+              "handle": "knob"
+            },
+            {
+              "type": "open_shelf",
+              "height": 35.0,
+              "count": 1,
+              "handle": "none"
+            },
+            {
+              "type": "door",
+              "height": 85.0,
+              "count": 1,
+              "handle": "knob"
+            }
+          ]
+        },
+        {
+          "id": "bay-2",
+          "label": "Center Left Base Cupboard & Upper Cubbies",
+          "width": 75.0,
+          "modules": [
+            {
+              "type": "door",
+              "height": 80.0,
+              "count": 1,
+              "handle": "knob"
+            },
+            {
+              "type": "open_shelf",
+              "height": 85.0,
+              "count": 3,
+              "handle": "none"
+            },
+            {
+              "type": "door",
+              "height": 35.0,
+              "count": 1,
+              "handle": "knob"
+            }
+          ]
+        },
+        {
+          "id": "bay-3",
+          "label": "Center Drawer Banks & Upper Cabinet",
+          "width": 90.0,
+          "modules": [
+            {
+              "type": "drawer",
+              "height": 80.0,
+              "count": 3,
+              "handle": "bar"
+            },
+            {
+              "type": "door",
+              "height": 85.0,
+              "count": 2,
+              "handle": "knob"
+            },
+            {
+              "type": "door",
+              "height": 35.0,
+              "count": 2,
+              "handle": "knob"
+            }
+          ]
+        },
+        {
+          "id": "bay-4",
+          "label": "Center Right Base Cupboard & Upper Cubbies",
+          "width": 75.0,
+          "modules": [
+            {
+              "type": "door",
+              "height": 80.0,
+              "count": 1,
+              "handle": "knob"
+            },
+            {
+              "type": "open_shelf",
+              "height": 85.0,
+              "count": 3,
+              "handle": "none"
+            },
+            {
+              "type": "door",
+              "height": 35.0,
+              "count": 1,
+              "handle": "knob"
+            }
+          ]
+        },
+        {
+          "id": "bay-5",
+          "label": "Right Flanking Tower",
+          "width": 60.0,
+          "modules": [
+            {
+              "type": "door",
+              "height": 80.0,
+              "count": 1,
+              "handle": "knob"
+            },
+            {
+              "type": "open_shelf",
+              "height": 35.0,
+              "count": 1,
+              "handle": "none"
+            },
+            {
+              "type": "door",
+              "height": 85.0,
+              "count": 1,
+              "handle": "knob"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "materials": {
+    "carcass": "Furniture-grade moisture-resistant MDF panels with solid birch/hardwood face frames",
+    "doors": "Solid birch/hardwood framed MDF panel doors",
+    "finish": "Smooth satin spray lacquer in warm neutral greige / off-white"
+  },
+  "hardware": {
+    "style": "Brushed brass / satin nickel slim bar pulls and matching round knobs",
+    "placement": "Bar pulls centered horizontally on drawer fronts; round knobs mounted vertically on door stile corners"
+  },
+  "brief": "PROJECT SPECIFICATION: Built-In Modular Wall Storage Unit & Credenza\n\n1. OVERALL ENVELOPE & FOOTPRINT\n- Total Width: 360 cm\n- Total Height: 220 cm\n- Total Depth (Towers & Base Credenza): 60 cm\n- Recessed Upper Hutch Depth: 35 cm (creates a 25 cm clear working counter surface in front)\n- Countertop Height: 90 cm from finished floor\n- Plinth / Baseboard: 10 cm continuous\n- Top Cornice / Header: 10 cm continuous\n\n2. BAY BREAKDOWN & ELEVATIONS (Left to Right)\n- Left Tower (60 cm W × 60 cm D × 220 cm H):\n  * 10 cm plinth\n  * Lower door cabinet: 60 cm W × 80 cm H (1 interior shelf)\n  * Mid open niche: 60 cm W × 35 cm H (located between 90 cm and 125 cm height)\n  * Upper door cabinet: 60 cm W × 85 cm H (2 interior shelves)\n  * 10 cm top fascia; 8 cm × 8 cm decorative corner framing blocks\n\n- Center Base Credenza (240 cm W × 60 cm D × 90 cm H):\n  * Left Bay: 40 cm W × 77 cm H single door cabinet (1 adjustable shelf)\n  * Center-Left Bay: 80 cm W bank of 3 drawers (~25.6 cm front height each)\n  * Center-Right Bay: 80 cm W bank of 3 drawers (~25.6 cm front height each)\n  * Right Bay: 40 cm W × 77 cm H single door cabinet (1 adjustable shelf)\n  * Countertop: 3 cm thick solid composite/painted hardwood at 90 cm finished height\n\n- Center Upper Hutch (240 cm W × 35 cm D × 120 cm H, recessed):\n  * Left Cubby Bay (75 cm W × 85 cm H): 12 sorting cubbies (4 columns × 3 tiers, internal slot size ~17 cm W × 25 cm H × 33 cm D)\n  * Center Cabinet (90 cm W × 85 cm H): Double-door cabinet with 2 adjustable interior shelves\n  * Right Cubby Bay (75 cm W × 85 cm H): 12 sorting cubbies matching the left bay\n  * Top Storage Tier (240 cm W × 35 cm H): Continuous overhead enclosed cabinet run (two 75 cm doors, one 90 cm double door)\n\n- Right Tower (60 cm W × 60 cm D × 220 cm H):\n  * Identical mirror configuration to Left Tower\n\n3. MATERIALS & FINISHES\n- Construction: Solid birch/hardwood face frames with furniture-grade moisture-resistant MDF panels and shelving\n- Finish: Smooth satin spray lacquer in warm neutral greige / off-white (non-yellowing)\n\n4. HARDWARE & FIT-OUT\n- Slides: Full-extension undermount soft-close drawer slides\n- Hinges: Fully concealed 110-degree soft-close European cup hinges\n- Handles: Brushed brass / satin nickel slim bar pulls on drawers and matching round knobs on doors",
+  "render_notes": "Continuous full-width straight wall unit. Flanking left and right tall towers project forward at 60 cm depth with open center niches aligned with the credenza counter level. Central base credenza at 60 cm depth with continuous 3 cm countertop at 90 cm finished height. Upper central hutch set back to 35 cm depth featuring twin 4x3 sorting pigeonhole cubby bays flanking a double-door enclosed cabinet, topped by a continuous run of top flap/cabinet doors under a 10 cm header cornice."
+}

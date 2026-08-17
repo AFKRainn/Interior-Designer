@@ -1,0 +1,124 @@
+{
+  "project_id": "fixture-straight",
+  "version": 1,
+  "units": "cm",
+  "name": "straight test run",
+  "layout": {
+    "type": "straight",
+    "walls": [
+      {
+        "id": "wall-a",
+        "label": "Wall A",
+        "length": 300.0,
+        "adjacent_to": [],
+        "faces": [],
+        "sequence": 0,
+        "corner": {
+          "start": null,
+          "end": null
+        }
+      }
+    ]
+  },
+  "walls": [
+    {
+      "id": "wall-a",
+      "height": 220.0,
+      "depth": 60.0,
+      "reveal_mm": 3.0,
+      "cornice": {
+        "type": "straight",
+        "height": 8.0
+      },
+      "plinth": {
+        "type": "recessed",
+        "height": 12.0
+      },
+      "side_columns": {
+        "left_cm": 0.0,
+        "right_cm": 0.0,
+        "detail": "plain"
+      },
+      "bays": [
+        {
+          "id": "bay-1",
+          "label": "",
+          "size_cm": 100.0,
+          "flex": null,
+          "split": "rows",
+          "children": [
+            {
+              "id": "row-1",
+              "label": "",
+              "size_cm": 60.0,
+              "flex": null,
+              "split": null,
+              "children": [],
+              "front": {
+                "type": "door",
+                "hinge": "none",
+                "handle": "bar",
+                "count": 1
+              }
+            },
+            {
+              "id": "row-2",
+              "label": "",
+              "size_cm": null,
+              "flex": 1.0,
+              "split": null,
+              "children": [],
+              "front": {
+                "type": "drawer",
+                "hinge": "none",
+                "handle": "bar",
+                "count": 1
+              }
+            }
+          ],
+          "front": null
+        },
+        {
+          "id": "bay-2",
+          "label": "",
+          "size_cm": 100.0,
+          "flex": null,
+          "split": null,
+          "children": [],
+          "front": {
+            "type": "open",
+            "hinge": "none",
+            "handle": "none",
+            "count": 1
+          }
+        },
+        {
+          "id": "bay-3",
+          "label": "",
+          "size_cm": null,
+          "flex": 1.0,
+          "split": null,
+          "children": [],
+          "front": {
+            "type": "door",
+            "hinge": "none",
+            "handle": "bar",
+            "count": 1
+          }
+        }
+      ]
+    }
+  ],
+  "materials": {
+    "carcass": "",
+    "doors": "",
+    "finish": ""
+  },
+  "hardware": {
+    "style": "",
+    "placement": ""
+  },
+  "brief": "",
+  "assumptions": [],
+  "render_notes": ""
+}

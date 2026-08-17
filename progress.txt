@@ -1,12 +1,588 @@
 ================================================================================
-                  ARCHITECTURE AGENT — PROGRESS TRACKER
+                  INTERIOR DESIGNER — PROGRESS TRACKER
 ================================================================================
 Created: 2026-03-25
-Last Updated: 2026-08-15
+Last Updated: 2026-08-16
 
 ================================================================================
-CURRENT STATUS: PHASE F COMPLETE — NEW PIPELINE IS THE PRODUCT
+CURRENT STATUS: BUILD 2 COMPLETE — ALL SEVEN PHASES LANDED
 ================================================================================
+
+Build 2 is the openings / paper-space / edit-ops architecture, and it is now
+the product. Build 1 is deleted, not deprecated.
+Architecture lives in plan.txt. This file is the running log.
+
+Run it:      python run.py                 # API on 127.0.0.1:8000
+             cd web && npm run dev          # editor on localhost:5173
+
+Test it:     python -m pytest tests -q      # 200
+             cd web && npm test             # 97
+             cd web && npx tsc --noEmit     # types
+
+  PHASE 1  SPEC v2 + OPS ................ COMPLETE  2026-08-16
+  PHASE 2  LAYOUT SOLVER + SCALE ........ COMPLETE  2026-08-16
+  PHASE 3  RENDERERS .................... COMPLETE  2026-08-16
+  PHASE 4  EDITOR ....................... COMPLETE  2026-08-16
+  PHASE 5  AGENTS ....................... COMPLETE  2026-08-16
+  PHASE 6  PHOTOREAL .................... COMPLETE  2026-08-16
+  PHASE 7  CUTOVER ...................... COMPLETE  2026-08-16
+
+The three symptoms from the test notes, and where each one is closed:
+  "image does not look like the map"  -> plan.txt 2. One spec, one solver.
+                                        An image model never draws geometry.
+  "designs go out of frame"           -> plan.txt 6. Model cm and paper mm are
+                                        separate; annotation is fixed in mm.
+  "two doors did not happen"          -> plan.txt 5.1. It had no representation.
+                                        Now one op, verified in the app.
+
+================================================================================
+HOW THESE TWO FILES WORK  (read this before editing either)
+================================================================================
+
+plan.txt      = the architecture. What we build and WHY, with sources.
+                Sections 3 (why build 1 failed) and 15 (basis) exist so a
+                settled decision is never silently reopened.
+                Change it only when the architecture actually changes.
+
+progress.txt  = the running log. What we DID, when, and what we learned.
+                Implementation-level decisions that do not rise to
+                architecture go in the DECISION LOG below.
+
+Rule: if a choice would be expensive to reverse, or if someone could
+reasonably re-suggest the thing we rejected, it gets a DECISION LOG entry
+with its alternative and its revisit trigger. Reasons decay faster than code.
+
+================================================================================
+DECISION LOG — BUILD 2
+================================================================================
+Format: WHAT / WHY / REJECTED / REVISIT IF
+
+--------------------------------------------------------------------------
+D1  2026-08-16 — Openings replace bays+modules
+WHAT     A bay is a tree that splits into rows/cols recursively. Children
+         are fixed size_cm or flex shares of the remainder.
+WHY      Build 1 could not express "two doors next to each other". Modules
+         were always full bay width and `count` repeated vertically, so a
+         side-by-side front had no representation. This was a missing
+         degree of freedom, not a prompting failure.
+         Flex sizing also makes vertical overflow UNREPRESENTABLE rather
+         than merely validated (build-1 bug 3.3).
+REJECTED Keeping the flat list and adding a "columns" field to a module —
+         solves one case, not the general one, and breaks again at depth 3.
+REVISIT  Never for the tree itself. The reveal/inset handling is tunable.
+
+--------------------------------------------------------------------------
+D2  2026-08-16 — One sizing rule at every level, walls included
+WHAT     A wall's bay list IS a "cols" split whose extent is the wall's
+         usable length. Bays are ordinary openings. Same rule top to bottom.
+WHY      plan.txt originally had I3 (bay widths sum to wall length) and I4
+         (children fit parent) as separate invariants. They are the same
+         rule. One rule means one implementation, one error message, one
+         set of tests, and bays can be flex too ("three equal bays" needs
+         no arithmetic from the model).
+REJECTED Two invariants as originally drafted. Collapsed into I3.
+REVISIT  If a wall ever needs sizing semantics a nested opening cannot use.
+
+--------------------------------------------------------------------------
+D3  2026-08-16 — `size_cm` everywhere, not `width`
+WHAT     Every opening sizes itself with size_cm / flex along its parent's
+         split axis. Bays no longer have a `width` field.
+WHY      "width" is wrong for a child of a rows split — there it is a
+         height. One axis-neutral name removes a whole class of confusion
+         for the model, the ops, and us. plan.txt §5.2 updated to match.
+REJECTED Keeping `width` at bay level as a friendlier alias. Two names for
+         one concept is exactly how drift starts.
+REVISIT  Not expected. The UI can still SAY "width" when the axis is cols.
+
+--------------------------------------------------------------------------
+D4  2026-08-16 — ids unique among siblings; the PATH is the global address
+WHAT     Node ids need only be unique within their parent. Addressing uses
+         "wall-a/bay-2/row-1/col-0", resolved segment by segment.
+WHY      plan.txt I5 first said ids are globally unique. That forces ugly
+         generated ids ("bay-2-row-0") and makes readable paths impossible.
+         Filesystem semantics are the well-understood version of this.
+REJECTED Document-wide unique ids. Rejected on readability — and the shared
+         user/model vocabulary (plan §9.1) depends on short readable names.
+REVISIT  If we ever need stable ids across restructuring (undo already
+         covers this via the op log).
+
+--------------------------------------------------------------------------
+D5  2026-08-16 — front.count is shorthand, normalised away on ingest
+WHAT     A model may write {"front":{"type":"drawer","count":3}}. On
+         validation this expands into a rows split of 3 flex drawer leaves.
+         count is never >1 in a stored spec.
+WHY      Two ways to express one thing is a bug factory — the solver would
+         need a special case and the ops would need to handle both. But
+         "3 drawers" is genuinely how the model and the user talk.
+         Normalising keeps the input friendly and the stored form canonical.
+         Bonus: each drawer becomes individually addressable, so "make the
+         top drawer taller" works.
+REJECTED Keeping count as a render-time repeat (build-1 behaviour). That is
+         precisely the mechanism that produced bug 3.1.
+REVISIT  If tree depth becomes a real problem for the model to author.
+
+--------------------------------------------------------------------------
+D6  2026-08-16 — Corner default: the later wall in sequence yields
+WHAT     At each corner exactly one wall gives up its depth; the other owns
+         the corner square. Bay sums validate against usable_length.
+WHY      Build 1 placed the next wall at prev.back_end and rotated 90°, so
+         two 60 cm runs occupied the same 60x60 cm square twice and both
+         counted it in their bay sums (bug 3.4).
+REJECTED Auto-inserting a corner unit. That is a design decision, not a
+         geometry one — the user or the model should make it explicitly.
+REVISIT  When corner unit types (blind / carousel / return) get modelled.
+
+--------------------------------------------------------------------------
+D7  2026-08-16 — spec.py (v2) lands beside furniture_spec.py (v1)
+WHAT     Build-1 model stays importable until Phase 7 cutover.
+WHY      The FastAPI app, planner, renderers and tests all import v1 today.
+         Deleting it now breaks everything before there is a replacement.
+REJECTED Big-bang replacement. Phases 2-6 need a working app to compare
+         against.
+REVISIT  Phase 7 deletes v1. If both are still alive after Phase 7, that
+         is a bug.
+
+--------------------------------------------------------------------------
+D8  2026-08-16 — One fit tolerance, 1.0 cm, at every level
+WHAT     FIT_TOLERANCE_CM = 1.0 applies to any fixed-size sibling group.
+WHY      Every fixed size in the document is human- or model-authored, so
+         they all have the same kind of slop. Computed sizes use flex and
+         are exact by construction, so they need no tolerance at all.
+REJECTED Per-level tolerances (1.0 cm at wall, 0.5 cm nested). Two numbers
+         with no principled boundary between them.
+REVISIT  If mm-precision joinery work needs a tighter check.
+
+--------------------------------------------------------------------------
+D9  2026-08-16 — Side columns consume width; they are not drawn over bays
+WHAT     bay_extent = usable_length - side_columns.left - side_columns.right.
+WHY      Build 1 drew side columns as rectangles ON TOP of the bays while
+         the bays still summed to the full wall length, so the trim
+         overlapped whatever front was behind it. Trim is real material and
+         takes real space.
+REJECTED Leaving them cosmetic. Cut lists come off this tree later, and a
+         cosmetic column produces a wrong part list.
+REVISIT  If a design ever needs an applied (surface-mounted) end panel, that
+         is a different thing and gets its own field.
+
+--------------------------------------------------------------------------
+D10 2026-08-16 — build_spec(), never Spec.model_validate()
+WHAT     One entry point that catches pydantic's ValidationError and raises
+         SpecError with a single readable sentence.
+WHY      These messages are user-facing in two places that matter: the editor
+         shows them when an op is rejected, and the spec-author repair loop
+         feeds them straight back to the model (plan 10.2). A pydantic error
+         blob is bad for the user and actively bad for the repair loop.
+REJECTED Letting callers unwrap ValidationError themselves. Every call site
+         would reimplement it, slightly differently.
+REVISIT  Never. If a new caller uses model_validate directly, that is a bug.
+
+--------------------------------------------------------------------------
+D11 2026-08-16 — distribute() is duplicated in TypeScript, pinned by goldens
+WHAT     The sizing formula lives in app/models/spec.py AND will live in the
+         browser solver, because the browser must re-run it at 60fps during
+         a drag and cannot round-trip to the server. Both are pinned to
+         tests/golden/distribute.json.
+WHY      This is the one place build 2 knowingly duplicates logic, and
+         duplicated layout math is exactly what caused build-1 bug 3.5. The
+         golden file is the mitigation: neither side can drift silently.
+ALTERNATIVE Server-authoritative sizing. Rejected — a network round trip per
+         drag frame is not an editor.
+REVISIT  If the drag path ever stops needing local resolution, delete the TS
+         copy rather than keeping both.
+
+--------------------------------------------------------------------------
+D12 2026-08-16 — Solver lives in TypeScript; Python keeps validation only
+WHAT     web/src/solver/ owns all geometry. Python owns the spec, the ops and
+         the invariants. Python never re-derives layout.
+WHY      The editor must re-solve during a drag at 60fps, which cannot round
+         trip to a server. Two full layout engines would be build-1 bug 3.5
+         at ten times the size.
+REJECTED A Python solver with the browser asking for coordinates.
+REVISIT  Never, unless the editor stops needing live geometry.
+
+--------------------------------------------------------------------------
+D13 2026-08-16 — A3 landscape, 30 mm title block, fixed annotation gutters
+WHAT     One sheet size (420x297), margin 10, title block 30. Annotation room
+         is reserved in PAPER mm BEFORE a scale is chosen.
+WHY      Reserving the gutter first means dimensions can never be squeezed
+         off the sheet by a large object. Title block at 30 rather than 40
+         buys back the height that would otherwise force common kitchen
+         elevations down an extra rung of the ladder.
+REJECTED Scaling to fit and then finding room for dimensions. That is how
+         build 1 ended up with 48 cm of padding.
+REVISIT  Portrait sheets for tall narrow pieces would raise fill for those.
+         Noted as future, not needed yet.
+
+--------------------------------------------------------------------------
+D14 2026-08-16 — Detail dimensions nearest the object, overall outermost
+WHAT     Per-bay widths in the first band under the carcass, overall width in
+         the second.
+WHY      Standard drafting order. plan.txt 6.5 lists them the other way round;
+         the standard wins and the plan text is the loose one.
+REJECTED Following the plan's listing order literally.
+REVISIT  No.
+
+--------------------------------------------------------------------------
+D15 2026-08-16 — An 'open' leaf draws no front, and no invented shelves
+WHAT     FrontType 'open' emits the opening outline and nothing inside it.
+WHY      plan 6.4 mentions shelf lines, but the spec carries no shelf count.
+         Drawing three shelves because it looks right is the image model's
+         habit, not a drafting tool's. The absence of a front IS the drawing.
+REJECTED Inventing a default shelf count.
+REVISIT  When the spec gains a real shelves field, draw them from it.
+
+--------------------------------------------------------------------------
+D16 2026-08-16 — Labels print only where they fit
+WHAT     A node's name is drawn when its box is at least 10x6 mm on paper.
+WHY      plan 9.1 wants every node labelled so the user and the model share a
+         vocabulary. Printing a 3.5 mm label inside a 2 mm sliver produces
+         unreadable mush, which serves neither.
+REJECTED Labelling everything. Also rejected: shrinking the text, which
+         breaks the fixed-annotation rule that Phase 2 exists to establish.
+REVISIT  The editor can show the full path on hover and on selection, so
+         nothing is actually unreachable.
+
+--------------------------------------------------------------------------
+D17 2026-08-16 — CSS does not lay the elevation out; the solver does
+WHAT     ElevationDOM positions absolute divs at the millimetre rectangles the
+         solver already produced. It does not use grid or flex to divide
+         anything.
+WHY      The point of choosing HTML was real DOM nodes, real mm units and real
+         print output — all of which survive. Letting the browser's layout
+         engine ALSO compute the divisions would mean two engines that must
+         agree, which is build-1 bug 3.5 rebuilt at ten times the size. The
+         browser is a renderer here, not a calculator.
+REJECTED Nested flex/grid boxes with percentage sizes. Prettier markup, but
+         the numbers on the drawing would no longer provably match the spec.
+REVISIT  Never while the solver exists.
+
+--------------------------------------------------------------------------
+D18 2026-08-16 — Geometry in DOM, annotation in an SVG overlay
+WHAT     Openings and fronts are divs; dimension lines, witness lines and
+         lettering are one SVG layer on top with pointer-events: none.
+WHY      Rotated text and 0.18 mm hairlines are what SVG is for and what CSS
+         is bad at. Interaction is what the DOM is for. Splitting on that line
+         gets both, and the overlay never eats a click.
+REJECTED All-SVG (loses focusable, styleable, accessible nodes) and all-DOM
+         (rotated dimension text becomes a fight).
+REVISIT  No.
+
+--------------------------------------------------------------------------
+D19 2026-08-16 — Edit ops travel as ONE wide nullable record
+WHAT     The model emits {kind, path, size_cm, axis, ... } with every field
+         present and nullable. Nulls are stripped, then Pydantic discriminates
+         on `kind`.
+WHY      A 13-shape discriminated union in strict json_schema is not portable
+         across OpenRouter providers. A flat nullable record is, and strict
+         mode is worth more than a tidy schema: it is what makes `ambiguities`
+         a field the model cannot skip.
+REJECTED anyOf per op kind (provider-dependent), and free-form JSON (gives up
+         the guarantee entirely).
+REVISIT  If strict union support becomes universal.
+
+--------------------------------------------------------------------------
+D20 2026-08-16 — The spec author uses json_object + a repair pass, not strict
+WHAT     Brief -> spec runs in json_object mode, validates with build_spec, and
+         retries once with the validator's own message.
+WHY      The opening tree is recursive, and recursive $ref schemas in strict
+         mode are the least portable corner of structured outputs. The
+         invariants are a stronger guarantee than a schema anyway: a spec that
+         passes them cannot draw wrong. This is exactly why D10 made error
+         messages readable.
+REJECTED Flattening the tree into a non-recursive DTO purely to satisfy strict
+         mode. That would put the tree-building arithmetic back in the model.
+REVISIT  If a provider ships dependable recursive strict schemas.
+
+--------------------------------------------------------------------------
+D21 2026-08-16 — Intake resolves KEYED fields, and code compiles the brief
+WHAT     The contract is `resolved: [{field, value, source}]` against a
+         typology profile, plus `open: [{field, why, options}]`. The brief
+         text is assembled in Python from the resolved list.
+WHY      An earlier draft had the model report locked facts as prose. Matching
+         prose to a checklist is fuzzy, so the gate could not actually be
+         enforced. Keys make the gate exact. And a model-written summary loses
+         numbers; a compiled one cannot.
+REJECTED Free-text `locked` + fuzzy matching. Unenforceable is the same as
+         absent.
+REVISIT  When profiles get richer, extend the keys rather than loosening this.
+
+--------------------------------------------------------------------------
+D22 2026-08-16 — The browser rasterises the sheets and posts them at lock
+WHAT     On Lock the browser renders SheetSVG for each elevation and one plan
+         per camera shot, converts to PNG, and uploads. The server stores them
+         and hands them to the image model verbatim.
+WHY      The reference image MUST be the drawing the user approved. A
+         server-side renderer would be a second implementation that could
+         disagree — and the whole spine of build 2 is that there is only one.
+REJECTED Headless-browser screenshots server-side (heavy for a local app) and
+         a parallel Python renderer (the exact duplication being avoided).
+REVISIT  If a server needs to produce sheets without a browser, generate them
+         by running the same TS solver under Node, not by rewriting it.
+
+--------------------------------------------------------------------------
+D23 2026-08-16 — One plan per shot, with that shot's walls shaded
+WHAT     solvePlan takes {highlight, label}; the walls in frame render as
+         kind "in-shot" and are filled. Reference name is plan-<shot_id>.png.
+WHY      plan.txt stage 3 asks for a plan "with that camera cone marked", and
+         the exclude list alone leaves the model guessing where the camera is.
+         Shading is a cheap, unambiguous way to say "these two runs, from
+         inside the room".
+REJECTED One shared plan for every shot. Cheaper, but it tells the image model
+         nothing about the viewpoint.
+REVISIT  A real cone wedge would be better than shading. Not needed yet.
+
+--------------------------------------------------------------------------
+D24 2026-08-16 — A spec must have at least one wall
+WHAT     build_spec rejects a document with no walls.
+WHY      Found while testing the repair loop: an empty spec passed every
+         invariant, so a model that returned {"walls":[]} looked successful and
+         the editor rendered a blank sheet with no explanation.
+REJECTED Treating empty as a valid starting state. The brief phase is the
+         starting state; a spec is a design.
+REVISIT  No.
+
+================================================================================
+WORK LOG — BUILD 2
+================================================================================
+
+2026-08-16 — PHASES 3-7 COMPLETE: THE BUILD IS THE PRODUCT
+200 python tests + 97 TypeScript tests pass. tsc and vite build clean.
+
+PHASE 3 — RENDERERS
+  web/src/render/
+    ElevationDOM.tsx   divs at solver millimetres, data-path on every node,
+                       divider handles, ghost classes, drag readout
+    Annotations.tsx    the SVG annotation layer (D18)
+    PlanSVG.tsx        footprints, corner marker, dividers, dimensions
+    SheetFrame.tsx     fits a physical A3 sheet to the viewport by zooming the
+                       finished drawing, never by re-solving it
+    SheetSVG.ts        export backend, shared with the packets
+    rasterize.ts       sheets -> PNG in-browser (D22)
+    sheet.css          every size in real mm; @page A3 landscape for print
+  Renderer tests assert DOM, SVG export and the hit list cover the same nodes.
+
+PHASE 4 — EDITOR
+  Inspector (set size, make flexible, split cols/rows, add, merge, set front,
+  stack of 3, delete), divider drag with a live cm readout, wall tabs, plan
+  tab, undo, print, and the chat panel with Apply / Cancel / "Not what I
+  meant". solver/dividers.ts derives handles from the Sheet so a handle is
+  always on the line you can see.
+
+PHASE 5 — AGENTS
+  intake.py     gemini-3.7-flash, strict schema, keyed resolved/open (D21),
+                and the completeness gate that sends a premature "ready" back
+                with the missing field list
+  structure.py  gpt-5.6-terra at effort "max": build_spec with one repair
+                pass, and edit() with the clarify/propose branch
+  schemas.py    strict INTAKE and EDIT schemas + the wide-op DTO (D19)
+  typology/     5 profiles; kitchen requires worktop, appliances, sink,
+                splashback, services on top of the common envelope
+  Routing: an edit becomes a question if the model says clarify, OR names any
+  ambiguity, OR scores below 0.75, OR emits no ops, OR its ops do not apply
+  after one retry. Four independent ways to stop a wrong change landing.
+
+PHASE 6 — PHOTOREAL
+  render/packets.py builds one sealed packet per camera job from the uploaded
+  sheets. The prompt is written by code: LEFT/RIGHT wall blocks with real
+  dimensions and a bay-by-bay breakdown, an explicit NOT-in-this-photograph
+  list, materials, and a numbered explanation of each reference image.
+  Lock refuses unless every sheet the planner asked for was uploaded.
+
+PHASE 7 — CUTOVER
+  Deleted: furniture_spec.py, svg_plan/svg_elevation/svg_markup/geometry/
+  raster/photoreal, editor/drawings.py, editor/tweak.py, editor/sample.py,
+  agents/brief.py, agents/spec_author.py, brief_prompts, spec_prompts, and
+  eight build-1 test modules. views.py was PORTED to v2, not rewritten — its
+  camera logic was correct.
+
+VERIFIED END TO END IN THE RUNNING APP (uvicorn + vite, real browser):
+  Demo L-kitchen loads              sheet 420mm x 297mm, SCALE 1:20
+  bay-1 draws at 80mm               = 160 cm at 1:20, dimensions read 160/160/320
+  Click bay-1 -> "Two side by side" v2, col-1 and col-2 at 40mm each,
+                                    two door fronts 39.85mm apart by exactly
+                                    one 3 mm reveal, labelled COL-1 / COL-2
+  Plan tab                          2 footprints, corner marked, runs
+                                    dimensioned 320 and 180 — the corner
+                                    counted ONCE (build-1 bug 3.4)
+  Undo                              back to v1, the pair gone
+  The sentence that started this rewrite is now one click and one op.
+
+EVAL SET — tests/eval/edit_cases.json, 21 cases, 14 clear + 7 ambiguous.
+  Scored on correct-op rate, clarify-when-needed, and false-clarify rate.
+  The third number exists because an agent that asks about everything is the
+  build-1 consultant loop again.
+  Harness is unit-tested; run against the live model with
+  `python -m scripts.run_edit_eval` (needs a key, ~21 max-effort calls).
+  Writing it found a real property: "get rid of bay 3" is NOT a safe edit on
+  the test spec, because bay-3 is the only flexible bay and removing it leaves
+  the 300 cm run 100 cm short. The system refuses it correctly, so the case
+  was reclassified as one the agent must ask about.
+
+STILL OPEN
+  - The sheets have not been reviewed by eye for visual quality. Geometry is
+    verified numerically and in the DOM; taste is not.
+  - Photoreal has never been run against the real image model (no key used in
+    this session). The packet contents are tested; the pictures are not.
+  - The intake and structure agents have only been exercised with scripted
+    replies. Run the eval before trusting the live numbers.
+  - No enlargement scales (2:1, 5:1), so a piece under ~20 cm would be drawn
+    small at 1:1. Out of scope for furniture, worth knowing.
+
+
+2026-08-16 — PHASE 2 COMPLETE: LAYOUT SOLVER + SCALE
+Still no UI and no API spend. 148 Python tests + 80 TypeScript tests pass.
+
+New (web/src/solver/):
+  sheet.ts       Sheet contract + ISO constants. STROKE ladder 0.7 / 0.35 /
+                 0.25 / 0.18 mm (ISO 128-20), TEXT_MM 2.5 / 3.5 / 5.0
+                 (ISO 3098), A3 sheet, frame, title block.
+  scale.ts       ISO 5455 ladder 1:1..1:100, chooseScale, fitInto, fmtCm.
+  distribute.ts  The shared sizing rule (D11).
+  spec.ts        TS mirror of the Pydantic model + usableLength / bayExtent /
+                 innerHeight / neighbourAt, including the ring wrap.
+  elevation.ts   Recursive solve with reveals, handles, dimension bands.
+  plan.ts        Wall placement with corner resolution, dividers, dimensions.
+web/src/render/SheetSVG.ts   Export backend (early slice of Phase 3), used to
+                 eyeball sheets before the editing renderer exists.
+
+Cross-language drift guards, both enforced by the Python suite:
+  tests/golden/distribute.json   sizing vectors, run by BOTH languages
+  tests/golden/specs/*.json      8 specs written by Python, read by TS.
+                                 test_fixtures_are_current fails if stale.
+
+Tests (web, 80): golden sizing vectors, scale ladder, elevation structure and
+annotation, plan corner resolution, the plan 7.3 property set over all
+fixtures AND 200 randomly generated specs, plus the readability gate.
+
+Property set (the classes of bug build 1 shipped):
+  - every child box lies inside its parent
+  - children exactly tile their parent (contained + equal area => no overlap,
+    no gap, whichever axis the split used)
+  - fronts never escape their opening
+  - every hit region matches a drawn box to 0.001 mm  (bug 3.5)
+  - the scale is always on the ladder and content stays inside its area
+
+PHASE 2 GATE — MET.
+  nightstand  40x50 cm   -> 1:5    80x100 mm on paper
+  six-metre   600x240 cm -> 1:20   300x120 mm on paper
+  Both sheets carry identical 2.5 / 3.5 / 5.0 mm lettering and identical
+  0.18 / 0.25 / 0.35 / 0.7 mm line weights. Only the geometry scales. That
+  is the whole of bug 3.2, closed.
+  Every fixture fills at least 39% of its available paper on the binding
+  axis. The floor is 1/2.5, set by the widest rung of the ladder (1:20 ->
+  1:50); it only fails to bind at 1:1, which needs enlargement scales and
+  does not arise for furniture.
+
+Preview sheets: `WRITE_PREVIEWS=1 npx vitest run preview` writes 23 SVGs to
+data/preview/. Not written during a normal test run.
+
+Notes for Phase 3:
+  - ElevationDOM consumes the same Sheet; do not recompute anything.
+  - Box.path is set on every addressable node, so hit targets are free.
+  - Sheet.area vs Sheet.content: area is what geometry MAY occupy, content is
+    where it landed. Fill ratio is content/area on the binding axis.
+  - SheetSVG already exists and is tested; extend rather than replace.
+  - Not verified visually yet. The browser pane could not be displayed in the
+    session that generated them, so the SVGs were handed to the user instead.
+    Confirm the look before building the editor on top.
+
+
+2026-08-16 — PHASE 1 COMPLETE: SPEC v2 + OPS
+Pure logic. No UI, no LLM calls, no API spend. 140 tests pass (76 new,
+64 pre-existing build-1 tests still green).
+
+New files:
+  app/models/spec.py       Spec v2. Opening tree, flex sizing, invariants
+                           I1-I8, corner resolution, usable_length /
+                           bay_extent / inner_height, distribute(),
+                           build_spec() as the only validating entry point.
+  app/models/paths.py      NodeRef + resolve() + list_paths() + describe().
+                           Path addressing carries the box each node occupies,
+                           so an op always knows the real cm it is acting on.
+  app/models/ops.py        13 ops as a discriminated union, apply_op /
+                           apply_ops (all-or-nothing) + OpRecord log.
+  app/models/migrate.py    Build-1 spec -> v2, with a report of every
+                           adjustment it had to make.
+
+New tests:
+  tests/test_spec_v2.py            26  invariants, sizing, corners, paths
+  tests/test_ops.py                25  every op, rejection, batching, parsing
+  tests/test_migrate.py            14  incl. all 7 real sessions on disk
+  tests/test_distribute_golden.py  11  the shared sizing contract
+  tests/v2_factory.py                  fixtures
+  tests/golden/distribute.json         cross-language golden vectors
+
+The regression that justifies the rewrite now passes as one operation:
+  test_two_doors_next_to_each_other_on_the_top_part
+  Split(path="wall-a/bay-1/row-1", axis="cols") -> two door leaves, equal
+  width, full height, hinged left and right. In build 1 this request had no
+  representation at all.
+
+Verified against real data: all 7 build-1 sessions holding a spec migrate
+into a valid v2 document. The wardrobe case absorbs 16 cm of side-column
+width into its last bay and records it as an assumption.
+
+EVIDENCE FOUND WHILE MIGRATING — bug 3.3 was live in production data.
+Scanned every bay in every saved session:
+
+    module stack did NOT fit its opening ....  4 of 36 bays (11%)
+    worst:  480 cm of modules in a 200 cm opening  (+280 cm)
+            370 cm in 200 cm  (x2)
+            271 cm in 233 cm
+
+Build 1 stacked upward from the plinth with no fit check, so those 280 cm
+were drawn ABOVE the carcass — literally off the sheet. This is a second,
+independent and very literal cause of the "designs go out of frame"
+complaint, alongside the paper/model space collision (3.2). Under v2 the
+same data cannot produce it: the stacks came through as proportional flex
+children that fill their opening exactly.
+
+Notes for Phase 2:
+  - The TS solver must load tests/golden/distribute.json (D11).
+  - Children are in DRAWING order: rows top->bottom, cols left->right.
+    The renderer depends on this; it is documented on Opening.
+  - resolve() already returns box_w / box_h in cm, so the solver only has to
+    add paper space, scale, and annotation — not re-derive the tree.
+
+
+
+2026-08-16 — PLAN REWRITTEN (build 2)
+Diagnosed build 1 against the user's test notes. Three reported symptoms
+turned out to be five defects; evidence recorded in plan.txt §3.
+  3.1 side-by-side fronts unrepresentable    -> openings (D1)
+  3.2 model space and paper space collided   -> scale system, plan §6
+  3.3 no vertical fit validation             -> flex sizing (D1)
+  3.4 plan corners overlapped 60x60 cm       -> usable_length (D6)
+  3.5 hit targets a second layout pass       -> solver emits hits, plan §8
+  3.6 edits rewrote the whole document       -> named ops, plan §10.3
+  3.7 "ask if unclear" had no mechanism      -> required fields, plan §10.1
+Research basis recorded in plan.txt §15 (ISO 128-20 / 3098 / 5455, cabinet
+CAD prior art, spatial-reasoning and clarification papers, model/API facts).
+
+Decisions taken with the user this session:
+  - Elevations in HTML/CSS, plan in SVG, one browser-side renderer
+  - gemini-3.7-flash for intake chat; gpt-5.6-terra at effort "max" for
+    structure and edit ops
+  - terra writes the RENDERER once, offline — it never draws a design
+
+================================================================================
+BUILD 1 AND BUILD 0 — HISTORICAL LOG BELOW THIS LINE
+================================================================================
+Everything below is the record of superseded architectures. Kept for the
+"why it failed" evidence, not as a description of the product.
+Build 1 = flat bays / server SVG / full-spec rewrites (Phases A-F).
+Build 0 = council / DSD / image-model drawings (Phases 1-18).
+
+================================================================================
+BUILD 1: PHASE F COMPLETE — SUPERSEDED 2026-08-16
+================================================================================
+
+2026-08-16: Never send max_tokens on OpenRouter calls (chat, vision, image).
+User forbade output caps. Spec author still uses reasoning low.
+
+2026-08-16: Spec build "model returned no JSON object" — Gemini 3.7 Flash
+with reasoning high + max_tokens 8192 spent the budget on thinking.
+Empty spec replies are repaired as empty, not as {}. Output caps removed.
 
 2026-08-15: User retired the council / image-model-drawings system.
 New plan is in plan.txt. Phase F removed the old Streamlit pipeline.

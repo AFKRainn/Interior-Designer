@@ -1,27 +1,44 @@
-"""FastAPI for the furniture editor."""
+"""
+FastAPI surface for build 2.
+
+The server owns the spec, the ops and the invariants. It does NOT own the
+drawings: the browser solves and renders them from the spec, so there is no
+second layout engine to drift (plan 8). At lock the browser posts back the
+sheets it rasterised, and those exact images become the image model's
+references.
+
+Every mutation goes through an op. There is no endpoint that accepts a spec.
+"""
 from __future__ import annotations
 
-import json
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from app.agents.brief import Brief
-from app.agents.spec_author import SpecAuthor, SpecAuthorError
-from app.editor.drawings import drawings_payload
-from app.editor.sample import l_kitchen_spec
+import config
+from app.agents.intake import Intake, IntakeError, compile_brief, merge_resolved
+from app.agents.schemas import parse_ops
+from app.agents.structure import Structure, StructureError
 from app.editor.session import (
+    find_wall,
     get_session,
+    load_sheets,
     new_session,
     public_session,
     save_session,
+    say,
+    set_spec,
+    store_sheets,
+    undo,
     upsert_render,
 )
-from app.editor.tweak import TweakError, move_divider, set_bay_width
-from app.models.furniture_spec import FurnitureSpec
-from app.render.photoreal import (
-    PhotorealError,
+from app.models.diff import diff_paths, summarise
+from app.models.ops import OpError, apply_ops
+from app.models.spec import Spec, SpecError
+from app.planner.views import plan_views
+from app.render.packets import (
+    PacketError,
     build_packets,
     packet_for_shot,
     public_packet,
@@ -30,6 +47,7 @@ from app.render.photoreal import (
 from app.services.openrouter import OpenRouterError
 
 app = FastAPI(title="Interior Designer")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://127.0.0.1:5173", "http://localhost:5173"],
@@ -41,8 +59,10 @@ app.add_middleware(
 
 @app.exception_handler(OpenRouterError)
 async def openrouter_error(_request: Request, exc: OpenRouterError) -> JSONResponse:
-    status = exc.status_code if exc.status_code in {400, 401, 402, 403, 429} else 502
-    return JSONResponse(status_code=status, content={"detail": str(exc)})
+    return JSONResponse(status_code=502, content={"detail": str(exc)})
+
+
+# -- payloads -------------------------------------------------------------
 
 
 class ImageIn(BaseModel):
@@ -50,38 +70,40 @@ class ImageIn(BaseModel):
     mime_type: str = "image/png"
 
 
-class BriefStartIn(BaseModel):
+class BriefIn(BaseModel):
     text: str = ""
     images: list[ImageIn] = Field(default_factory=list)
 
 
-class BriefReplyIn(BaseModel):
-    text: str = ""
-    images: list[ImageIn] = Field(default_factory=list)
+class OpsIn(BaseModel):
+    ops: list[dict] = Field(default_factory=list)
 
 
-class TextIn(BaseModel):
-    text: str
+class EditIn(BaseModel):
+    utterance: str
+    wall_id: str | None = None
+    selection: str | None = None
 
 
-class BayWidthIn(BaseModel):
-    wall_id: str
-    bay_id: str
-    width: float
+class SheetIn(BaseModel):
+    name: str
+    data: str
+    wall_id: str | None = None
 
 
-class DividerIn(BaseModel):
-    wall_id: str
-    left_bay_id: str
-    delta_cm: float
+class LockIn(BaseModel):
+    sheets: list[SheetIn] = Field(default_factory=list)
 
 
-def get_brief() -> Brief:
-    return Brief()
+# -- dependencies ---------------------------------------------------------
 
 
-def get_author() -> SpecAuthor:
-    return SpecAuthor()
+def get_intake() -> Intake:
+    return Intake()
+
+
+def get_structure() -> Structure:
+    return Structure()
 
 
 def get_image_client():
@@ -93,89 +115,92 @@ def get_image_client():
 def _require(session_id: str) -> dict:
     session = get_session(session_id)
     if session is None:
-        raise HTTPException(404, "session not found")
+        raise HTTPException(status_code=404, detail="session not found")
     return session
 
 
-def _draw(session: dict) -> dict | None:
+def _require_spec(session: dict) -> Spec:
     spec = session.get("spec")
-    if not isinstance(spec, FurnitureSpec):
-        return None
-    return drawings_payload(spec)
+    if not isinstance(spec, Spec):
+        raise HTTPException(status_code=409, detail="no spec yet — build the drawings first")
+    return spec
 
 
 def _ok(session: dict) -> dict:
     save_session(session)
-    return public_session(session, _draw(session))
+    return public_session(session)
+
+
+# -- session --------------------------------------------------------------
 
 
 @app.get("/api/health")
 def health() -> dict:
-    from app.services.openrouter import CostTracker
-
-    return {"ok": True, "cost": CostTracker().get_summary()}
+    return {
+        "ok": True,
+        "intake_model": config.INTAKE_MODEL["id"],
+        "structure_model": config.STRUCTURE_MODEL["id"],
+        "image_model": config.IMAGE_GEN_MODEL["id"],
+    }
 
 
 @app.post("/api/session")
 def create_session() -> dict:
-    return _ok(new_session())
+    return public_session(new_session())
 
 
 @app.post("/api/session/demo")
 def demo_session() -> dict:
+    """A worked L-kitchen, so the editor can be exercised without an API key."""
+    from tests.v2_factory import l_kitchen
+
     session = new_session()
-    spec = l_kitchen_spec()
-    spec.project_id = session["id"]
-    session["spec"] = spec
-    session["brief"] = spec.brief
     session["phase"] = "edit"
-    session["chat"] = [
-        {"role": "assistant", "text": "Demo L-kitchen loaded. Tweak bays or chat a change."}
-    ]
+    session["typology"] = "kitchen"
+    session["brief"] = "Demo L-kitchen. Not from a real intake."
+    set_spec(session, l_kitchen())
+    say(session, "system", "Loaded the demo L-kitchen.")
     return _ok(session)
 
 
 @app.get("/api/session/{session_id}")
 def read_session(session_id: str) -> dict:
-    return _ok(_require(session_id))
+    return public_session(_require(session_id))
 
 
-@app.post("/api/session/{session_id}/brief/start")
-async def brief_start(
+# -- intake ---------------------------------------------------------------
+
+
+@app.post("/api/session/{session_id}/brief")
+async def brief_turn(
     session_id: str,
-    body: BriefStartIn,
-    brief: Brief = Depends(get_brief),
+    body: BriefIn,
+    intake: Intake = Depends(get_intake),
 ) -> dict:
     session = _require(session_id)
-    if session["locked"]:
-        raise HTTPException(409, "session is locked")
-    images = [img.model_dump() for img in body.images] or None
-    result = await brief.start(body.text or None, images)
-    session["messages"] = result["messages"]
-    session["brief"] = result.get("brief")
-    session["chat"] = _visible_chat(result["messages"])
-    if result["status"] == "confirmed" and result.get("brief"):
-        session["phase"] = "brief_ready"
-    else:
-        session["phase"] = "brief"
-    return _ok(session)
+    if session["phase"] == "locked":
+        raise HTTPException(status_code=409, detail="session is locked")
 
+    images = [image.model_dump() for image in body.images]
+    say(session, "user", body.text or "(image attached)")
+    try:
+        first = not session["messages"]
+        turn = (
+            await intake.start(session["messages"], body.text, images)
+            if first
+            else await intake.reply(session["messages"], body.text, images)
+        )
+    except IntakeError as err:
+        raise HTTPException(status_code=502, detail=str(err)) from err
 
-@app.post("/api/session/{session_id}/brief/reply")
-async def brief_reply(
-    session_id: str,
-    body: BriefReplyIn,
-    brief: Brief = Depends(get_brief),
-) -> dict:
-    session = _require(session_id)
-    if session["locked"]:
-        raise HTTPException(409, "session is locked")
-    images = [img.model_dump() for img in body.images] or None
-    result = await brief.reply(session["messages"], body.text, images)
-    session["messages"] = result["messages"]
-    session["brief"] = result.get("brief")
-    session["chat"] = _visible_chat(result["messages"])
-    if result["status"] == "confirmed" and result.get("brief"):
+    resolved = merge_resolved(session["messages"], turn)
+    session["typology"] = turn.typology
+    session["resolved"] = [item.__dict__ for item in resolved]
+    session["intake"] = turn.public()
+    say(session, "assistant", turn.response, {"open": turn.open})
+
+    if turn.ready:
+        session["brief"] = compile_brief(resolved, turn.typology)
         session["phase"] = "brief_ready"
     return _ok(session)
 
@@ -183,155 +208,173 @@ async def brief_reply(
 @app.post("/api/session/{session_id}/spec/build")
 async def spec_build(
     session_id: str,
-    author: SpecAuthor = Depends(get_author),
+    structure: Structure = Depends(get_structure),
 ) -> dict:
     session = _require(session_id)
-    if session["locked"]:
-        raise HTTPException(409, "session is locked")
     if not session.get("brief"):
-        raise HTTPException(400, "brief is not confirmed yet")
+        raise HTTPException(status_code=409, detail="the brief is not ready yet")
     try:
-        spec = await author.from_brief(session["brief"], session.get("messages"))
-    except SpecAuthorError as exc:
-        raise HTTPException(422, str(exc)) from exc
-    spec.project_id = session["id"]
-    session["spec"] = spec
+        spec = await structure.build_spec(session["brief"])
+    except StructureError as err:
+        raise HTTPException(status_code=502, detail=str(err)) from err
+    set_spec(session, spec, note="built from brief")
     session["phase"] = "edit"
+    say(session, "system", f"Drawings built. {len(spec.walls)} wall(s).")
     return _ok(session)
 
 
-@app.post("/api/session/{session_id}/spec/patch")
-async def spec_patch(
+# -- editing --------------------------------------------------------------
+
+
+@app.post("/api/session/{session_id}/ops")
+def apply_operations(session_id: str, body: OpsIn) -> dict:
+    """Direct manipulation. The same ops the edit agent emits."""
+    session = _require(session_id)
+    spec = _require_spec(session)
+    try:
+        ops = parse_ops(body.ops)
+        updated, records = apply_ops(spec, ops)
+    except (OpError, SpecError) as err:
+        raise HTTPException(status_code=422, detail=str(err)) from err
+    set_spec(session, updated, [record.op for record in records], note="editor")
+    return _ok(session)
+
+
+@app.post("/api/session/{session_id}/ops/preview")
+def preview_operations(session_id: str, body: OpsIn) -> dict:
+    """Solve the change without committing it, for the ghost preview."""
+    session = _require(session_id)
+    spec = _require_spec(session)
+    try:
+        updated, _ = apply_ops(spec, parse_ops(body.ops))
+    except (OpError, SpecError) as err:
+        raise HTTPException(status_code=422, detail=str(err)) from err
+    return {
+        "spec": updated.model_dump(mode="json"),
+        "diff": diff_paths(spec, updated),
+        "summary": summarise(spec, updated),
+    }
+
+
+@app.post("/api/session/{session_id}/edit")
+async def edit_by_chat(
     session_id: str,
-    body: TextIn,
-    author: SpecAuthor = Depends(get_author),
+    body: EditIn,
+    structure: Structure = Depends(get_structure),
 ) -> dict:
-    session = _require(session_id)
-    _editable(session)
-    spec = session["spec"]
-    try:
-        updated = await author.patch(spec, body.text)
-    except SpecAuthorError as exc:
-        raise HTTPException(422, str(exc)) from exc
-    session["spec"] = updated
-    session["chat"] = session.get("chat", []) + [
-        {"role": "user", "text": body.text},
-        {"role": "assistant", "text": "Spec updated."},
-    ]
-    return _ok(session)
+    """Natural language -> ops. Nothing is applied here.
 
-
-@app.post("/api/session/{session_id}/spec/bay-width")
-def spec_bay_width(session_id: str, body: BayWidthIn) -> dict:
+    The decision comes back with a restatement and, when it is confident, a
+    preview of the change. The user confirms it against the drawing before it
+    reaches the spec (plan 10.3).
+    """
     session = _require(session_id)
-    _editable(session)
+    spec = _require_spec(session)
+    wall_id = find_wall(spec, body.wall_id)
+
+    say(session, "user", body.utterance)
     try:
-        session["spec"] = set_bay_width(
-            session["spec"], body.wall_id, body.bay_id, body.width
+        decision = await structure.edit(spec, wall_id, body.utterance, body.selection)
+    except StructureError as err:
+        raise HTTPException(status_code=502, detail=str(err)) from err
+
+    payload = decision.public()
+    if decision.must_clarify:
+        question = decision.ambiguities[0]["question"] if decision.ambiguities else (
+            decision.understanding or "Could you say which part you mean?"
         )
-    except TweakError as exc:
-        raise HTTPException(400, str(exc)) from exc
-    return _ok(session)
+        say(session, "assistant", question, {"ambiguities": decision.ambiguities})
+    else:
+        updated, _ = apply_ops(spec, decision.ops)
+        payload["preview"] = {
+            "spec": updated.model_dump(mode="json"),
+            "diff": diff_paths(spec, updated),
+            "summary": summarise(spec, updated),
+        }
+        say(session, "assistant", decision.understanding, {"proposal": True})
+
+    save_session(session)
+    return {"session": public_session(session), "decision": payload}
 
 
-@app.post("/api/session/{session_id}/spec/divider")
-def spec_divider(session_id: str, body: DividerIn) -> dict:
+@app.post("/api/session/{session_id}/undo")
+def undo_last(session_id: str) -> dict:
     session = _require(session_id)
-    _editable(session)
-    try:
-        session["spec"] = move_divider(
-            session["spec"], body.wall_id, body.left_bay_id, body.delta_cm
-        )
-    except TweakError as exc:
-        raise HTTPException(400, str(exc)) from exc
+    if not undo(session):
+        raise HTTPException(status_code=409, detail="nothing to undo")
     return _ok(session)
+
+
+# -- lock and photoreal ---------------------------------------------------
+
+
+@app.get("/api/session/{session_id}/shots")
+def list_shots(session_id: str) -> dict:
+    """The camera plan, so the browser knows which sheets to rasterise."""
+    session = _require(session_id)
+    spec = _require_spec(session)
+    plan = plan_views(spec)
+    return {
+        "elevations": [job.model_dump() for job in plan.elevations],
+        "cameras": [job.model_dump() for job in plan.cameras],
+    }
 
 
 @app.post("/api/session/{session_id}/lock")
-def lock_session(session_id: str) -> dict:
+def lock(session_id: str, body: LockIn) -> dict:
     session = _require(session_id)
-    if not isinstance(session.get("spec"), FurnitureSpec):
-        raise HTTPException(400, "no spec to lock")
+    spec = _require_spec(session)
+
+    required = {name for job in plan_views(spec).cameras for name in job.references}
+    stored = set(store_sheets(session, [sheet.model_dump() for sheet in body.sheets]))
+    missing = sorted(required - stored)
+    if missing:
+        raise HTTPException(
+            status_code=422,
+            detail=f"the browser did not upload every sheet. Missing: {', '.join(missing)}",
+        )
+
     session["locked"] = True
     session["phase"] = "locked"
+    say(session, "system", f"Drawings locked at v{spec.version}.")
     return _ok(session)
 
 
 @app.post("/api/session/{session_id}/render")
 async def render_all(session_id: str, client=Depends(get_image_client)) -> dict:
-    session = _locked_spec(session_id)
-    return await _render_shots(session, build_packets(session["spec"]), client, fill_missing=True)
+    session = _require(session_id)
+    spec = _require_spec(session)
+    if not session["locked"]:
+        raise HTTPException(status_code=409, detail="lock the drawings first")
 
-
-@app.post("/api/session/{session_id}/render/{shot_id}")
-async def render_one(
-    session_id: str,
-    shot_id: str,
-    client=Depends(get_image_client),
-) -> dict:
-    session = _locked_spec(session_id)
-    try:
-        packet = packet_for_shot(session["spec"], shot_id)
-    except PhotorealError as exc:
-        raise HTTPException(404, str(exc)) from exc
-    return await _render_shots(session, [packet], client, fill_missing=False)
-
-
-async def _render_shots(session: dict, packets: list, client, fill_missing: bool) -> dict:
-    existing = {item["shot_id"] for item in session.get("renders", [])}
     session["render_error"] = None
     try:
-        for packet in packets:
-            if fill_missing and packet.shot_id in existing:
-                continue
+        packets = build_packets(spec, load_sheets(session))
+    except PacketError as err:
+        raise HTTPException(status_code=409, detail=str(err)) from err
+
+    for packet in packets:
+        try:
             data, _mime = await render_packet(client, packet)
-            upsert_render(session, public_packet(packet), data)
-    except PhotorealError as exc:
-        session["render_error"] = str(exc)
-        save_session(session)
-        raise HTTPException(502, str(exc)) from exc
+        except PacketError as err:
+            session["render_error"] = str(err)
+            break
+        upsert_render(session, public_packet(packet), data)
     return _ok(session)
 
 
-def _locked_spec(session_id: str) -> dict:
+@app.post("/api/session/{session_id}/render/{shot_id}")
+async def render_one(session_id: str, shot_id: str, client=Depends(get_image_client)) -> dict:
     session = _require(session_id)
-    if not session.get("locked"):
-        raise HTTPException(409, "lock drawings before photoreal")
-    if not isinstance(session.get("spec"), FurnitureSpec):
-        raise HTTPException(400, "no spec to render")
-    return session
+    spec = _require_spec(session)
+    if not session["locked"]:
+        raise HTTPException(status_code=409, detail="lock the drawings first")
 
-
-def _editable(session: dict) -> None:
-    if session["locked"]:
-        raise HTTPException(409, "session is locked")
-    if not isinstance(session.get("spec"), FurnitureSpec):
-        raise HTTPException(400, "no spec yet")
-
-
-def _visible_chat(messages: list[dict]) -> list[dict]:
-    visible = []
-    for msg in messages:
-        role = msg.get("role")
-        if role not in ("user", "assistant"):
-            continue
-        content = msg.get("content", "")
-        if isinstance(content, list):
-            texts = [
-                part.get("text", "")
-                for part in content
-                if isinstance(part, dict) and part.get("type") == "text"
-            ]
-            content = " ".join(texts)
-        if not isinstance(content, str):
-            continue
-        text = content
-        if role == "assistant":
-            try:
-                parsed = json.loads(content)
-                text = parsed.get("response") or content
-            except (json.JSONDecodeError, TypeError):
-                text = content
-        if text.strip():
-            visible.append({"role": role, "text": text})
-    return visible
+    session["render_error"] = None
+    try:
+        packet = packet_for_shot(spec, shot_id, load_sheets(session))
+        data, _mime = await render_packet(client, packet)
+    except PacketError as err:
+        raise HTTPException(status_code=409, detail=str(err)) from err
+    upsert_render(session, public_packet(packet), data)
+    return _ok(session)

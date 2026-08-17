@@ -1,0 +1,74 @@
+{
+  "_comment": [
+    "Golden vectors for THE sizing rule (plan 5.1, spec.distribute).",
+    "This formula exists twice: app/models/spec.py distribute() validates on",
+    "the server, and the TypeScript solver re-runs it live in the browser",
+    "during a drag (plan 7). Two implementations of one rule is the exact",
+    "kind of duplication that produced build-1 bug 3.5, so both are pinned",
+    "to this file. If you change the formula, change both and add a vector.",
+    "children: size = fixed extent, flex = share of the remainder, null flex",
+    "means 1.0. Sizes are cm, rounded to 4 decimals."
+  ],
+  "cases": [
+    {
+      "name": "all fixed, exact fit",
+      "extent": 300,
+      "children": [{ "size": 100 }, { "size": 100 }, { "size": 100 }],
+      "expect": [100, 100, 100]
+    },
+    {
+      "name": "one flex absorbs the remainder",
+      "extent": 300,
+      "children": [{ "size": 100 }, { "size": 100 }, { "flex": 1 }],
+      "expect": [100, 100, 100]
+    },
+    {
+      "name": "two equal flex split what is left",
+      "extent": 300,
+      "children": [{ "size": 100 }, { "flex": 1 }, { "flex": 1 }],
+      "expect": [100, 100, 100]
+    },
+    {
+      "name": "weighted flex",
+      "extent": 200,
+      "children": [{ "flex": 3 }, { "flex": 1 }],
+      "expect": [150, 50]
+    },
+    {
+      "name": "flex defaults to 1 when unset",
+      "extent": 90,
+      "children": [{}, {}, {}],
+      "expect": [30, 30, 30]
+    },
+    {
+      "name": "repeating decimal is rounded to 4 places",
+      "extent": 200,
+      "children": [{ "flex": 1 }, { "flex": 1 }, { "flex": 1 }],
+      "expect": [66.6667, 66.6667, 66.6667]
+    },
+    {
+      "name": "fixed siblings leave nothing for flex",
+      "extent": 300,
+      "children": [{ "size": 300 }, { "flex": 1 }],
+      "expect": [300, 0]
+    },
+    {
+      "name": "oversubscribed fixed clamps flex at zero, never negative",
+      "extent": 100,
+      "children": [{ "size": 80 }, { "size": 40 }, { "flex": 1 }],
+      "expect": [80, 40, 0]
+    },
+    {
+      "name": "single flex child takes the whole extent",
+      "extent": 344,
+      "children": [{ "flex": 1 }],
+      "expect": [344]
+    },
+    {
+      "name": "no children",
+      "extent": 200,
+      "children": [],
+      "expect": []
+    }
+  ]
+}

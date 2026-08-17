@@ -1,0 +1,137 @@
+{
+  "project_id": "bea9ab0a-440e-48c8-8078-e8c0dbb8568a",
+  "version": 1,
+  "units": "cm",
+  "name": "L kitchen",
+  "layout": {
+    "type": "L",
+    "walls": [
+      {
+        "id": "wall-a",
+        "label": "",
+        "length": 320.0,
+        "adjacent_to": [
+          "wall-b"
+        ],
+        "faces": [],
+        "sequence": 0,
+        "corner": {
+          "start": null,
+          "end": "take"
+        }
+      },
+      {
+        "id": "wall-b",
+        "label": "",
+        "length": 240.0,
+        "adjacent_to": [
+          "wall-a"
+        ],
+        "faces": [],
+        "sequence": 1,
+        "corner": {
+          "start": "yield",
+          "end": null
+        }
+      }
+    ]
+  },
+  "walls": [
+    {
+      "id": "wall-a",
+      "height": 220.0,
+      "depth": 60.0,
+      "reveal_mm": 3.0,
+      "cornice": {
+        "type": "straight",
+        "height": 0.0
+      },
+      "plinth": {
+        "type": "recessed",
+        "height": 0.0
+      },
+      "side_columns": {
+        "left_cm": 0.0,
+        "right_cm": 0.0,
+        "detail": "plain"
+      },
+      "bays": [
+        {
+          "id": "bay-1",
+          "label": "",
+          "size_cm": 160.0,
+          "flex": null,
+          "split": null,
+          "children": [],
+          "front": {
+            "type": "door",
+            "hinge": "none",
+            "handle": "none",
+            "count": 1
+          }
+        },
+        {
+          "id": "bay-2",
+          "label": "",
+          "size_cm": null,
+          "flex": 1.0,
+          "split": null,
+          "children": [],
+          "front": {
+            "type": "drawer",
+            "hinge": "none",
+            "handle": "none",
+            "count": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "wall-b",
+      "height": 220.0,
+      "depth": 60.0,
+      "reveal_mm": 3.0,
+      "cornice": {
+        "type": "straight",
+        "height": 0.0
+      },
+      "plinth": {
+        "type": "recessed",
+        "height": 0.0
+      },
+      "side_columns": {
+        "left_cm": 0.0,
+        "right_cm": 0.0,
+        "detail": "plain"
+      },
+      "bays": [
+        {
+          "id": "bay-1",
+          "label": "",
+          "size_cm": null,
+          "flex": 1.0,
+          "split": null,
+          "children": [],
+          "front": {
+            "type": "open",
+            "hinge": "none",
+            "handle": "none",
+            "count": 1
+          }
+        }
+      ]
+    }
+  ],
+  "materials": {
+    "carcass": "",
+    "doors": "",
+    "finish": ""
+  },
+  "hardware": {
+    "style": "",
+    "placement": ""
+  },
+  "brief": "",
+  "assumptions": [],
+  "render_notes": ""
+}

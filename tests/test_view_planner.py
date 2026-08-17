@@ -1,150 +1,78 @@
-import unittest
+"""Camera planning is code, not a model (plan 7 / 11)."""
+from __future__ import annotations
+
+import pytest
 
 from app.planner.views import plan_views
-from tests.spec_factory import (
-    four_wall_spec,
-    galley_spec,
-    l_spec,
-    straight_spec,
-    u_spec,
-)
+from tests.v2_factory import four_walls, galley, l_kitchen, straight_wall, u_kitchen
+
+CASES = {
+    "straight": (straight_wall, 1, [["wall-a"]]),
+    "L": (l_kitchen, 2, [["wall-a", "wall-b"]]),
+    "U": (u_kitchen, 3, [["wall-a", "wall-b"], ["wall-b", "wall-c"]]),
+    "galley": (galley, 2, [["wall-a"], ["wall-b"]]),
+    "four walls": (four_walls, 4, [["wall-a", "wall-b"], ["wall-c", "wall-d"]]),
+}
 
 
-def _wall_sets(plan):
-    return [frozenset(job.walls) for job in plan.cameras]
+@pytest.mark.parametrize("name", list(CASES))
+def test_worked_examples(name: str):
+    factory, elevations, shots = CASES[name]
+    plan = plan_views(factory())
+    assert len(plan.elevations) == elevations
+    assert [job.walls for job in plan.cameras] == shots
 
 
-class ViewPlannerTests(unittest.TestCase):
-    def test_straight_one_elevation_one_frontal(self):
-        plan = plan_views(straight_spec())
-        self.assertEqual(len(plan.elevations), 1)
-        self.assertEqual(plan.elevations[0].wall_id, "wall-a")
-        self.assertEqual(plan.elevations[0].sheet, "elev-wall-a.svg")
-        self.assertEqual(len(plan.cameras), 1)
-        shot = plan.cameras[0]
-        self.assertEqual(shot.camera, "frontal")
-        self.assertEqual(shot.walls, ["wall-a"])
-        self.assertEqual(shot.frame.left, "wall-a")
-        self.assertIsNone(shot.frame.right)
-        self.assertEqual(shot.exclude, [])
-        self.assertEqual(shot.references, ["elev-wall-a.svg", "plan-cone.svg"])
-
-    def test_l_two_elevations_one_corner(self):
-        plan = plan_views(l_spec())
-        self.assertEqual([e.wall_id for e in plan.elevations], ["wall-a", "wall-b"])
-        self.assertEqual(len(plan.cameras), 1)
-        shot = plan.cameras[0]
-        self.assertEqual(shot.camera, "inside_corner")
-        self.assertEqual(shot.walls, ["wall-a", "wall-b"])
-        self.assertEqual(shot.frame.left, "wall-a")
-        self.assertEqual(shot.frame.right, "wall-b")
-        self.assertEqual(shot.exclude, [])
-        self.assertEqual(
-            shot.references,
-            ["elev-wall-a.svg", "elev-wall-b.svg", "plan-cone.svg"],
-        )
-
-    def test_u_three_elevations_two_overlapping_corners(self):
-        plan = plan_views(u_spec())
-        self.assertEqual(len(plan.elevations), 3)
-        self.assertEqual(len(plan.cameras), 2)
-        self.assertEqual(_wall_sets(plan), [
-            frozenset(["wall-a", "wall-b"]),
-            frozenset(["wall-b", "wall-c"]),
-        ])
-        for shot in plan.cameras:
-            self.assertEqual(shot.camera, "inside_corner")
-            self.assertEqual(len(shot.walls), 2)
-        self.assertEqual(plan.cameras[0].exclude, ["wall-c"])
-        self.assertEqual(plan.cameras[1].exclude, ["wall-a"])
-        self.assertNotIn("elev-wall-c.svg", plan.cameras[0].references)
-        self.assertNotIn("elev-wall-a.svg", plan.cameras[1].references)
-        self.assertTrue(self._covers_all(plan, ["wall-a", "wall-b", "wall-c"]))
-        self.assertFalse(self._has_duplicate_sets(plan))
-
-    def test_galley_two_frontals_never_one_shot(self):
-        plan = plan_views(galley_spec())
-        self.assertEqual(len(plan.elevations), 2)
-        self.assertEqual(len(plan.cameras), 2)
-        self.assertEqual(_wall_sets(plan), [
-            frozenset(["wall-a"]),
-            frozenset(["wall-b"]),
-        ])
-        for shot in plan.cameras:
-            self.assertEqual(shot.camera, "frontal")
-            self.assertEqual(len(shot.walls), 1)
-        self.assertFalse(self._has_duplicate_sets(plan))
-
-    def test_four_wall_opposite_corners_not_adjacent_corners(self):
-        plan = plan_views(four_wall_spec())
-        self.assertEqual(len(plan.elevations), 4)
-        self.assertEqual(len(plan.cameras), 2)
-        self.assertEqual(_wall_sets(plan), [
-            frozenset(["wall-a", "wall-b"]),
-            frozenset(["wall-c", "wall-d"]),
-        ])
-        self.assertNotIn(
-            frozenset(["wall-b", "wall-c"]),
-            _wall_sets(plan),
-        )
-        self.assertTrue(
-            self._covers_all(plan, ["wall-a", "wall-b", "wall-c", "wall-d"])
-        )
-        self.assertEqual(plan.cameras[0].exclude, ["wall-c", "wall-d"])
-        self.assertEqual(plan.cameras[1].exclude, ["wall-a", "wall-b"])
-        self.assertFalse(self._has_duplicate_sets(plan))
-        for shot in plan.cameras:
-            self.assertEqual(shot.camera, "inside_corner")
-            self.assertLessEqual(len(shot.walls), 2)
-            self.assertNotIn(shot.frame.left, shot.exclude)
-            if shot.frame.right:
-                self.assertNotIn(shot.frame.right, shot.exclude)
-
-    def test_facing_walls_never_share_a_camera(self):
-        for spec in (u_spec(), galley_spec(), four_wall_spec()):
-            plan = plan_views(spec)
-            for shot in plan.cameras:
-                if len(shot.walls) < 2:
-                    continue
-                a, b = shot.walls
-                self.assertFalse(
-                    spec.is_facing(a, b),
-                    f"{shot.shot_id} paired facing walls {a} and {b}",
-                )
-
-    def test_every_shot_at_most_two_walls(self):
-        for spec in (
-            straight_spec(),
-            l_spec(),
-            u_spec(),
-            galley_spec(),
-            four_wall_spec(),
-        ):
-            plan = plan_views(spec)
-            self.assertEqual(len(plan.elevations), len(spec.wall_ids()))
-            for shot in plan.cameras:
-                self.assertLessEqual(len(shot.walls), 2)
-                self.assertGreaterEqual(len(shot.walls), 1)
-
-    def test_bays_listed_only_for_walls_in_the_shot(self):
-        plan = plan_views(u_spec())
-        shot = plan.cameras[0]
-        self.assertEqual(set(shot.bays_by_wall), set(shot.walls))
-        self.assertEqual(shot.bays_by_wall["wall-a"], ["wall-a-bay-1"])
-        self.assertNotIn("wall-c", shot.bays_by_wall)
-
-    @staticmethod
-    def _covers_all(plan, wall_ids):
-        seen = set()
-        for job in plan.cameras:
-            seen.update(job.walls)
-        return seen == set(wall_ids)
-
-    @staticmethod
-    def _has_duplicate_sets(plan):
-        sets = _wall_sets(plan)
-        return len(sets) != len(set(sets))
+def test_one_elevation_per_wall_never_asked_of_a_model():
+    for factory, elevations, _ in CASES.values():
+        spec = factory()
+        plan = plan_views(spec)
+        assert [job.wall_id for job in plan.elevations] == spec.wall_ids()
+        assert len(plan.elevations) == elevations
 
 
-if __name__ == "__main__":
-    unittest.main()
+def test_a_shot_never_holds_more_than_two_walls():
+    for factory, _, _ in CASES.values():
+        for job in plan_views(factory()).cameras:
+            assert 1 <= len(job.walls) <= 2
+
+
+def test_facing_walls_never_share_a_shot():
+    """A galley photographed as one shot would be a lie about the room."""
+    for factory, _, _ in CASES.values():
+        spec = factory()
+        for job in plan_views(spec).cameras:
+            if len(job.walls) == 2:
+                assert not spec.is_facing(*job.walls)
+
+
+def test_every_wall_appears_somewhere():
+    for factory, _, _ in CASES.values():
+        spec = factory()
+        seen = {wall for job in plan_views(spec).cameras for wall in job.walls}
+        assert seen == set(spec.wall_ids())
+
+
+def test_no_two_shots_have_the_same_wall_set():
+    for factory, _, _ in CASES.values():
+        shots = [frozenset(job.walls) for job in plan_views(factory()).cameras]
+        assert len(shots) == len(set(shots))
+
+
+def test_excludes_name_every_wall_not_in_the_shot():
+    spec = u_kitchen()
+    for job in plan_views(spec).cameras:
+        assert set(job.walls) | set(job.exclude) == set(spec.wall_ids())
+        assert not set(job.walls) & set(job.exclude)
+
+
+def test_references_are_the_shot_walls_plus_its_own_plan():
+    for job in plan_views(u_kitchen()).cameras:
+        expected = [f"elev-{wall}.png" for wall in job.walls] + [f"plan-{job.shot_id}.png"]
+        assert job.references == expected
+
+
+def test_camera_type_follows_the_wall_count():
+    for factory, _, _ in CASES.values():
+        for job in plan_views(factory()).cameras:
+            assert job.camera == ("inside_corner" if len(job.walls) == 2 else "frontal")

@@ -1,0 +1,94 @@
+{
+  "id": "98d568ae-42c0-462f-bfde-98f3388b8066",
+  "phase": "brief",
+  "locked": false,
+  "typology": "kitchen",
+  "brief": null,
+  "resolved": [
+    {
+      "field": "envelope.height",
+      "value": "stated",
+      "source": "client"
+    },
+    {
+      "field": "envelope.width",
+      "value": "stated",
+      "source": "client"
+    }
+  ],
+  "intake": {
+    "response": "text for the client",
+    "status": "chat",
+    "typology": "kitchen",
+    "resolved": [
+      {
+        "field": "envelope.width",
+        "value": "stated",
+        "source": "client"
+      },
+      {
+        "field": "envelope.height",
+        "value": "stated",
+        "source": "client"
+      }
+    ],
+    "open": [],
+    "confidence": 0.8,
+    "missing": [
+      "envelope.depth",
+      "layout",
+      "plinth",
+      "top",
+      "sides",
+      "fronts",
+      "hardware",
+      "materials.carcass",
+      "materials.doors",
+      "materials.finish",
+      "appliances",
+      "worktop",
+      "sink",
+      "splashback",
+      "services"
+    ]
+  },
+  "spec": null,
+  "history": [],
+  "op_log": [],
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a senior furniture and kitchen designer taking a brief from a client.\nYou do not praise. You do not pad. You do the arithmetic.\n\nUNITS: centimetres only. Convert if the client says mm (600 mm = 60 cm) and\nkeep speaking in cm.\n\nMODE, chosen from context, never asked:\n- A sketch or photo is usually a CROP. Top, bottom, sides or neighbouring\n  bays may be out of frame. Only claim what you can actually see. Absence\n  from the crop is not absence from the design: no cornice in the photo does\n  not mean no cornice. Ask what sits outside the frame. Several detail shots\n  are fragments of ONE piece \u2014 assemble them.\n  Image wins visible geometry. Client words win materials and colour. Stated\n  numbers win dimensions.\n- With no image, design from scratch: understand the piece, then propose\n  something specific with numbers.\n\nNOTICE \u2014 think before you speak. Every turn, privately answer:\n  1. What is this piece really, and how does it sit in the room?\n  2. If there are images: what does each one show, and what is cut off?\n  3. What would the MAKER need that clients forget?\n  4. What is now settled, and what did the client actually say?\n  5. What is still open, and which gaps matter enough to ask this turn?\nThen write \"response\" from those answers. Never paste the notice to the\nclient.\n\nRESOLVED vs OPEN. `resolved` is the settled fields, keyed to the checklist\nbelow. source=\"client\" when they said it; source=\"default\" when you chose a\nprofessional default \u2014 and if you defaulted, SAY SO in one sentence in the\nresponse, with the number. `open` is what you still need.\n\nASK WELL:\n- At most 3 questions per turn. Give options (A / B / C) for anything visual.\n- A settled field is closed. Do not reopen it. Do not re-ask.\n- Prefer proposing a specific default over asking an open question the client\n  has no basis to answer. \"I will use a 12 cm recessed plinth unless you want\n  something else\" beats \"what plinth would you like?\".\n- Never invent a system error. Never mention this checklist to the client.\n\nREADY means a maker could build from the brief with no further questions.\nSet status \"ready\" only then. The checklist is enforced in code: if a\nrequired field is neither resolved nor defaulted you will be sent back with\nthe gaps, so check your own work first.\n\nAn island or peninsula is not a wall unless it has its own designed face.\n"
+    },
+    {
+      "role": "user",
+      "content": "a 3 m kitchen\n\nFreestanding piece \u2014 a maker needs all of these:\n  envelope.width: overall width of the run or piece, cm\n  envelope.height: overall height, cm, floor to top\n  envelope.depth: overall depth, cm\n  layout: straight, L, U, galley, or a single free-standing piece\n  plinth: plinth or legs: type and height in cm, or none\n  top: what happens at the top: cornice, open, scribe to ceiling\n  sides: exposed ends, returns, or scribes against a wall\n  fronts: what the fronts are, bay by bay, left to right\n  hardware: handle style and placement, or handleless\n  materials.carcass: carcass material\n  materials.doors: door and drawer front material\n  materials.finish: finish and colour\n\nAlready resolved: nothing yet\nStill missing: envelope.width, envelope.height, envelope.depth, layout, plinth, top, sides, fronts, hardware, materials.carcass, materials.doors, materials.finish\n"
+    },
+    {
+      "role": "assistant",
+      "content": "{\"typology\": \"kitchen\", \"notice\": [{\"q\": \"what is it\", \"a\": \"a kitchen run\"}], \"resolved\": [{\"field\": \"envelope.width\", \"value\": \"stated\", \"source\": \"client\"}, {\"field\": \"envelope.height\", \"value\": \"stated\", \"source\": \"client\"}], \"open\": [], \"confidence\": 0.8, \"response\": \"text for the client\", \"status\": \"ready\"}"
+    },
+    {
+      "role": "user",
+      "content": "[system] Not ready yet. These required fields are neither resolved nor\ndefaulted: envelope.depth, layout, plinth, top, sides, fronts, hardware, materials.carcass, materials.doors, materials.finish, appliances, worktop, sink, splashback, services.\nEither ask the client about the ones that genuinely need their decision (max\n3, with options), or resolve the rest with a stated professional default in\ncm. Do not set status \"ready\" until every one of them is in `resolved`.\n"
+    },
+    {
+      "role": "assistant",
+      "content": "{\"typology\": \"kitchen\", \"notice\": [{\"q\": \"what is it\", \"a\": \"a kitchen run\"}], \"resolved\": [{\"field\": \"envelope.width\", \"value\": \"stated\", \"source\": \"client\"}, {\"field\": \"envelope.height\", \"value\": \"stated\", \"source\": \"client\"}], \"open\": [], \"confidence\": 0.8, \"response\": \"text for the client\", \"status\": \"ready\"}"
+    }
+  ],
+  "chat": [
+    {
+      "role": "user",
+      "text": "a 3 m kitchen"
+    },
+    {
+      "role": "assistant",
+      "text": "text for the client",
+      "open": []
+    }
+  ],
+  "sheets": [],
+  "renders": [],
+  "render_error": null
+}

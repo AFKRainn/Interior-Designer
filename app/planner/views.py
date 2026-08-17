@@ -17,7 +17,7 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
-from app.models.furniture_spec import FurnitureSpec
+from app.models.spec import Spec
 
 
 class ElevationJob(BaseModel):
@@ -47,10 +47,15 @@ class ViewPlan(BaseModel):
 
 
 def elevation_sheet_name(wall_id: str) -> str:
-    return f"elev-{wall_id}.svg"
+    return f"elev-{wall_id}.png"
 
 
-def plan_views(spec: FurnitureSpec) -> ViewPlan:
+def plan_sheet_name(shot_id: str) -> str:
+    """One plan per shot, with that shot's walls marked (plan 6, stage 3)."""
+    return f"plan-{shot_id}.png"
+
+
+def plan_views(spec: Spec) -> ViewPlan:
     ordered = spec.ordered_layout_walls()
     elevations = [
         ElevationJob(
@@ -66,7 +71,7 @@ def plan_views(spec: FurnitureSpec) -> ViewPlan:
     return ViewPlan(elevations=elevations, cameras=cameras)
 
 
-def _plan_cameras(spec: FurnitureSpec, wall_ids: list[str]) -> list[CameraJob]:
+def _plan_cameras(spec: Spec, wall_ids: list[str]) -> list[CameraJob]:
     shots: list[tuple[str, ...]] = []
     i = 0
     n = len(wall_ids)
@@ -99,7 +104,7 @@ def _plan_cameras(spec: FurnitureSpec, wall_ids: list[str]) -> list[CameraJob]:
 
 
 def _build_camera_job(
-    spec: FurnitureSpec,
+    spec: Spec,
     all_wall_ids: list[str],
     shot: tuple[str, ...],
     index: int,
@@ -118,7 +123,7 @@ def _build_camera_job(
     shot_walls = list(shot)
     exclude = [wid for wid in all_wall_ids if wid not in shot_walls]
     references = [elevation_sheet_name(wid) for wid in shot_walls]
-    references.append("plan-cone.svg")
+    references.append(plan_sheet_name(f"shot-{index}"))
 
     bays_by_wall = {
         wid: spec.design_wall(wid).bay_ids()

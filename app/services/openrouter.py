@@ -239,7 +239,7 @@ class OpenRouterClient:
         model: str,
         messages: list[dict],
         temperature: float = 0.7,
-        max_tokens: int = 8192,
+        max_tokens: int | None = None,
         response_format: dict | None = None,
         reasoning_effort: str = "none",
     ) -> dict:
@@ -250,7 +250,7 @@ class OpenRouterClient:
             model: OpenRouter model ID (e.g. "anthropic/claude-sonnet-4")
             messages: List of message dicts with 'role' and 'content'
             temperature: Sampling temperature (0-2)
-            max_tokens: Output cap. Sent so OpenRouter does not reserve 65k tokens.
+            max_tokens: Ignored — no output token limit is sent to the API.
             response_format: Optional (e.g. {"type": "json_object"})
             reasoning_effort: Reasoning effort level: "none" | "low" | "medium" | "high".
                               When not "none", temperature is forced to 1.0
@@ -267,7 +267,7 @@ class OpenRouterClient:
             "model": model,
             "messages": messages,
             "temperature": temperature,
-            "max_tokens": max_tokens,
+            # max_tokens intentionally omitted — models output freely
         }
         if response_format:
             payload["response_format"] = response_format
@@ -474,8 +474,7 @@ class OpenRouterClient:
 
         if is_modalities_model:
             payload["modalities"] = ["image"]
-        else:
-            payload["max_tokens"] = 8192
+        # max_tokens intentionally omitted — models output freely
 
         response = await self._make_request(payload)
         return self._parse_image_response(response)
@@ -502,12 +501,13 @@ class OpenRouterClient:
             if isinstance(content, list):
                 texts = []
                 for part in content:
-                    if isinstance(part, dict):
-                        # Skip extended-thinking blocks — keep only actual text
-                        if part.get("type") in ("thinking", "redacted_thinking"):
-                            continue
-                        if part.get("type") == "text":
-                            texts.append(part.get("text", ""))
+                    if not isinstance(part, dict):
+                        continue
+                    # Skip extended-thinking blocks — keep only actual text
+                    if part.get("type") in ("thinking", "redacted_thinking"):
+                        continue
+                    if part.get("type") in ("text", "output_text") or "text" in part:
+                        texts.append(part.get("text") or "")
                 return " ".join(texts)
             return str(content)
         except (KeyError, IndexError) as e:

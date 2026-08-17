@@ -1,0 +1,148 @@
+{
+  "_comment": [
+    "Evaluation set for the edit agent (plan.txt Phase 5).",
+    "Spec under test: tests/golden/specs/straight.json",
+    "  wall-a, 300 cm run, 220 high, cornice 8, plinth 12",
+    "  bay-1 100 cm: rows -> row-1 (door, 60) / row-2 (drawer, flex)",
+    "  bay-2 100 cm: a single open opening",
+    "  bay-3 flex : a single door",
+    "",
+    "expect 'ops'     -> the agent should act, and these are the ops that count",
+    "       'clarify' -> the agent should ask; acting is the failure",
+    "Measured: correct-op rate, clarify-when-ambiguous rate, false-clarify rate.",
+    "Run against a real model with: python -m scripts.run_edit_eval"
+  ],
+  "spec": "straight",
+  "wall_id": "wall-a",
+  "cases": [
+    {
+      "id": "two-doors-top",
+      "utterance": "I want two doors next to each other on the top part of bay 1",
+      "expect": "ops",
+      "ops": [{ "kind": "split", "path": "wall-a/bay-1/row-1", "axis": "cols" }],
+      "note": "the request build 1 could not represent at all"
+    },
+    {
+      "id": "two-doors-loose",
+      "utterance": "split the top of the first bay into a pair of doors",
+      "expect": "ops",
+      "ops": [{ "kind": "split", "path": "wall-a/bay-1/row-1", "axis": "cols" }]
+    },
+    {
+      "id": "bay-width",
+      "utterance": "make bay 2 120 cm wide",
+      "expect": "ops",
+      "ops": [{ "kind": "set_size", "path": "wall-a/bay-2", "size_cm": 120 }]
+    },
+    {
+      "id": "bay-width-mm",
+      "utterance": "bay 2 should be 900 mm",
+      "expect": "ops",
+      "ops": [{ "kind": "set_size", "path": "wall-a/bay-2", "size_cm": 90 }],
+      "note": "unit conversion, not a question"
+    },
+    {
+      "id": "three-drawers",
+      "utterance": "turn bay 2 into three drawers",
+      "expect": "ops",
+      "ops": [{ "kind": "set_front", "path": "wall-a/bay-2", "type": "drawer", "count": 3 }]
+    },
+    {
+      "id": "glass-front",
+      "utterance": "bay 3 should have a glass door",
+      "expect": "ops",
+      "ops": [{ "kind": "set_front", "path": "wall-a/bay-3", "type": "glass" }]
+    },
+    {
+      "id": "open-shelving",
+      "utterance": "make the bottom of bay 1 open shelving instead of a drawer",
+      "expect": "ops",
+      "ops": [{ "kind": "set_front", "path": "wall-a/bay-1/row-2", "type": "open" }]
+    },
+    {
+      "id": "label",
+      "utterance": "call bay 2 the sink bay",
+      "expect": "ops",
+      "ops": [{ "kind": "set_label", "path": "wall-a/bay-2", "label": "Sink" }]
+    },
+    {
+      "id": "taller-wall",
+      "utterance": "the run should be 240 tall",
+      "expect": "ops",
+      "ops": [{ "kind": "set_wall", "wall_id": "wall-a", "height": 240 }]
+    },
+    {
+      "id": "plinth",
+      "utterance": "drop the plinth to 10 cm",
+      "expect": "ops",
+      "ops": [{ "kind": "set_wall", "wall_id": "wall-a", "plinth_height": 10 }]
+    },
+    {
+      "id": "materials",
+      "utterance": "oak carcass, matt white fronts",
+      "expect": "ops",
+      "ops": [{ "kind": "set_materials", "carcass": "oak", "doors": "matt white" }]
+    },
+    {
+      "id": "add-bay",
+      "utterance": "add another bay on the right",
+      "expect": "ops",
+      "ops": [{ "kind": "insert_bay", "wall_id": "wall-a" }]
+    },
+    {
+      "id": "flex",
+      "utterance": "let bay 1 stretch to fill whatever is left",
+      "expect": "ops",
+      "ops": [{ "kind": "set_flex", "path": "wall-a/bay-1" }]
+    },
+    {
+      "id": "delete",
+      "utterance": "get rid of bay 2",
+      "expect": "ops",
+      "ops": [{ "kind": "delete", "path": "wall-a/bay-2" }],
+      "note": "bay-3 is flexible and absorbs the freed width"
+    },
+
+    {
+      "id": "ambiguous-the-big-one",
+      "utterance": "make the big one wider",
+      "expect": "clarify",
+      "note": "bay-1 and bay-2 are both 100 cm; nothing distinguishes them"
+    },
+    {
+      "id": "ambiguous-top-part",
+      "utterance": "change the top part",
+      "expect": "clarify",
+      "note": "top of which bay, and change it to what"
+    },
+    {
+      "id": "ambiguous-bare-number",
+      "utterance": "make it 80",
+      "expect": "clarify",
+      "note": "no target and no unit"
+    },
+    {
+      "id": "ambiguous-nicer",
+      "utterance": "make it look nicer",
+      "expect": "clarify"
+    },
+    {
+      "id": "ambiguous-more-storage",
+      "utterance": "I need more storage",
+      "expect": "clarify",
+      "note": "a goal, not an edit"
+    },
+    {
+      "id": "impossible-width",
+      "utterance": "make bay 1 400 cm wide",
+      "expect": "clarify",
+      "note": "will not fit a 300 cm run; the agent must say so rather than mangle the spec"
+    },
+    {
+      "id": "delete-the-only-flex-bay",
+      "utterance": "get rid of bay 3",
+      "expect": "clarify",
+      "note": "bay-3 is the only flexible bay, so removing it leaves the 300 cm run 100 cm short. The agent must ask what fills the gap rather than produce a spec that does not add up."
+    }
+  ]
+}
