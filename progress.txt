@@ -2,7 +2,7 @@
                   INTERIOR DESIGNER — PROGRESS TRACKER
 ================================================================================
 Created: 2026-03-25
-Last Updated: 2026-08-16
+Last Updated: 2026-09-19
 
 ================================================================================
 CURRENT STATUS: BUILD 2 COMPLETE — ALL SEVEN PHASES LANDED
@@ -26,6 +26,11 @@ Test it:     python -m pytest tests -q      # 200
   PHASE 5  AGENTS ....................... COMPLETE  2026-08-16
   PHASE 6  PHOTOREAL .................... COMPLETE  2026-08-16
   PHASE 7  CUTOVER ...................... COMPLETE  2026-08-16
+
+2026-09-19  README.md added for GitHub. It describes this build (spec v2,
+            browser solver, two agents, sealed photoreal), not the retired
+            council pipeline. Test counts in that file are live: 229 pytest,
+            97 vitest. Architecture is unchanged.
 
 The three symptoms from the test notes, and where each one is closed:
   "image does not look like the map"  -> plan.txt 2. One spec, one solver.
